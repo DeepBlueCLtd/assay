@@ -1,8 +1,8 @@
-# ASSAY — Project Scaffold & Founding Register
+# ASSAY — Concept
 
 **Assessment Semantics & Scenario Analysis**
-Status: founding document · v0.1 · 2026-07-11
-Regime: full register discipline (ASSAY-DEC-2). This document carries the founding register until `assay-register.md` is split out at repo creation; thereafter the register is the sole home of decisions.
+Status: canonical · v0.2 · 2026-07-11 · retitled from `assay-scaffold.md` per §4 (batch 2)
+Regime: full register discipline (ASSAY-DEC-2). The register has been split out to `assay-register.md`, which is now the sole home of decisions; this document carries purpose, theses, narratives, and principles.
 
 ---
 
@@ -37,23 +37,9 @@ The build shares one spine; the demo narrative is a configuration choice:
 4. **Bridge narrative** — one object model across the J-2/J-3 seam (A + traceability graph)
 5. **REMIT narrative** — principles re-examination for the design team
 
-## 2. Founding register
+## 2. Decision register (pointer)
 
-Decisions ratified in the founding design session (2026-07-11). Register-first applies from the next session onward.
-
-| ID | Decision | Rationale |
-|---|---|---|
-| ASSAY-DEC-1 | **ASSAY established** as a standalone demonstrator: JIPOE-derived knowledge, quantified and typed, exploited by optimisation machinery; one environment, multiple explorable theses (A–H), multiple demo narratives over a shared backend. | A single coherent demonstration beats discrete thesis builds; the theses share ~80% of their machinery. |
-| ASSAY-DEC-2 | **Full REMIT-style documentation discipline**: own register with own DEC numbering; register-first (decisions recorded before citation in peer documents); batch propagation across the canonical set; methodology never originates in the build plan. | The discipline proved its worth in REMIT; a demonstrator that reconsiders principles must record its reconsiderations. |
-| ASSAY-DEC-3 | **Fully independent LinkML schema.** No import of REMIT shapes; REMIT concepts re-derived only where they earn their place. Convergence/divergence findings reported back as REMIT register candidates. | The point is re-derivation; a dependency would prejudge the answer. |
-| ASSAY-DEC-4 | **In-browser mock implementation behind a service seam contract** (TS/TSX, REMIT v1 pattern): fully client-side and offline; REST-shaped contracts mature early; real services can swap in later with no client change. **Invariant: the scorer is honestly real even in the mock** — sensitivity, discrimination, and robustness demos are re-scoring loops and become theatre over a fake scorer. | Fastest demo loop; the seam is the durable asset. |
-| ASSAY-DEC-5 | **Architecture**: one content-addressed store; compile / plan-score / analysis services behind the seam; the **traceability graph as a first-class object** (knowledge → channel → verdict → rationale edges); role surfaces as config-declared projections over the shared store; every cross-surface write a stamped delta. A surface may only *arrange* existing projections, never demand new backend semantics. | Every narrative is a read of the trace graph from a different end; surfaces stay cheap only if the graph is real. |
-| ASSAY-DEC-6 | **The knowledge object is the central new type**: a quantified JIPOE Q&A carrying encoding class (hard constraint / banded soft cost / scenario weight), banded value, provenance (source class, confidence, ownership), criticality, and validity window. Detailed in `assay-knowledge-model.md`. | The one genuinely new schema relative to REMIT's model; everything else is a familiar shape re-derived. |
-| ASSAY-DEC-7 | **Theses are explorations, not builds**; narratives are demo configurations. No thesis-specific backend forks. | Prevents the demonstrator fragmenting into four half-products. |
-| ASSAY-DEC-8 | **Vignette**: deliberately fictional archipelago setting; small joint task force echelon (3–5 force elements, red ORBAT with 2–3 genuinely divergent COAs, one operational objective). The vignette is engineered by construction to exercise every narrative: conflicting commitments (B), a load-bearing deceivable assessment (E), divergent red COAs (C), a collectable discriminator (D), a perishable forecast (F). Detailed in `assay-vignette.md`. | Fiction removes classification-adjacent realism constraints; JTF echelon gives JIPOE texture without ORBAT sprawl. |
-| ASSAY-DEC-9 | **Banded-honesty invariant**: no scalar derived from an *assessed* source reaches any surface unbanded; provenance and an "assessment, not fact" marking are visible wherever such a number is shown; plan dominance is judged in banded space only. | One SME seeing a confident number they know is guesswork discredits the whole pipeline. Inherits the Blockbuster lesson and REMIT NF9/NF10 by re-derivation, not import. |
-| ASSAY-DEC-10 | **Scoring factored as an independently callable unit** of the planning service. Analysis services (sensitivity, discrimination, staleness) are thin orchestrations: the scorer called in a loop plus a trace-graph walk — never separate engines. | Keeps theses C/D/E/F nearly free once A and B stand. |
-| ASSAY-DEC-11 | **Research-first development discipline.** Every build stage opens with a bounded research task on the doctrine and literature that stage touches (JIPOE/IPOE and military planning doctrine; optimisation techniques). Findings are recorded as a short research note in `docs/research/` *before* implementation begins; notes cite sources and state what the stage will do differently because of them. Doctrinal or algorithmic claims in canonical documents must trace to a research note or a register entry, not to developer recollection. The build plan (`assay-build-plan.md`) names each stage's research prompts; §7 below lists starting points. | ASSAY's credibility rests on doctrinal and mathematical honesty. Developers who haven't read the doctrine will build a strawman JIPOE; developers who haven't read the optimisation literature will reinvent it badly. Bounded research (hours, not weeks) with a written note keeps this cheap, auditable, and cumulative. |
+Decisions live in `assay-register.md` — the sole home of ASSAY-DEC entries (ASSAY-DEC-2). The founding batch (ASSAY-DEC-1 … 11, ratified 2026-07-11) was carried in this section until the register was split out (delivery plan slice D1); it now lives there verbatim, joined by batch 2 (ASSAY-DEC-12 … 21, the canonical-set authoring session). Register-first is in force: nothing in this document originates a decision.
 
 ## 3. Architecture (summary)
 
@@ -81,14 +67,16 @@ Target set (peers, batch-propagated):
 
 | Document | Role | Status |
 |---|---|---|
-| `assay-register.md` | decision register (split from §2 at repo creation) | founding entries herein |
-| `assay-scaffold.md` → `assay-concept.md` | purpose, theses, narratives, principles | this document, to be retitled |
-| `assay-architecture.md` | services, surfaces, trace graph, invariants | seeded by §3 |
-| `assay-knowledge-model.md` | LinkML schema + commentary | **founding doc 2** |
-| `assay-seam-contract.md` | REST shapes and semantics | **founding doc 3** |
-| `assay-vignette.md` | the Meridian Archipelago scenario | **founding doc 4** |
+| `assay-register.md` | decision register | authored; sole home of decisions |
+| `assay-concept.md` | purpose, theses, narratives, principles | this document (retitled from `assay-scaffold.md`) |
+| `assay-architecture.md` | services, surfaces, trace graph, invariants | **deferred** (ASSAY-DEC-13); orientation in §3, invariants in seam contract §G |
+| `assay-knowledge-model.md` | LinkML schema + commentary | authored, draft for review |
+| `assay-seam-contract.md` | REST shapes and semantics | authored, draft for review |
+| `assay-vignette.md` | the Meridian Archipelago scenario | authored, draft for review |
 | `assay-ui-design.md` | surfaces, information flows, shared components | authored, draft for review |
 | `assay-build-plan.md` | stage sequencing, gates, per-stage research prompts | authored, draft for review |
+| `assay-delivery-plan.md` | spec slicing, dependency graph, parallel lanes | authored, draft for review |
+| `assay-comms-plan.md` | public GitHub Pages site | authored, draft for review |
 
 ## 5. Repository & working conventions
 
@@ -97,12 +85,12 @@ Target set (peers, batch-propagated):
 - **Edits**: guarded patch scripts (assert-each-replacement-lands-once) for targeted document updates.
 - **Diagrams**: Mermaid with explicitly pinned theme variables *and* per-subgraph `style` statements; TB orientation preferred.
 - **Milestones**: ntfy.sh/iancc2025.
-- **Sessions**: structured interview format; one fork per turn; register-first from the next session.
+- **Sessions**: structured interview format; one fork per turn; register-first in force since batch 2.
 - **Research notes** (ASSAY-DEC-11): `docs/research/<stage>-<topic>.md`; one page preferred; must cite sources and end with "what we will do differently". Stage implementation does not start until its note exists.
 
 ## 6. Open questions (candidates for the next register batch)
 
-1. Build order of the spine — a "lap" equivalent (capture → compile → plan → argue?) has not been decided.
+1. ~~Build order of the spine~~ — resolved: the build plan's "lap then depth" shape (seven stages, spine-complete gate) is the decided order.
 2. Handful generation strategy axes for this domain (REMIT's time/exposure/robustness/completeness axes do not transfer unexamined).
 3. Whether thesis G (interdependency) admits *any* honest v1 slice, or is horizon-only.
 4. Surface implementation: literal tabs in one SPA vs routed micro-frontends over the shared store.

@@ -23,7 +23,7 @@ Companion: `assay-ui-wireframes.html` — populated wireframes of all four surfa
 | S3 · Commander view | Commander / chief of staff | "Argue the least-worst choice to me, and answer why" | B + trace |
 | S4 · Bridge view | Both staffs / observers | "Watch one object model cross the J-2/J-3 seam" | A, F |
 
-All four are projections of the same store; a demo narrative (scaffold §1) is a *tab order and a script*, not a build.
+All four are projections of the same store; a demo narrative (concept §1) is a *tab order and a script*, not a build.
 
 ## 3. Information flows
 

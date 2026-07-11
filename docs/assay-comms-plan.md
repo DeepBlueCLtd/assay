@@ -48,8 +48,8 @@ Seven pages, each a projection of a canonical source. Kept flat and few — a de
 
 | # | Page | Projects from | Job |
 |---|---|---|---|
-| 1 | **Home / Overview** | `assay-scaffold.md` §1 | The premise in one screen; the honesty stance; a current-stage badge and "demonstrator, not product" framing. |
-| 2 | **Goals & Theses** | scaffold §1 (thesis table) | The A–H catalogue with per-thesis state and one-line claim; the five demo narratives named. |
+| 1 | **Home / Overview** | `assay-concept.md` §1 | The premise in one screen; the honesty stance; a current-stage badge and "demonstrator, not product" framing. |
+| 2 | **Goals & Theses** | concept §1 (thesis table) | The A–H catalogue with per-thesis state and one-line claim; the five demo narratives named. |
 | 3 | **Roadmap & Progress** | `assay-build-plan.md` + `docs/status.yml` | The seven stages as a tracker with exit criteria; the spine-complete gate; research-notes index; the updates feed. |
 | 4 | **The Vignette** | `assay-vignette.md` (when authored) | Meridian Archipelago: setting, forces, the engineered conflicts each narrative exercises. |
 | 5 | **Demo** | `assay-ui-wireframes.html`, `assay-ui-design.md` | Embedded wireframes of the four surfaces now; the live demonstrator post-gate. |
@@ -89,7 +89,7 @@ theses:
   - id: G
     name: Interdependency
     state: horizon
-  # ...B..H per scaffold §1
+  # ...B..H per concept §1
 
 updates:                     # newest first; the dated feed
   - date: 2026-07-11
@@ -114,7 +114,7 @@ updates:                     # newest first; the dated feed
 - **Generator:** Jekyll (Pages-native, zero extra CI) with a minimal, high-legibility theme (`just-the-docs` or a hand-trimmed minimal layout). A small Jekyll data plugin reads `docs/status.yml` so the tracker is data-driven with no JavaScript required.
 - **Wireframes:** `assay-ui-wireframes.html` embedded as a static asset on the Demo page; it already renders the four surfaces on Meridian data.
 - **Deploy:** built-in Pages-from-branch build (no custom Action needed at first); revisit a GitHub Actions build only if a plugin outside the Pages allowlist is wanted.
-- **Diagrams:** Mermaid with pinned theme variables per the repo convention (scaffold §5), for the spine/architecture picture on the Overview.
+- **Diagrams:** Mermaid with pinned theme variables per the repo convention (concept §5), for the spine/architecture picture on the Overview.
 - **Voice & visual:** register-document restraint; the band pill and four-stop verdict colour language (ASSAY-DEC-9, ui-design §2) reused as the site's accent system so the site *looks like* the demonstrator's honesty.
 
 ## 8. Cadence & ownership
@@ -122,7 +122,7 @@ updates:                     # newest first; the dated feed
 - **On every stage gate** (exit criteria met in the build plan): update `status.yml`, publish the stage's research note to the Roadmap index, add an updates-feed entry. This ties site currency to the build's own gates — no separate reporting ritual.
 - **On each research note written:** flip `research_published: true`; the note appears in the index.
 - **At the spine-complete gate:** swap the Demo page from wireframes to the live demonstrator; add a milestone entry.
-- **Milestones** continue to fire to `ntfy.sh/iancc2025` (scaffold §5); the updates feed is the durable written record of the same events.
+- **Milestones** continue to fire to `ntfy.sh/iancc2025` (concept §5); the updates feed is the durable written record of the same events.
 - **Ownership:** the person closing a stage owns that stage's `status.yml` edit — progress reporting is part of "done," not a downstream chore.
 
 ## 9. Build plan for the site (next pass, after sign-off)
