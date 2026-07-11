@@ -71,13 +71,13 @@ The lap runs end-to-end against Meridian: capture → compile → plan → relax
 
 **Research first** *(note: `07-narratives.md`)*: decision-support presentation in doctrine (decision support template/matrix) and the human-factors literature on uncertainty communication — how bands and confidence are read and misread by decision-makers; test the band pill against it.
 
-**Build**: full S1–S4 chrome as config-declared bundles; the five demo narrative scripts (scaffold §1) as tab-orders + presenter notes; wall-projection mode decision (ui-design §6.4); SME-facing polish pass under the banded-honesty invariant.
+**Build**: full S1–S4 chrome as config-declared bundles; the five demo narrative scripts (concept §1) as tab-orders + presenter notes; wall-projection mode decision (ui-design §6.4); SME-facing polish pass under the banded-honesty invariant.
 
 **Exit**: each narrative runs as a scripted 10-minute demo from a cold start, offline.
 
 ## Deferred (explicitly out of the lap)
 
-Thesis G interdependency slice (pending the honest-v1 judgement, scaffold §6.3); thesis H reactive red; vignette authoring surface; any real (non-mock) service.
+Thesis G interdependency slice (pending the honest-v1 judgement, concept §6.3); thesis H reactive red; vignette authoring surface; any real (non-mock) service.
 
 ## Sequencing rationale & risks
 
