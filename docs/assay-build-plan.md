@@ -45,7 +45,7 @@ The plan is a **lap then depth**: seven stages thread the spine end-to-end again
 
 **Build**: `/relax`; `sacrificed` populated on infeasible-set planning (contract invariant G4); S3 least-worst cards.
 
-**Exit**: the R3 mining branch yields three candidates sacrificing K4, K3, K2 respectively; the cards state each sacrifice in command language; no silent constraint drops anywhere.
+**Exit**: the R3 mining branch yields three candidates sacrificing C4, C3, C2 respectively; the cards state each sacrifice in command language; no silent constraint drops anywhere.
 
 ## Stage 5 — Scenario robustness (thesis C live)
 
