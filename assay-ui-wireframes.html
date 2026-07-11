@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASSAY — UI wireframes v0.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#EDF0F2; --card:#FFFFFF; --ink:#1B2732; --mut:#5B6B77; --line:#D8DFE4;
+    --fact:#14655F; --factbg:#E2EFEA;
+    --asmt:#9A6A14; --asmtbg:#F7EDD8;
+    --rob:#1D7A46; --robbg:#E1F0E6;
+    --marg:#9A6A14; --margbg:#F7EDD8;
+    --tight:#B4541E; --tightbg:#FAE8DC;
+    --viol:#A33131; --violbg:#F8E2E2;
+    --open:#3E5D8A; --openbg:#E6ECF6;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace; --disp:'Archivo',sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 24px 64px}
+  header.mast{display:flex;align-items:baseline;gap:18px;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:8px}
+  .wordmark{font-family:var(--disp);font-weight:700;font-size:30px;letter-spacing:.04em}
+  .mast .vig{font-family:var(--disp);font-weight:500;font-size:15px;color:var(--mut)}
+  .mast .clock{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .subnote{font-size:12.5px;color:var(--mut);margin:6px 0 30px}
+  h2.surf{font-family:var(--disp);font-weight:600;font-size:19px;margin:44px 0 2px;display:flex;align-items:center;gap:10px}
+  .rolechip{font-family:var(--mono);font-size:11px;background:var(--ink);color:#fff;padding:2px 8px;border-radius:3px;letter-spacing:.06em}
+  .io{font-family:var(--mono);font-size:11.5px;color:var(--mut);margin:2px 0 14px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+  .cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .qhead{font-family:var(--disp);font-weight:600;font-size:13.5px;margin:0 0 2px}
+  .qsub{font-size:11.5px;color:var(--mut);margin:0 0 10px}
+  .krow{border:1px solid var(--line);border-radius:5px;padding:10px 11px;margin-bottom:10px;background:#FCFDFD}
+  .kid{font-family:var(--mono);font-size:11px;color:var(--mut)}
+  .kq{font-weight:600;font-size:13px;margin:2px 0 6px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .chip{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:3px;border:1px solid transparent;white-space:nowrap}
+  .chip.fact{background:var(--factbg);color:var(--fact);border-color:#BFDCD3}
+  .chip.asmt{background:var(--asmtbg);color:var(--asmt);border-color:#E7D3A6}
+  .chip.warn{background:var(--violbg);color:var(--viol);border-color:#EFC6C6}
+  .chip.open{background:var(--openbg);color:var(--open);border-color:#C8D5EA}
+  .chip.plain{background:#F1F3F5;color:var(--mut);border-color:var(--line)}
+  .band{margin-top:7px}
+  .bandlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--mut)}
+  .track{position:relative;height:8px;background:#EDF0F2;border:1px solid var(--line);border-radius:4px;margin-top:2px}
+  .fill{position:absolute;top:1px;bottom:1px;background:var(--asmt);opacity:.55;border-radius:3px}
+  .fill.fact{background:var(--fact)}
+  .vchip{display:inline-block;min-width:64px;text-align:center;font-family:var(--mono);font-size:10.5px;padding:3px 6px;border-radius:3px}
+  .v-rob{background:var(--robbg);color:var(--rob)} .v-marg{background:var(--margbg);color:var(--marg)}
+  .v-tight{background:var(--tightbg);color:var(--tight)} .v-viol{background:var(--violbg);color:var(--viol)}
+  table.matrix{border-collapse:collapse;width:100%;font-size:12.5px}
+  table.matrix th{font-family:var(--disp);font-weight:600;font-size:11.5px;text-align:left;padding:7px 8px;border-bottom:2px solid var(--ink);white-space:nowrap}
+  table.matrix td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .plan{font-family:var(--mono);font-weight:500}
+  .plansub{font-size:11px;color:var(--mut)}
+  .strip{display:flex;gap:4px;align-items:center}
+  .sbar{width:44px;height:9px;border-radius:3px;border:1px solid var(--line);position:relative;background:#EDF0F2}
+  .sbar i{position:absolute;top:1px;bottom:1px;border-radius:2px;background:var(--fact);opacity:.6}
+  .sbar.bad i{background:var(--viol);opacity:.65}
+  .slab{font-family:var(--mono);font-size:9.5px;color:var(--mut);text-align:center;margin-top:1px}
+  .sac{font-family:var(--mono);font-size:10.5px;color:var(--viol)}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .stamp{font-family:var(--mono);font-size:11px;background:#F1F3F5;border:1px solid var(--line);padding:3px 8px;border-radius:3px;color:var(--mut)}
+  .toggle{font-family:var(--mono);font-size:11px;border:1px solid var(--ink);padding:3px 9px;border-radius:3px}
+  .toggle.on{background:var(--ink);color:#fff}
+  .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .card{border:1px solid var(--line);border-radius:6px;padding:14px;background:#FCFDFD;display:flex;flex-direction:column;gap:8px}
+  .card h3{font-family:var(--disp);font-weight:600;font-size:15px;margin:0}
+  .card .give{border-left:3px solid var(--viol);padding:6px 10px;background:var(--violbg);font-size:12.5px;color:#5A2323}
+  .card .keep{font-size:12px;color:var(--mut)}
+  .whychain{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+  .wc{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px}
+  .wcnode{border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:#fff}
+  .wcnode .t{font-weight:600;font-size:12px}
+  .wcnode .s{font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .wcarr{color:var(--mut);font-size:15px}
+  .feed{display:flex;flex-direction:column;gap:8px}
+  .delta{display:flex;gap:12px;align-items:baseline;border:1px solid var(--line);border-radius:5px;padding:9px 12px;background:#FCFDFD;font-size:12.5px}
+  .delta .who{font-family:var(--mono);font-size:11px;background:var(--ink);color:#fff;padding:1px 7px;border-radius:3px;white-space:nowrap}
+  .delta .t{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin-left:auto;white-space:nowrap}
+  .delta.hot{border-color:var(--asmt);background:var(--asmtbg)}
+  .split{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+  .note{font-size:12px;color:var(--mut);border-left:3px solid var(--line);padding:4px 12px;margin:10px 0 0}
+  .flowsvg{width:100%;height:auto;display:block}
+  @media (max-width:880px){.cols,.cards,.split{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <span class="wordmark">ASSAY</span>
+  <span class="vig">Meridian Archipelago · TF ARGENT</span>
+  <span class="clock">D+2 · 14:30Z &nbsp;·&nbsp; world stamp <b>7f3a…c91</b></span>
+</header>
+<p class="subnote">UI wireframes v0.1 — four role surfaces as projections over one store (ASSAY-DEC-5). All figures fictional; assessed values always banded and marked (ASSAY-DEC-9).</p>
+
+<h2 class="surf" style="margin-top:8px">Information flow</h2>
+<p class="io">the heartbeat loop: J-2 writes knowledge → planner compiles &amp; plans → commander selects → new PIRs back to J-2 — every write a stamped delta</p>
+<div class="panel">
+<svg class="flowsvg" viewBox="0 0 1040 250" role="img" aria-label="Four surfaces around a shared store and seam, connected by a delta loop">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#5B6B77" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+  <rect x="320" y="88" width="400" height="76" rx="8" fill="#F1F3F5" stroke="#1B2732" stroke-width="1.2"/>
+  <text x="520" y="118" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="15" fill="#1B2732">Store · trace graph · seam</text>
+  <text x="520" y="140" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#5B6B77">compile · plan/score · relax · analyse</text>
+
+  <rect x="30" y="20" width="200" height="52" rx="6" fill="#fff" stroke="#D8DFE4"/>
+  <text x="130" y="42" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="13" fill="#1B2732">S1 · J-2 workbench</text>
+  <text x="130" y="60" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">knowledge · analyse D/E/F</text>
+
+  <rect x="30" y="180" width="200" height="52" rx="6" fill="#fff" stroke="#D8DFE4"/>
+  <text x="130" y="202" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="13" fill="#1B2732">S4 · Bridge view</text>
+  <text x="130" y="220" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">delta feed · trace chains</text>
+
+  <rect x="810" y="20" width="200" height="52" rx="6" fill="#fff" stroke="#D8DFE4"/>
+  <text x="910" y="42" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="13" fill="#1B2732">S2 · Planner workbench</text>
+  <text x="910" y="60" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">handful · relax · scenarios</text>
+
+  <rect x="810" y="180" width="200" height="52" rx="6" fill="#fff" stroke="#D8DFE4"/>
+  <text x="910" y="202" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="13" fill="#1B2732">S3 · Commander view</text>
+  <text x="910" y="220" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">least-worst · why-chain</text>
+
+  <line x1="232" y1="55" x2="316" y2="100" stroke="#9A6A14" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="248" y="66" font-family="IBM Plex Mono" font-size="10" fill="#9A6A14">supersede K9</text>
+  <line x1="722" y1="100" x2="806" y2="55" stroke="#5B6B77" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="726" y="66" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">handful + flags</text>
+  <line x1="806" y1="196" x2="722" y2="152" stroke="#5B6B77" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="716" y="196" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77" text-anchor="end">rationale</text>
+  <line x1="316" y1="152" x2="232" y2="196" stroke="#5B6B77" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="240" y="186" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">delta feed</text>
+</svg>
+</div>
+
+<!-- ─────────────────────────── S1 ─────────────────────────── -->
+<h2 class="surf">S1 · J-2 workbench <span class="rolechip">ROLE: N2</span></h2>
+<p class="io">reads: /analyse/discrimination · /analyse/sensitivity · /knowledge?status=… &nbsp;&nbsp;writes: /knowledge supersede·contest·resolve</p>
+<div class="panel">
+  <div class="cols">
+    <div>
+      <p class="qhead">Collect next</p>
+      <p class="qsub">Which open question best separates the red COAs (thesis D)</p>
+      <div class="krow">
+        <span class="kid">K11 · open · JIPOE step 3</span>
+        <p class="kq">Northmark airstrip surface condition?</p>
+        <div class="chips">
+          <span class="chip open">separates R1 | {R2,R3}</span>
+          <span class="chip plain">value ▮▮▮▮▯</span>
+          <span class="chip plain">cost: UAS sortie</span>
+        </div>
+      </div>
+      <div class="krow">
+        <span class="kid">K13 · open · JIPOE step 2</span>
+        <p class="kq">Strait fishing-pattern baseline?</p>
+        <div class="chips">
+          <span class="chip open">separates R3 | {R1,R2}</span>
+          <span class="chip plain">value ▮▮▮▯▯</span>
+          <span class="chip plain">cost: patrol overlap</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="qhead">Verify next</p>
+      <p class="qsub">Load-bearing assessments — band-edge perturbation flips the decision (thesis E)</p>
+      <div class="krow" style="border-color:#E7D3A6">
+        <span class="kid">K8 · answered · hard_constraint (waiver)</span>
+        <p class="kq">Ossen Causeway impassable at all tide states?</p>
+        <div class="chips">
+          <span class="chip warn">flips handful if false</span>
+          <span class="chip asmt">HUMINT · single-source · moderate</span>
+          <span class="chip plain">owner: N2 HUMINT cell</span>
+          <span class="chip warn">deception exposure</span>
+        </div>
+      </div>
+      <div class="krow">
+        <span class="kid">K7 · answered · banded_cost</span>
+        <p class="kq">Red fast-craft strength, Kessel Cove?</p>
+        <div class="band">
+          <div class="bandlab"><span>0</span><span>8–14 hulls</span><span>20</span></div>
+          <div class="track"><span class="fill" style="left:40%;width:30%"></span></div>
+        </div>
+        <div class="chips"><span class="chip asmt">IMAGERY · moderate · assessment</span><span class="chip plain">shifts P3 margin only</span></div>
+      </div>
+    </div>
+    <div>
+      <p class="qhead">Refresh &amp; resolve</p>
+      <p class="qsub">Perishable and contested objects (thesis F)</p>
+      <div class="krow" style="border-color:#E7D3A6">
+        <span class="kid">K9 · answered · banded_cost</span>
+        <p class="kq">Storm window arrival?</p>
+        <div class="band">
+          <div class="bandlab"><span>D+7</span><span>D+9 – D+11</span><span>D+14</span></div>
+          <div class="track"><span class="fill" style="left:28%;width:29%"></span></div>
+        </div>
+        <div class="chips"><span class="chip asmt">METOC assessed · moderate</span><span class="chip warn">valid 31 h remaining</span></div>
+      </div>
+      <div class="krow" style="border-color:#EFC6C6">
+        <span class="kid">K12 · contested</span>
+        <p class="kq">SAM section location?</p>
+        <div class="chips">
+          <span class="chip fact">SIGINT: The Teeth</span>
+          <span class="chip asmt">assessed: embarked</span>
+          <span class="chip warn">blocking compile — resolve</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="note">Exposure strip (collapsed): 9 of your objects sit under live handful 7f3a…c91 — K8 under all four plans.</p>
+</div>
+
+<!-- ─────────────────────────── S2 ─────────────────────────── -->
+<h2 class="surf">S2 · Planner workbench <span class="rolechip">ROLE: J-3/5</span></h2>
+<p class="io">reads: /plan/handful · /score · /relax · /trace/backward &nbsp;&nbsp;writes: /compile · plan basis (stamped delta)</p>
+<div class="panel">
+  <div class="toolbar">
+    <span class="stamp">world 7f3a…c91 · engine 0.1.0 · seed 42</span>
+    <span class="toggle on">R1 most likely</span>
+    <span class="toggle on">R2 most dangerous</span>
+    <span class="toggle on">R3 mining</span>
+    <span class="stamp" style="color:#B4541E">⚑ 2 verdicts stale — K9 superseded 14:02Z · recompile when ready</span>
+  </div>
+  <table class="matrix">
+    <tr>
+      <th>Plan</th><th>K1 civilians</th><th>K2 strait D+7</th><th>K3 Sanctuary</th><th>K4 aviation</th><th>K5 pre-storm</th><th>K6 recon</th><th>R1 / R2 / R3</th><th>Sacrifice</th>
+    </tr>
+    <tr>
+      <td><span class="plan">P1</span><div class="plansub">mass north early</div></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-marg">marginal</span></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><span class="vchip v-tight">tight ⚑</span></td><td><span class="vchip v-viol">violated</span></td>
+      <td><div class="strip"><span class="sbar"><i style="left:6%;width:88%"></i></span><span class="sbar bad"><i style="left:6%;width:22%"></i></span><span class="sbar"><i style="left:6%;width:60%"></i></span></div><div class="slab">collapses under R2</div></td>
+      <td class="sac">K6</td>
+    </tr>
+    <tr>
+      <td><span class="plan">P2</span><div class="plansub">Calder-centric · ISR-first</div></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-marg">marginal</span></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><span class="vchip v-marg">marginal ⚑</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><div class="strip"><span class="sbar"><i style="left:6%;width:66%"></i></span><span class="sbar"><i style="left:6%;width:62%"></i></span><span class="sbar"><i style="left:6%;width:58%"></i></span></div><div class="slab">survives all three</div></td>
+      <td class="sac">—</td>
+    </tr>
+    <tr>
+      <td><span class="plan">P3</span><div class="plansub">strait clearance-led</div></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-viol">violated</span></td>
+      <td><span class="vchip v-marg">marginal</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><div class="strip"><span class="sbar"><i style="left:6%;width:52%"></i></span><span class="sbar"><i style="left:6%;width:48%"></i></span><span class="sbar"><i style="left:6%;width:80%"></i></span></div><div class="slab">best under R3</div></td>
+      <td class="sac">K4</td>
+    </tr>
+    <tr>
+      <td><span class="plan">P4</span><div class="plansub">Sanctuary staging</div></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><span class="vchip v-viol">violated</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><span class="vchip v-marg">marginal</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><div class="strip"><span class="sbar"><i style="left:6%;width:56%"></i></span><span class="sbar"><i style="left:6%;width:50%"></i></span><span class="sbar"><i style="left:6%;width:76%"></i></span></div><div class="slab">political cost</div></td>
+      <td class="sac">K3</td>
+    </tr>
+  </table>
+  <p class="note">Within-band plans are co-equal — the matrix narrows, judgement chooses. Any chip opens the trace drawer; mixed stamps grey the matrix (comparability guard).</p>
+</div>
+
+<!-- ─────────────────────────── S3 ─────────────────────────── -->
+<h2 class="surf">S3 · Commander view <span class="rolechip">ROLE: COMD</span></h2>
+<p class="io">reads: /relax · /trace/backward &nbsp;&nbsp;writes: SelectionRationale (stamped delta)</p>
+<div class="panel">
+  <p class="qsub" style="font-size:12.5px">If Karev mines the Strait (COA-R3), no plan keeps all six commitments. Three least-worst options — each gives up something different:</p>
+  <div class="cards">
+    <div class="card">
+      <h3>P3 · Clearance surge</h3>
+      <div class="give">Gives up <b>K4</b> — aviation drops below 50% regional readiness for ~5 days</div>
+      <p class="keep">Keeps: strait open D+7 · Sanctuary untouched · civilians protected</p>
+      <div class="strip"><span class="sbar"><i style="left:6%;width:52%"></i></span><span class="sbar"><i style="left:6%;width:48%"></i></span><span class="sbar"><i style="left:6%;width:80%"></i></span></div><div class="slab">R1 / R2 / R3 resilience</div>
+    </div>
+    <div class="card">
+      <h3>P4 · Sanctuary staging</h3>
+      <div class="give">Gives up <b>K3</b> — blue presence on Sanctuary Island; green consent at risk</div>
+      <p class="keep">Keeps: strait open D+7 · aviation readiness · civilians protected</p>
+      <div class="strip"><span class="sbar"><i style="left:6%;width:56%"></i></span><span class="sbar"><i style="left:6%;width:50%"></i></span><span class="sbar"><i style="left:6%;width:76%"></i></span></div><div class="slab">R1 / R2 / R3 resilience</div>
+    </div>
+    <div class="card">
+      <h3>P2 · Accept late opening</h3>
+      <div class="give">Gives up <b>K2</b> — strait opens D+9, two days late for relief shipping</div>
+      <p class="keep">Keeps: everything else · most robust across all three red COAs</p>
+      <div class="strip"><span class="sbar"><i style="left:6%;width:66%"></i></span><span class="sbar"><i style="left:6%;width:62%"></i></span><span class="sbar"><i style="left:6%;width:58%"></i></span></div><div class="slab">R1 / R2 / R3 resilience</div>
+    </div>
+  </div>
+  <div class="whychain">
+    <p class="qhead">Why can't I have K2 and K4? <span style="font-weight:400;color:var(--mut)">— trace, terminating in named assessments</span></p>
+    <div class="wc">
+      <span class="wcnode"><span class="t">K2 verdict: tight/violated</span><br><span class="s">plan P2 · stamp 7f3a…c91</span></span>
+      <span class="wcarr">←</span>
+      <span class="wcnode"><span class="t">Strait mined (COA-R3 branch)</span><br><span class="s">scenario_weight · assessed</span></span>
+      <span class="wcarr">←</span>
+      <span class="wcnode"><span class="t">Clearance rate 0.8–1.4 nm/day</span><br><span class="s">assessed · moderate · N3 mine warfare — assessment, not fact</span></span>
+      <span class="wcarr">←</span>
+      <span class="wcnode"><span class="t">SAM location contested (K12)</span><br><span class="s">forces standoff profile · owner: N2</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────── S4 ─────────────────────────── -->
+<h2 class="surf">S4 · Bridge view <span class="rolechip">ROLE: OBSERVER</span></h2>
+<p class="io">reads: /deltas · /trace/forward · /analyse/staleness — the J-2/J-3 seam, watched live</p>
+<div class="panel split">
+  <div>
+    <p class="qhead">Delta feed</p>
+    <div class="feed">
+      <div class="delta hot"><span class="who">N2 · S1</span><span>superseded <b>K9</b> storm window → D+8–D+10 (METOC 14:00Z)</span><span class="t">14:02Z</span></div>
+      <div class="delta"><span class="who">SYS</span><span>staleness walk: <b>2 plans, 3 verdicts</b> flagged (K5-dependent) — no silent recompute</span><span class="t">14:02Z</span></div>
+      <div class="delta"><span class="who">J-3/5 · S2</span><span>compiled world <b>7f3a…c91</b> from 12 knowledge objects · handful of 4</span><span class="t">13:40Z</span></div>
+      <div class="delta"><span class="who">N2 · S1</span><span>contested <b>K12</b>: SIGINT (Teeth) vs assessed (embarked) — compile blocked on K12 paths</span><span class="t">11:15Z</span></div>
+      <div class="delta"><span class="who">COMD · S3</span><span>rationale drafted: P2 v P3 — deciding axis: consent risk</span><span class="t">10:55Z</span></div>
+    </div>
+  </div>
+  <div>
+    <p class="qhead">Trace: selected delta (K9 supersession)</p>
+    <div class="wc" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <span class="wcnode"><span class="t">K9 v2 · storm D+8–D+10</span><br><span class="s">supersedes K9 v1 · METOC · valid 48 h</span></span>
+      <span class="wcarr">↓ compiled_into</span>
+      <span class="wcnode"><span class="t">storm-severity channel</span><br><span class="s">world 7f3a…c91 now stale-input</span></span>
+      <span class="wcarr">↓ scored_against</span>
+      <span class="wcnode"><span class="t">K5 verdicts: P1 tight ⚑ · P2 marginal ⚑</span><br><span class="s">flagged on S2 — planner decides when to recompile</span></span>
+    </div>
+    <p class="note">One object model, both ends thin: the J-2's write becomes the planner's flag with no document, no email, no re-brief.</p>
+  </div>
+</div>
+
+<p class="subnote" style="margin-top:40px">ASSAY v0.1 wireframes · companion to assay-ui-design.md · all data from assay-vignette.md fixtures</p>
+</div>
+</body>
+</html>
