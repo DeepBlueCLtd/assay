@@ -59,7 +59,7 @@ Stage column maps to `assay-build-plan.md`. Research note is the DEC-11 prerequi
 | **SPEC-11** | Analysis · sensitivity — band-edge perturbation loop; single-source flag | 6 | SPEC-07, SPEC-02 | `06-analysis.md` |
 | **SPEC-12** | Analysis · discrimination — COA-pair separation over open questions | 6 | SPEC-07 | `06-analysis.md` |
 | **SPEC-13** | Analysis · staleness — transitive trace walk | 6 | SPEC-02, SPEC-05 | `06-analysis.md` |
-| **SPEC-14** | Shared component library — band pill, provenance chip, verdict chip, trace drawer, stamp badge, delta row, scenario strip | (cross-cut) | D3 | — |
+| **SPEC-14** | Shared component library — band pill, provenance chip, verdict chip, trace drawer, stamp badge, delta row, scenario strip, refusal banner — delivered as a **fixture-backed gallery**: every component rendered over real Meridian fixture objects (content-addressed instances, not mock props), reviewable from Wave 0 and embeddable on the comms Demo page. The first user-visible value the build produces, and honest by construction — projection of real data, no compute faked | (cross-cut) | D3, SPEC-04 | — |
 | **SPEC-15** | Spine-complete gate harness — asserts content-addressing, stamp determinism, and invariants G2–G5 end-to-end on Meridian | gate | SPEC-05…13 | — |
 | **SPEC-16** | Surfaces S1–S4 as config-declared bundles + five narrative scripts + banded-honesty polish pass | 7 | SPEC-14, SPEC-15, services | `07-narratives.md` |
 
@@ -110,6 +110,7 @@ graph TB
   D2 --> S2
   D3 --> S1
   D3 --> S14
+  S4 --> S14
   S1 --> S5
   S2 --> S5
   S5 --> S6 --> S7
@@ -149,7 +150,7 @@ Six swimlanes. Barriers are marked; everything else inside a lane is pipelined.
 |---|---|---|
 | **α · Docs** | D1 ∥ (D2 → {D3 ∥ D4} → D5) | starts at t0; D1 and D2 immediately concurrent |
 | **β · Core store** | SPEC-01 ∥ SPEC-02; SPEC-03 → SPEC-04 | starts once D2 (and D3 for the store) land |
-| **γ · Front-end** | SPEC-14 | starts once D3 lands; runs the entire build alongside every backend lane |
+| **γ · Front-end** | SPEC-14 | starts once D3 lands (component contracts from types; fixture objects flow in as SPEC-04 lands); runs the entire build alongside every backend lane; its gallery is the build's first user-visible value |
 | **δ · Spine** | SPEC-05 → SPEC-06 → SPEC-07 (→ SPEC-08) | the critical path; single-threaded by dependency |
 | **ε · Depth fan-out** | SPEC-09 ∥ SPEC-10 ∥ SPEC-11 ∥ SPEC-12 ∥ SPEC-13 | **all five open the moment SPEC-07 lands** — the widest parallel window |
 | **ζ · Integration** | SPEC-15 → SPEC-16 | SPEC-15 is the spine-complete **barrier**; SPEC-16 is post-gate |
@@ -170,7 +171,7 @@ Six swimlanes. Barriers are marked; everything else inside a lane is pipelined.
 
 | Wave | In flight | Gate to exit |
 |---|---|---|
-| 0 | D1, D2, D3, D4, D5 · SPEC-01/02/03/04 · start SPEC-14 | fixtures validate against generated types; store round-trips with stable hash; trace walks both ways |
+| 0 | D1, D2, D3, D4, D5 · SPEC-01/02/03/04 · start SPEC-14 | fixtures validate against generated types; store round-trips with stable hash; trace walks both ways; gallery renders band pill + provenance chip over fixture objects (first user-visible value) |
 | 1 | SPEC-05, SPEC-06 | K10 refused, K8 waiver visible, contested K12 blocks compile; same knowledge ⇒ byte-identical stamp |
 | 2 | SPEC-07 (+ SPEC-08 opportunistic) | handful of 3–5 distinct plans; same stamp+seed ⇒ identical handful; every verdict opens a full trace chain |
 | 3 | SPEC-09/10/11/12/13 fan-out · continue SPEC-14 | each depth exit criterion (R3 sacrifices, R1 collapse under R2, K8 tops sensitivity, K11 > K13 discrimination, K9 supersession flags exactly K5-dependent verdicts) |
