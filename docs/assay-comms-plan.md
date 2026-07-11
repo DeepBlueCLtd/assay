@@ -132,6 +132,7 @@ Illustrative, not binding — the embed is chosen per article by whoever closes 
 3. **Embeds are shipped code.** An embed appears only when its underlying slice's status supports it — a component embed for a slice still `building` is the same lie as an unlabelled "done."
 4. **Self-contained and static.** GitHub Pages serves no backend: each embed is a self-contained client-side bundle (inlined fixture data, no external services, no CDNs), so articles keep working offline and indefinitely.
 5. **Degrade honestly.** If a component genuinely cannot run standalone yet, the article says so and shows a captured interaction labelled as a recording — never passed off as live.
+6. **Embeds freeze at publication.** An article's embed is a snapshot of the component or rule *as shipped on that date*; it is never silently upgraded when the living library moves on. An article is a dated claim, and its evidence stays as dated as the claim. (If a later change makes an old embed misleading, the fix is a dated editorial note on the article — not a rebuild of its embed.)
 
 ## 7. Honesty guardrails (the site's version of the banded seam)
 
@@ -178,7 +179,7 @@ Mirroring ASSAY's own lap-then-depth discipline:
 3. Should the REMIT-narrative re-derivation findings live on the public site at all, or stay in the canonical set only?
 4. Analytics: none (privacy-clean, fits the restraint), or a minimal privacy-respecting counter to evidence stakeholder reach?
 5. Does the live demonstrator embed in the Demo page (iframe) or link out, once it exists?
-6. Do article embeds freeze at their publication date (each article a snapshot of the component as shipped then), or track the living component library? Frozen is more honest as a record; living is less maintenance. Leans frozen — an article is a dated claim.
+6. ~~Do article embeds freeze at their publication date, or track the living component library?~~ **Resolved: frozen.** Each article's embed is a snapshot of the component as shipped at publication — an article is a dated claim (now §6.2 rule 6).
 
 ## 12. Success criteria
 
