@@ -52,7 +52,7 @@ Seven pages, each a projection of a canonical source. Kept flat and few — a de
 | 2 | **Goals & Theses** | concept §1 (thesis table) | The A–H catalogue with per-thesis state and one-line claim; the five demo narratives named. |
 | 3 | **Roadmap & Progress** | `assay-build-plan.md` + `docs/status.yml` | The seven stages as a tracker with exit criteria; the spine-complete gate; research-notes index; the updates feed. |
 | 4 | **The Vignette** | `assay-vignette.md` (when authored) | Meridian Archipelago: setting, forces, the engineered conflicts each narrative exercises. |
-| 5 | **Demo** | `assay-ui-wireframes.html`, `assay-ui-design.md` | Embedded wireframes of the four surfaces now; the live demonstrator post-gate. |
+| 5 | **Demo** | `assay-ui-wireframes.html`, `assay-ui-design.md`, the SPEC-14 gallery | Embedded wireframes of the four surfaces now; the fixture-backed component gallery as it lands (real Meridian objects, honestly labelled as components-not-product); the live demonstrator post-gate. |
 | 6 | **Register** | `assay-register.md` (when split out) | The DEC log — transparency is the project's signature, so the decisions are a feature, not an appendix. |
 | 7 | **Documents** | canonical set | Linked index of the canonical documents with status and version. |
 
@@ -164,6 +164,8 @@ Illustrative, not binding — the embed is chosen per article by whoever closes 
 ## 10. Build plan for the site (next pass, after sign-off)
 
 Mirroring ASSAY's own lap-then-depth discipline:
+
+**Launch sequencing rule.** The site *publishes* no earlier than the first demoable moment (the Stage-1 exit at the earliest, or the SPEC-14 gallery rendering fixture data — whichever lands first). A site showing only plans contradicts §1.1's own honesty principle: with nothing demonstrable, "communicating progress" degrades into promising it. Scaffold, wiring, and population (steps 1–3) may proceed dark at any time; flipping Pages public is gated on having something real on the Demo page.
 
 1. **Scaffold** — enable Pages from `/docs`; Jekyll config; theme; the seven page stubs; `status.yml` seeded from the current build state (Stage 0, gate not passed).
 2. **Wire progress** — the data-driven Roadmap tracker and Home badge reading `status.yml`; the research-notes index.

@@ -10,6 +10,16 @@ ASSAY is a deliberate re-derivation of the principles of REMIT (a sibling projec
 
 **Documentation phase.** The canonical document set is authored (draft for review); implementation has not started. Per the delivery plan, code begins with the spec-kit workflow (`specs/NNN-name/`) once the document workstream closes. Nothing here should be read as a shipped capability.
 
+## Where to start
+
+The repository's value at this stage is in how the documents surface the **user interactions**, **data structures**, and **data flows** involved in developing and defending courses of action. The fastest route through them:
+
+1. **[`docs/assay-vignette.md`](docs/assay-vignette.md)** — the Meridian Archipelago: the fictional scenario every fixture, exit criterion, and demo moment is engineered from. Everything else cites its identifiers (K1–K14, C1–C6, R1–R3, FE-*).
+2. **[`docs/assay-walkthrough.md`](docs/assay-walkthrough.md)** — one full heartbeat of the system played end-to-end: who acts, what objects and trace edges each act creates, and what every other role sees. The fastest way to understand what ASSAY *does*.
+3. **[`docs/assay-ui-wireframes.html`](docs/assay-ui-wireframes.html)** — the four role surfaces rendered on Meridian data (open in a browser).
+
+For the formal set in authority order, start with the concept document in the map below.
+
 ## What ASSAY demonstrates
 
 One coherent environment — a shared backend and a small set of role surfaces — within which a catalogue of theses can be explored rather than separately built:
@@ -25,7 +35,7 @@ One coherent environment — a shared backend and a small set of role surfaces �
 | G · Interdependency | Systems-perspective (PMESII node-link) knowledge can be computable — horizon |
 | H · Reactive red | A responding adversary changes which plans survive — horizon |
 
-The demonstration runs against a deliberately fictional scenario — the **Meridian Archipelago** vignette — engineered so that every thesis has a concrete instance to exercise.
+The demonstration runs against a deliberately fictional scenario — the **Meridian Archipelago** vignette — engineered so that every thesis has a concrete instance to exercise. Nothing in this repository reflects any real operational picture.
 
 ## Design commitments (abbreviated)
 
@@ -46,9 +56,10 @@ All canonical documents live in `docs/`:
 | [`assay-knowledge-model.md`](docs/assay-knowledge-model.md) | LinkML schema + commentary; source of truth for every data shape |
 | [`assay-seam-contract.md`](docs/assay-seam-contract.md) | REST shapes and semantics; system invariants (§G) |
 | [`assay-vignette.md`](docs/assay-vignette.md) | The Meridian Archipelago scenario — the sole fixture source |
-| [`assay-ui-design.md`](docs/assay-ui-design.md) | Surfaces, information flows, shared components |
+| [`assay-walkthrough.md`](docs/assay-walkthrough.md) | One heartbeat end-to-end on Meridian; standing contract validation (candidate addition, concept §6.6) |
+| [`assay-ui-design.md`](docs/assay-ui-design.md) | Surfaces, information flows, discipline-moment interactions, shared components |
 | [`assay-ui-wireframes.html`](docs/assay-ui-wireframes.html) | Populated wireframes of all four surfaces |
-| [`assay-build-plan.md`](docs/assay-build-plan.md) | Stage sequencing, gates, per-stage research prompts |
+| [`assay-build-plan.md`](docs/assay-build-plan.md) | Stage sequencing, gates (machine- and user-observable), demo moments, research prompts |
 | [`assay-delivery-plan.md`](docs/assay-delivery-plan.md) | Spec slicing, dependency graph, parallel lanes |
 | [`assay-comms-plan.md`](docs/assay-comms-plan.md) | Public GitHub Pages site plan |
 

@@ -1,9 +1,9 @@
 # ASSAY — Seam Contract
 
 **Founding doc 3** · REST shapes and semantics
-Status: draft for review · v0.1 · 2026-07-11
+Status: draft for review · v0.2 · 2026-07-11 · v0.2 closes four gaps surfaced by the end-to-end walkthrough (`assay-walkthrough.md` §9): object listing (§2), delta publication on knowledge writes (§3), the select service (§11), and the `?since=seq` delta parameter harmonised with `assay-ui-design.md`.
 Authority: ASSAY-DEC-4 (mock behind seam; scorer honestly real), DEC-5 (store, services, trace graph, stamped deltas), DEC-10 (scorer independently callable), DEC-13 (invariants live here in §G while `assay-architecture.md` is deferred), DEC-15/17/19/21 via the shapes they constrain.
-Companions: `assay-knowledge-model.md` (every payload shape named here is defined there), `assay-vignette.md` (the fixture instances), `assay-ui-design.md` §3 (which surface calls what).
+Companions: `assay-knowledge-model.md` (every payload shape named here is defined there), `assay-vignette.md` (the fixture instances), `assay-ui-design.md` §3 (which surface calls what), `assay-walkthrough.md` (the contract played end-to-end; its §9 logs changes it forces here).
 
 The seam is the durable asset (DEC-4). The v1 implementation is an in-browser mock; it is exempt from resembling any future real service internally and exempt from nothing else — shapes, error model, refusal paths, and invariants bind the mock exactly as they would bind a server. Every service response carries `{engine_version, stamp}`; every write lands a delta; every computation writes its own trace edges.
 
@@ -38,9 +38,10 @@ PUT  /objects                      {object}                → {ref: Ref}       
 GET  /objects/{hash}                                       → {object}
 GET  /objects/exists/{hash}                                → {exists: boolean}
 GET  /objects/{logical_id}/versions                        → {versions: Ref[]}     // lineage, oldest first
+GET  /objects?class={ClassName}                            → {refs: Ref[]}         // latest live version per lineage
 ```
 
-`PUT` of byte-identical content is idempotent and returns the same hash. There is no update and no delete (knowledge model §2).
+`PUT` of byte-identical content is idempotent and returns the same hash. There is no update and no delete (knowledge model §2). The class listing (added v0.2 — S3's plan/rationale candidates had no serving endpoint; walkthrough §9.1) takes LinkML class names (`Plan`, `SelectionRationale`, …) and returns the newest non-superseded version of each lineage; historical versions remain reachable via `/versions`.
 
 ## 3. Knowledge service
 
@@ -54,6 +55,8 @@ GET  /knowledge/{id}/exposure                              → {chains: TraceCha
 ```
 
 Create/supersede enforce the encoding-discipline table (knowledge model §9) at write time: an `assumption` claiming `hard_constraint` is refused `encoding_violation`; `reported`/`assessed` claiming `hard_constraint` without a `waiver` is refused `waiver_required`. Supersession may cross lineages (K9 supersedes K5); the response's `stale` list is exactly the versions the edge staled.
+
+Create, supersede, contest, and resolve each publish exactly one delta (§10). They are cross-surface writes in effect, not just in name: a contest blocks the planner's next compile (G5), a supersession stales verdicts on the planner's matrix — so each lands on the feed like any other seam-crossing act (clarified v0.2; walkthrough §9.4).
 
 ## 4. Compile
 
@@ -129,6 +132,15 @@ Delta = {seq: integer, actor: string, role: string, op: string,
 ```
 
 Every cross-surface write publishes exactly one delta (DEC-5). The feed is ordered by `seq`; `at` never participates in any computation or hash. S4 is a rendering of this endpoint.
+
+## 11. Select (added v0.2)
+
+```
+POST /select    {plan: Ref, relaxation_report?: Ref, statement, decided_by}
+                → {rationale: Ref}
+```
+
+Records the commander's act as a `SelectionRationale` and writes the `cited_in` edges from the relaxation report and the verdicts/scores under the selected plan to the rationale — the edges the knowledge model §10 assigns to "selection". A raw `PUT /objects` of a SelectionRationale is legal at the store but writes no edges and publishes no delta; surfaces MUST use `/select`, because edges are written at compute time by the service performing the act (constitution III), and a selection with no backward chain is a dead end (G3). Publishes one delta; its arrival re-prioritises verification of the knowledge under the decision (the S1 exposure view). Added v0.2: the walkthrough (§9.2) found the commander's decisive act was the one write in the system with no service behind it.
 
 ## §G Invariants (normative; projected into the constitution)
 
