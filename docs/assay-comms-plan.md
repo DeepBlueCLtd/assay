@@ -1,6 +1,6 @@
 # ASSAY — Communications Plan
 
-Status: draft for review · v0.1 · 2026-07-11
+Status: draft for review · v0.2 · 2026-07-11 (v0.2 adds §6: blog articles with working interactive embeds)
 Authority: ASSAY-DEC-9 (banded honesty — re-derived here as *communications* honesty), ASSAY-DEC-2 (register discipline; the site surfaces the register, never replaces it), ASSAY-DEC-7 (theses as explorations; the site reports thesis *state*, not thesis *products* claimed as shipped).
 
 The vehicle is a **public GitHub Pages site** whose single job is to communicate ASSAY's goals and demonstrate its progress — honestly, always-current, and doctrinally literate — to the audiences who will judge it. The site is not a product page; it is the demonstrator's accountable public face, and it inherits ASSAY's signature discipline: **nothing is shown as done that is not, and nothing assessed is shown as fact.**
@@ -31,7 +31,7 @@ The site is written for the primary ring; the secondary ring is served by the ro
 
 **We communicate:**
 - **Goals** — the central premise (JIPOE knowledge made typed, quantified, honestly exploitable) and the thesis catalogue A–H with each thesis's *state* (planned / explored / horizon / deferred).
-- **Progress** — the seven build stages and the spine-complete gate as a live tracker; research notes as they are published; a dated updates feed at milestone cadence.
+- **Progress** — the seven build stages and the spine-complete gate as a live tracker; research notes as they are published; a dated updates feed at milestone cadence, growing into blog articles — with working interactive embeds — where a milestone warrants it (§6).
 - **The vignette** — enough of Meridian Archipelago that a visitor can follow any demo narrative.
 - **The demo** — the existing wireframes now; the live in-browser demonstrator once the spine-complete gate passes.
 - **The reasoning** — the decision register and the research-first discipline, as evidence the work is accountable.
@@ -100,7 +100,40 @@ updates:                     # newest first; the dated feed
 
 **Honesty guardrail baked in:** the tracker renders `research_published: false` as an unmet precondition, so a stage marked `building` without its note shows as an inconsistency on the site itself — the site polices its own optimism.
 
-## 6. Honesty guardrails (the site's version of the banded seam)
+## 6. Blog articles — show, don't just describe
+
+The updates feed's milestone entries grow, where a milestone warrants it, into **blog articles**: dated posts that walk through what a completed slice actually does. Articles obey the same guardrails as every other page — status labels, source links, the fictional-vignette framing — plus one rule that exploits the medium:
+
+**If a browser can run it, the article embeds it.** This site is a web page reporting on a browser-based demonstrator; a prose description of an interactive thing wastes that coincidence. Concretely:
+
+- **New UI component.** When a slice introduces an interesting new component (the band pill, the provenance chip, the trace drawer…), the article embeds a *working* copy of that component, running on Meridian fixture data, for stakeholders to play with. Not a screenshot, not a mock: the same component code the demonstrator uses. (The SPEC-14 library gains a standalone-embed build target per component to make this cheap — see §8.)
+- **New algorithm with a graphical expression.** When a slice's substance is algorithmic (content hashing, banded scoring, relaxation, sensitivity perturbation, staleness walks…), the article carries an **interactive widget**: a small self-contained visualisation whose inputs the reader manipulates and whose response is computed by the *real rule* — never a canned animation of it.
+
+### 6.1 Candidate embeds by slice
+
+Illustrative, not binding — the embed is chosen per article by whoever closes the stage (§9 ownership). Slice IDs per `assay-delivery-plan.md`.
+
+| Slice | Embed | The reader can… |
+|---|---|---|
+| SPEC-01 store | content-addressing widget | edit a small JSON object and watch its hash — and therefore its identity — change |
+| SPEC-02 trace store | trace-walk widget | click any node in a toy trace graph; see the forward/backward closure light up |
+| SPEC-05 knowledge | live band pill + provenance chip | inspect a banded assessment; toggle `single-source` and watch the mandatory markings behave |
+| SPEC-06 compile | stamp-determinism demo | recompile the same knowledge twice and see byte-identical stamps; change one item and see the stamp shift |
+| SPEC-07 scorer | verdict playground | move a commitment threshold across a banded score; watch the four-stop verdict flip at band edges, never inside them |
+| SPEC-09 relaxation | least-worst explorer | choose which commitment to sacrifice; see what each relaxation buys and what it costs |
+| SPEC-10 robustness | scenario strip | flip between scenarios and watch a plan's banded bars collapse |
+| SPEC-11 sensitivity | band-edge slider | nudge one assessment to its band edge; see which verdicts flip |
+| SPEC-13 staleness | supersession fan-out | supersede a knowledge object; watch stale flags propagate along real trace edges |
+
+### 6.2 Rules for embeds (honesty, again)
+
+1. **Label what it is.** Every embed carries one of two labels: *live component — the demonstrator's actual code*, or *illustrative widget — real rule, simplified data*. An illustrative widget passed off as product is exactly the false "done" that §1 forbids.
+2. **Real rule, fixture data.** Component embeds run against vignette fixtures (SPEC-04); algorithm widgets implement the same rule the service implements, cited to its research note. No embed invents behaviour the repository doesn't contain.
+3. **Embeds are shipped code.** An embed appears only when its underlying slice's status supports it — a component embed for a slice still `building` is the same lie as an unlabelled "done."
+4. **Self-contained and static.** GitHub Pages serves no backend: each embed is a self-contained client-side bundle (inlined fixture data, no external services, no CDNs), so articles keep working offline and indefinitely.
+5. **Degrade honestly.** If a component genuinely cannot run standalone yet, the article says so and shows a captured interaction labelled as a recording — never passed off as live.
+
+## 7. Honesty guardrails (the site's version of the banded seam)
 
 - **Status everywhere.** No thesis, stage, or goal is shown without an explicit state label. There is no unlabelled "done."
 - **Fictional-vignette disclaimer** on Home, Vignette, and Demo pages: Meridian is engineered fiction (ASSAY-DEC-8); nothing here reflects any real operational picture.
@@ -108,45 +141,50 @@ updates:                     # newest first; the dated feed
 - **Dates are descriptive, not promissory.** The updates feed dates what *happened*; the roadmap shows *where we are*, never a delivery date the repo can't back.
 - **Every claim links to its source** document or research note — the site's equivalent of a trace chain terminating in a named object.
 
-## 7. Technical implementation (recommendation for the build pass)
+## 8. Technical implementation (recommendation for the build pass)
 
 - **Hosting:** GitHub Pages, served from `/docs` on the default branch (keeps site and canonical docs co-located; no `gh-pages` branch to drift). Public, per the SME-facing decision.
 - **Generator:** Jekyll (Pages-native, zero extra CI) with a minimal, high-legibility theme (`just-the-docs` or a hand-trimmed minimal layout). A small Jekyll data plugin reads `docs/status.yml` so the tracker is data-driven with no JavaScript required.
+- **Blog:** Jekyll posts (`docs/_posts/`), listed newest-first from the Roadmap page's updates feed; an updates-feed entry either is its own one-liner or links to its full article.
+- **Interactive embeds (§6):** each embed is a self-contained JS bundle under `docs/assets/embeds/<article>/`, mounted into its post via a `<div>` plus one `<script>` tag. Component embeds are a *build product* of SPEC-14 — the component library gains a standalone-embed target that bundles one component with inlined fixture data — not bespoke per-article work. Algorithm widgets are small hand-written modules kept next to the article. The tracker stays JavaScript-free; only articles carry embeds.
 - **Wireframes:** `assay-ui-wireframes.html` embedded as a static asset on the Demo page; it already renders the four surfaces on Meridian data.
 - **Deploy:** built-in Pages-from-branch build (no custom Action needed at first); revisit a GitHub Actions build only if a plugin outside the Pages allowlist is wanted.
 - **Diagrams:** Mermaid with pinned theme variables per the repo convention (scaffold §5), for the spine/architecture picture on the Overview.
 - **Voice & visual:** register-document restraint; the band pill and four-stop verdict colour language (ASSAY-DEC-9, ui-design §2) reused as the site's accent system so the site *looks like* the demonstrator's honesty.
 
-## 8. Cadence & ownership
+## 9. Cadence & ownership
 
-- **On every stage gate** (exit criteria met in the build plan): update `status.yml`, publish the stage's research note to the Roadmap index, add an updates-feed entry. This ties site currency to the build's own gates — no separate reporting ritual.
+- **On every stage gate** (exit criteria met in the build plan): update `status.yml`, publish the stage's research note to the Roadmap index, add an updates-feed entry. Where the stage introduced a new component or a graphically-expressible algorithm, that entry is a full blog article carrying its working embed (§6) — choosing and shipping the embed is part of authoring the article, not a separate task. This ties site currency to the build's own gates — no separate reporting ritual.
 - **On each research note written:** flip `research_published: true`; the note appears in the index.
 - **At the spine-complete gate:** swap the Demo page from wireframes to the live demonstrator; add a milestone entry.
 - **Milestones** continue to fire to `ntfy.sh/iancc2025` (scaffold §5); the updates feed is the durable written record of the same events.
-- **Ownership:** the person closing a stage owns that stage's `status.yml` edit — progress reporting is part of "done," not a downstream chore.
+- **Ownership:** the person closing a stage owns that stage's `status.yml` edit and its article-plus-embed where §6 calls for one — progress reporting is part of "done," not a downstream chore.
 
-## 9. Build plan for the site (next pass, after sign-off)
+## 10. Build plan for the site (next pass, after sign-off)
 
 Mirroring ASSAY's own lap-then-depth discipline:
 
 1. **Scaffold** — enable Pages from `/docs`; Jekyll config; theme; the seven page stubs; `status.yml` seeded from the current build state (Stage 0, gate not passed).
 2. **Wire progress** — the data-driven Roadmap tracker and Home badge reading `status.yml`; the research-notes index.
 3. **Populate** — Overview, Goals & Theses, Register, Documents from the canonical set; Demo page embedding the wireframes.
-4. **Vignette page** — authored when `assay-vignette.md` lands (currently a founding-doc target, not yet written).
-5. **Polish** — Mermaid spine diagram; band-pill accent styling; the honesty disclaimers; a scan pass for any unlabelled claim.
+4. **Blog & embed pipeline** — Jekyll posts wired to the updates feed; the embed mount convention (§8); the SPEC-14 standalone-embed build target; the first article shipped with a working embed as the pattern-setter.
+5. **Vignette page** — authored when `assay-vignette.md` lands (currently a founding-doc target, not yet written).
+6. **Polish** — Mermaid spine diagram; band-pill accent styling; the honesty disclaimers; a scan pass for any unlabelled claim.
 
-## 10. Open questions (candidates for the next register batch)
+## 11. Open questions (candidates for the next register batch)
 
 1. Custom domain, or the default `deepbluecltd.github.io/assay` path?
 2. Does the Register page publish the *full* DEC log, or a curated public subset (some entries may reference REMIT internals not for external view)?
 3. Should the REMIT-narrative re-derivation findings live on the public site at all, or stay in the canonical set only?
 4. Analytics: none (privacy-clean, fits the restraint), or a minimal privacy-respecting counter to evidence stakeholder reach?
 5. Does the live demonstrator embed in the Demo page (iframe) or link out, once it exists?
+6. Do article embeds freeze at their publication date (each article a snapshot of the component as shipped then), or track the living component library? Frozen is more honest as a record; living is less maintenance. Leans frozen — an article is a dated claim.
 
-## 11. Success criteria
+## 12. Success criteria
 
 - An SME landing cold understands, within one screen, what ASSAY claims and that it claims it honestly.
 - A stakeholder can answer "where is it and is it moving?" from the Roadmap page alone.
+- A stakeholder reading a stage article can *operate* the new thing inside the article itself — play with the component, drive the algorithm — not merely read a description of it.
 - No page ever shows a capability as delivered that the repository does not contain.
 - Updating progress after a stage gate is a single-file edit, and the site reflects it with no other action.
 - The site reads as an extension of the register's discipline, not a marketing layer bolted onto it.
