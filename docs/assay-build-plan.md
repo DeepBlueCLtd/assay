@@ -11,7 +11,7 @@ The plan is a **lap then depth**: seven stages thread the spine end-to-end again
 
 ## Stage 0 — Foundations
 
-**Research first** *(note: `00-foundations.md`)*: skim JP 2-01.3 ch. II end-to-end so every developer holds the four-step process and its products (MCOO, situation/event templates, event matrix, NAIs) before any code exists; survey content-addressed storage and canonical-serialisation pitfalls (key ordering, float representation) across JS runtimes.
+**Research first** *(note: `00-foundations.md`)*: skim JP 2-01.3 ch. II end-to-end so every developer holds the four-step process and its products (MCOO, situation/event templates, event matrix, NAIs) before any code exists; survey content-addressed storage and canonical-serialisation pitfalls (key ordering, float representation) across JS runtimes — **including serialisation and hashing cost at CompiledWorld scale** (a dense world is ~1.2M banded cells; seam contract open item 2), so the sparse-vs-dense channel representation question reaches `02-compile.md` with numbers, not guesses.
 
 **Build**: repo scaffold; LinkML → TypeScript type generation pipeline; canonical-JSON + content hashing; in-browser object store (`PUT/GET/exists/versions`); TraceEdge store with forward/backward walks; vignette fixtures (Meridian knowledge base K1–K14, COAs, commitments) hand-authored against the schema.
 
@@ -29,7 +29,7 @@ The plan is a **lap then depth**: seven stages thread the spine end-to-end again
 
 ## Stage 2 — Compile
 
-**Research first** *(note: `02-compile.md`)*: MCOO construction in ATP 2-01.3 — how doctrine actually layers obstacles, mobility corridors, and avenues of approach into a combined product; time-varying cost surfaces in the routing literature (time-expanded graphs vs (cell, time) state).
+**Research first** *(note: `02-compile.md`)*: MCOO construction in ATP 2-01.3 — how doctrine actually layers obstacles, mobility corridors, and avenues of approach into a combined product; time-varying cost surfaces in the routing literature (time-expanded graphs vs (cell, time) state); **channel representation** — sparse (deviation-from-default or run-length regions, as MCOO overlays naturally are) vs dense, decided against the Stage-0 cost numbers before `Channel.cells` is implemented (seam contract open item 2).
 
 **Build**: compile service — knowledge subset + vignette config → CompiledWorld (mobility, tide, storm, civil-density, sensor channels); deterministic stamp; `compiled_into` edges written per consumed object; refusal paths (`contested_knowledge`, `stale_input`).
 
@@ -38,11 +38,11 @@ The plan is a **lap then depth**: seven stages thread the spine end-to-end again
 
 ## Stage 3 — Score, then plan
 
-**Research first** *(note: `03-score-plan.md`)*: banded/epsilon-dominance and the NSGA-II family — what "distinct in banded space" means formally; JP 5-0 COA comparison criteria (suitability, feasibility, acceptability) as a cross-check that verdict semantics match staff practice.
+**Research first** *(note: `03-score-plan.md`)*: banded/epsilon-dominance and the NSGA-II family — what "distinct in banded space" means formally; JP 5-0 COA comparison criteria (suitability, feasibility, acceptability) as a cross-check that verdict semantics match staff practice; **define the four-stop verdict mapping against banded margins** so the vignette §9 oracle outcomes (O-2/O-3) are decided by the note, not discovered in code.
 
-**Build**: the **scorer first** (DEC-10, and the honesty invariant of DEC-4): plan × world × scenario → CommitmentVerdicts + banded scores, with the `knowledge_overrides` perturbation hook. Then a modest generator (strategy-biased fan-out over the vignette's four axes, seeded) and banded non-dominated organisation into the handful. S2 verdict matrix over real output.
+**Build**: the **scorer first** (DEC-10, and the honesty invariant of DEC-4): plan × world × scenario → CommitmentVerdicts + banded scores, with the `knowledge_overrides` perturbation hook — **validated against the vignette §9 oracle cases before anything consumes it**: a deterministic, traced scorer that propagates intervals wrongly would pass every other exit while being the exact false-precision machine ASSAY refuses. Then a modest generator (strategy-biased fan-out over the vignette's four axes, seeded) and banded non-dominated organisation into the handful. S2 verdict matrix over real output.
 
-**Exit**: `/plan/handful` returns 3–5 genuinely distinct plans for the Meridian baseline; same stamp + seed ⇒ identical handful; every verdict opens a complete trace chain.
+**Exit**: `/plan/handful` returns 3–5 genuinely distinct plans for the Meridian baseline; same stamp + seed ⇒ identical handful; every verdict opens a complete trace chain; **the scorer reproduces oracle cases O-1–O-3 exactly and the O-4 propagation-honesty property (candidate G6) holds under property-based testing**.
 **User-observable**: the S2 matrix shows the handful as four-stop chips (margin bands on hover, no decimals anywhere); clicking any verdict opens a complete why-chain. *Demo moment: "the honest matrix" — pick a verdict, walk it to the assessment and owner it rests on.*
 
 ## Stage 4 — Least-worst (thesis B live)

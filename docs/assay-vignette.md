@@ -118,9 +118,25 @@ Every engineered feature exists to exercise a named claim. **A change to the vig
 | G5 contested-never-compiles | K12a/K12b contested pair on the mine inventory | Stage-1/2 exits: compile refuses `contested_knowledge` naming the pair until `resolves` lands |
 | G1 determinism | Whole fixture set | Stage-2/3 exits: same knowledge ⇒ byte-identical stamp; same stamp+seed ⇒ identical handful |
 | G4 relaxation honesty | The R3m conflict | `/relax` never empty, never silent; tie-breaks stated |
+| Scorer correctness | Oracle cases O-1–O-4 (§9) | Stage-3 exit: the scorer reproduces O-1–O-3 exactly and the O-4 containment property holds under property-based testing |
 
 ## 8. Fixtures & authoring
 
 Fixtures are hand-authored JSON instances of the LinkML classes, validated against the generated types (SPEC-04); a light authoring surface remains an open register candidate (concept §6.5) and is explicitly out of the v1 lap (build plan §deferred). Numbers not tabled here (channel cell values, route geometry) are fixture-authoring latitude *within* the constraints this document sets; where a fixture value would decide a §7 row's outcome, this document wins.
 
-Narrative colour (place names, unit nicknames) is free to grow for demo polish; identifiers (`K*`, `C*`, `R*`, `FE-*`) are frozen — the build plan's exit criteria and the demo scripts cite them.
+Narrative colour (place names, unit nicknames) is free to grow for demo polish; identifiers (`K*`, `C*`, `R*`, `FE-*`, and the oracle ids `O-*` below) are frozen — the build plan's exit criteria and the demo scripts cite them.
+
+## 9. Oracle cases (scorer correctness)
+
+The coverage matrix proves the machinery *runs*; nothing in it proves the scorer is *right*. A deterministic, banded, fully traced scorer that propagates intervals incorrectly would pass every §7 row and every seam invariant while being exactly the false-precision machine ASSAY exists to refuse. These oracle cases are the independent leg: hand-computed on paper, committed here, and binding on SPEC-07's acceptance. They deliberately pin only elementary interval arithmetic and threshold comparison — the parts of scoring that are *not* Stage-3 design latitude — so they constrain correctness without pre-empting the `03-score-plan.md` research note.
+
+**Setup (shared).** A single force element sweeps two strait segments in sequence, starting at step 2. Segment A takes an assessed 4–6 steps; segment B an assessed 3–5 steps. Both durations are banded (`assessed`, so scalar is forbidden — G2). The metric is `strait_open_step` = start + duration(A) + duration(B).
+
+| ID | Case | Inputs | Required output | Why it binds |
+|---|---|---|---|---|
+| `O-1` | Interval sum | start 2 · A [4,6] · B [3,5] | `strait_open_step` = **[9,13]** exactly | Pure interval addition; any other band is a propagation defect, not a design choice |
+| `O-2` | Verdict at clear margin | O-1 output vs C2-style threshold `at_most 28` | verdict **robust**; margin band **[15,19]** | Threshold comfortably outside the band: verdict and margin are hand-checkable |
+| `O-3` | Band-straddling threshold | O-1 output vs threshold `at_most 12` | verdict **neither robust nor violated** (both outcomes lie inside the band); as the threshold sweeps 8→14, the verdict changes **only at the band edges (9, 13), never inside the band** | Pins the honesty of the four-stop scale without pre-deciding the marginal/tight boundary — that mapping is Stage-3 research (`03-score-plan.md`), and whichever mapping it picks must satisfy this case |
+| `O-4` | Containment under widening | Re-run O-1 with A widened to [3,7] | `strait_open_step` = **[8,14]**, which **contains** [9,13]; in general: widening any input band never narrows any output band, and every point-realisation of the inputs scores inside the output band | The banded-honesty invariant stated mathematically — the propagation-honesty property (candidate G6, seam contract §G). Property-based tests assert it across random bands, not just this instance |
+
+Rules: oracle expected values are computed by hand and never regenerated from the implementation (an oracle regenerated from the code under test is not an oracle). A change to an `O-*` row is a register matter, same as a §7 coverage row. SPEC-07 acceptance includes all four; SPEC-15 (the gate) re-asserts them end-to-end.

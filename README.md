@@ -61,7 +61,8 @@ All canonical documents live in `docs/`:
 | [`assay-ui-wireframes.html`](docs/assay-ui-wireframes.html) | Populated wireframes of all four surfaces |
 | [`assay-build-plan.md`](docs/assay-build-plan.md) | Stage sequencing, gates (machine- and user-observable), demo moments, research prompts |
 | [`assay-delivery-plan.md`](docs/assay-delivery-plan.md) | Spec slicing, dependency graph, parallel lanes |
-| [`assay-comms-plan.md`](docs/assay-comms-plan.md) | Public GitHub Pages site plan |
+| [`assay-comms-plan.md`](docs/assay-comms-plan.md) | Public GitHub Pages site plan, including the SME evaluation checkpoints |
+| [`assay-findings.md`](docs/assay-findings.md) | Findings ledger — thesis states and transition criteria, re-derivation verdicts, REMIT candidates (candidate addition, concept §6.10) |
 
 `assay-architecture.md` is deferred by decision (ASSAY-DEC-13) until the knowledge model and seam contract stabilise; orientation lives in the concept §3.
 

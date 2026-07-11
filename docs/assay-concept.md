@@ -75,6 +75,7 @@ Target set (peers, batch-propagated):
 | `assay-vignette.md` | the Meridian Archipelago scenario | authored, draft for review |
 | `assay-ui-design.md` | surfaces, information flows, shared components | authored, draft for review |
 | `assay-walkthrough.md` | one heartbeat end-to-end on Meridian; standing contract validation | authored, draft for review; candidate addition (§6.6) |
+| `assay-findings.md` | findings ledger — thesis states, transition criteria, re-derivation verdicts, REMIT candidates | authored, draft for review; candidate addition (§6.10) |
 | `assay-build-plan.md` | stage sequencing, gates, per-stage research prompts | authored, draft for review |
 | `assay-delivery-plan.md` | spec slicing, dependency graph, parallel lanes | authored, draft for review |
 | `assay-comms-plan.md` | public GitHub Pages site | authored, draft for review |
@@ -99,6 +100,9 @@ Target set (peers, batch-propagated):
 6. Whether `assay-walkthrough.md` joins the canonical set as the standing end-to-end validation of interactions, structures, and flows (its §0 discipline rule — "a step the contract can't perform is a contract defect" — would then bind).
 7. Per-stage **demo moments** (build plan) as a standing exit requirement: every stage exit paired with a user-observable twin and a scripted two-minute demonstration from the running build.
 8. Ratifying seam contract v0.2's additions (`POST /select`, `GET /objects?class=`, delta publication on all knowledge writes) as a register entry — currently draft-document content under DEC-5's authority, adopted to close walkthrough §9's gaps.
+9. **G6 — propagation honesty** (seam contract §G candidate; vignette §9 oracle cases): widening any input band never narrows any output band, and every point-realisation of inputs scores inside the output band. G2 stated mathematically; ratification would make it a standing acceptance criterion alongside G1–G5.
+10. Whether `assay-findings.md` joins the canonical set as the sole home of findings — thesis states with transition criteria, re-derivation verdicts, and the DEC-3 REMIT-candidate channel (until ratified, nothing may cite a finding as authority).
+11. SME evaluation checkpoints (comms plan §12) as standing gates in the thesis-transition rules: no thesis concludes without at least one checkpoint having seen it.
 
 ## 7. Research starting points (ASSAY-DEC-11)
 
