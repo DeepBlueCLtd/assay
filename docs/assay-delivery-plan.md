@@ -2,7 +2,7 @@
 
 Status: draft for review · v0.1 · 2026-07-11 · candidate addition to the canonical set
 Authority: ASSAY-DEC-4 (mock behind seam), DEC-5 (spine architecture, trace graph first-class), DEC-7 (theses as configurations), DEC-10 (scorer as an independently callable unit), DEC-11 (research-first stages). Sequencing authority remains `assay-build-plan.md`; methodology remains the register (DEC-2).
-Companions: `assay-build-plan.md` (stage sequencing), `assay-scaffold.md` (§4 canonical set, §6 open questions), `assay-ui-design.md` (surfaces & components).
+Companions: `assay-build-plan.md` (stage sequencing), `assay-concept.md` (§4 canonical set, §6 open questions), `assay-ui-design.md` (surfaces & components).
 
 This document does not introduce methodology or re-sequence the build plan. It **translates** the build plan's seven stages into spec-kit-shaped specifications, overlays the dependency graph that the stage-linear narrative leaves implicit, and names where genuine parallel working is available. Where a slice would originate a new decision, that is a register conversation, not a licence carried here.
 
@@ -12,7 +12,7 @@ This document does not introduce methodology or re-sequence the build plan. It *
 
 Three facts about the existing documents set the shape of delivery:
 
-1. **Four canonical documents are declared but not authored** (`assay-scaffold.md` §4): `assay-register.md`, `assay-knowledge-model.md`, `assay-seam-contract.md`, `assay-vignette.md` (and `assay-architecture.md`, seeded by §3). The schema, the contract, and the vignette are *hard prerequisites* to nearly every build slice — the type-gen pipeline, the store's object shapes, the fixtures, and every service signature all reference them. Delivery therefore opens with a bounded document workstream, not with code.
+1. **Four canonical documents are declared but not authored** (`assay-concept.md` §4): `assay-register.md`, `assay-knowledge-model.md`, `assay-seam-contract.md`, `assay-vignette.md` (and `assay-architecture.md`, seeded by §3). The schema, the contract, and the vignette are *hard prerequisites* to nearly every build slice — the type-gen pipeline, the store's object shapes, the fixtures, and every service signature all reference them. Delivery therefore opens with a bounded document workstream, not with code.
 
 2. **The scorer is the delivery linchpin** (DEC-10, and the build plan's own scorer-before-generator rationale). Theses C/D/E/F are re-scoring loops plus trace walks; they consume the scorer and almost nothing else. So the critical path runs *through* the scorer, the depth stages (4–6) **fan out in parallel** behind it, and the handful **generator is sacrificial scope** — a canned handful over an honest scorer still demonstrates four theses.
 
@@ -30,13 +30,15 @@ Two kinds of slice. **Document slices (D#)** author the missing canonical set an
 
 | ID | Document | Unblocks | Depends on |
 |---|---|---|---|
-| **D1** | `assay-register.md` — split from scaffold §2; DEC numbering; register-first from here on | register-first discipline for every later decision | — |
+| **D1** | `assay-register.md` — split from concept §2; DEC numbering; register-first from here on | register-first discipline for every later decision | — |
 | **D2** | `assay-knowledge-model.md` — LinkML schema (KnowledgeObject, Commitment, ScenarioCOA, CompiledWorld, Plan, Rationale, TraceEdge), founding doc 2 | typegen, store shapes, contract, fixtures | — |
 | **D3** | `assay-seam-contract.md` — REST shapes/semantics: `/knowledge`, `/compile`, `/score`, `/plan/handful`, `/relax`, `/analyse/*`, `/trace/*`, `/deltas`; refusal paths; stamp semantics | every service + the component library | D2 |
 | **D4** | `assay-vignette.md` — Meridian: knowledge K1–K14, red COAs, commitment set, engineered to exercise B/C/D/E/F | fixtures, every exit criterion | D2 |
 | **D5** | `assay-architecture.md` — services, surfaces, trace graph, invariants G2–G5 | gate harness, surface bundles | D3 |
 
 D2 is upstream of D3, D4, D5. **D1 and D2 can start immediately and in parallel; D3 and D4 then run in parallel behind D2; D5 follows D3.**
+
+> **Status (2026-07-11, batch 2):** D1–D4 authored; D5 deferred by ASSAY-DEC-13, with invariants G1–G5 carried normatively in `assay-seam-contract.md` §G in the interim. §1's "declared but not authored" described the state at this plan's drafting.
 
 ### 2.2 Build specifications
 
@@ -177,11 +179,11 @@ Six swimlanes. Barriers are marked; everything else inside a lane is pipelined.
 
 ## 5. Open questions that gate slicing
 
-These are `assay-scaffold.md` §6 / `assay-ui-design.md` §6 items that change a slice's shape and want a register answer before that slice starts (not before the whole build):
+These are `assay-concept.md` §6 / `assay-ui-design.md` §6 items that change a slice's shape and want a register answer before that slice starts (not before the whole build):
 
-1. **Surface shell — tabs in one SPA vs. routed micro-frontends** (scaffold §6.4, ui §6.2). Gates **SPEC-16**, not the services; can be answered as late as end of Wave 3.
-2. **Handful generation strategy axes for this domain** (scaffold §6.2 — REMIT's axes do not transfer unexamined). Gates **SPEC-08**; folds into its `03-score-plan.md` research note.
-3. **Thesis G honest v1 slice?** (scaffold §6.3) — explicitly deferred by the build plan; no slice here. Naming it keeps it out of scope by decision, not by omission.
+1. **Surface shell — tabs in one SPA vs. routed micro-frontends** (concept §6.4, ui §6.2). Gates **SPEC-16**, not the services; can be answered as late as end of Wave 3.
+2. **Handful generation strategy axes for this domain** (concept §6.2 — REMIT's axes do not transfer unexamined). Gates **SPEC-08**; folds into its `03-score-plan.md` research note.
+3. **Thesis G honest v1 slice?** (concept §6.3) — explicitly deferred by the build plan; no slice here. Naming it keeps it out of scope by decision, not by omission.
 4. **Map/geospatial panel** (ui §6.1) — no narrative requires it in v1; if admitted, it is an additive S2 side-panel spec after SPEC-16, never a spine dependency.
 
 ## 6. Next step
