@@ -1,0 +1,57 @@
+name: PR Preview
+
+# For each pull request, publish a preview of the assembled static site to
+# gh-pages under pr-preview/pr-<N>/ and link it from a PR comment. When the PR
+# is merged or closed, the preview subtree is removed and the comment updated.
+#
+# Uses GITHUB_TOKEN, which has write access only for same-repository branches;
+# previews are therefore not produced for pull requests from forks.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+# One preview build per PR at a time; newer pushes supersede in-flight builds.
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  preview:
+    name: Build and deploy preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Skip the build on close: the deploy step only tears the preview down.
+      - name: Set up Node.js
+        if: github.event.action != 'closed'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: github.event.action != 'closed'
+        run: npm ci
+
+      - name: Assemble static site
+        if: github.event.action != 'closed'
+        run: npm run build:site
+        env:
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+
+      - name: Deploy / tear down preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: site
+          umbrella-dir: pr-preview
+          # Deploy on open/reopen/synchronize; remove on close/merge.
+          action: auto
