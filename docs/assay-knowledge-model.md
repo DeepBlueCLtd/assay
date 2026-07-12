@@ -172,7 +172,7 @@ enums:
     description: ASSAY-DEC-14. Only 'observed' is fact and may render unbanded.
     permissible_values: {observed: {}, reported: {}, assessed: {}, assumption: {}}
   ConfidenceBand:
-    description: ICD 203 confidence levels (ASSAY-DEC-16). Width mapping decided in research note 01-knowledge.md — minimum relative width per level (low 0.25 / moderate 0.10 / high 0), enforced as a warning-level lint at POST /knowledge (observed exempt); the per-level floor is added as annotations under SPEC-05.
+    description: ICD 203 confidence levels (ASSAY-DEC-16). Width mapping decided in research note 01-knowledge.md — minimum relative width per level (low 0.25 / moderate 0.10 / high 0), enforced as a warning-level lint at write (observed exempt).
     permissible_values: {low: {}, moderate: {}, high: {}}
   EncodingClass:
     description: ASSAY-DEC-6; compile firewall rules in knowledge-model §9.
