@@ -1,0 +1,320 @@
+[
+  {
+    "logical_id": "K1",
+    "version": 1,
+    "question": "What depths and beach gradients constrain approach to Anchor Island?",
+    "subject": "mobility.approach",
+    "encoding_class": "hard_constraint",
+    "answer": { "lo": 7.5, "hi": 7.5, "unit": "m controlling depth" },
+    "provenance": {
+      "source_class": "observed",
+      "confidence": "high",
+      "owner": "CTF-M hydrographic cell",
+      "single_source": false,
+      "collected_at": 0,
+      "note": "Survey chart; fact, unbanded rendering permitted (DEC-14). Carried as a degenerate band through banded machinery."
+    },
+    "criticality": "critical",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K2",
+    "version": 1,
+    "question": "What load will the Ledger–Anchor causeway bear?",
+    "subject": "mobility.causeway",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 20, "hi": 40, "unit": "tonnes" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2 imagery cell",
+      "single_source": false,
+      "collected_at": 0,
+      "note": "Imagery engineering estimate."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K3",
+    "version": 1,
+    "question": "What is the civil population in the Port Halcyon district?",
+    "subject": "civil_density.port_district",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 35000, "hi": 55000, "unit": "persons" },
+    "provenance": {
+      "source_class": "reported",
+      "confidence": "moderate",
+      "owner": "J-2 civil affairs",
+      "single_source": false,
+      "collected_at": 0,
+      "note": "NGO census, 18 months old."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K4",
+    "version": 1,
+    "question": "What is garrison strength and posture?",
+    "subject": "threat.garrison",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 300, "hi": 450, "unit": "effectives" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2",
+      "single_source": false,
+      "collected_at": 1,
+      "note": "Port-district posture."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K5",
+    "version": 1,
+    "question": "What are tide and storm conditions D+0–D+4?",
+    "subject": "weather.tide_storm",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 0.4, "hi": 0.9, "unit": "m surge" },
+    "provenance": {
+      "source_class": "reported",
+      "confidence": "high",
+      "owner": "METOC",
+      "single_source": false,
+      "collected_at": 0,
+      "note": "The perishable forecast (thesis F); superseded by K9 in the Stage-1 demo."
+    },
+    "criticality": "important",
+    "validity": { "valid_from": 0, "valid_until": 16 },
+    "status": "answered"
+  },
+  {
+    "logical_id": "K6",
+    "version": 1,
+    "question": "What sortie rate can the FAC squadron sustain?",
+    "subject": "threat.fac_sorties",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 2, "hi": 6, "unit": "sorties/day" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "low",
+      "owner": "J-2",
+      "single_source": false,
+      "collected_at": 1,
+      "note": "Wide band from weak evidence; C4 pressure."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K7",
+    "version": 1,
+    "question": "What is the air-defence engagement envelope at Carrick strip?",
+    "subject": "threat.air_defence",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 8, "hi": 14, "unit": "km" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2",
+      "single_source": false,
+      "collected_at": 1,
+      "note": "Shapes FALCON routing."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K8",
+    "version": 1,
+    "question": "Is the Carrick Head battery's fire-control radar operational?",
+    "subject": "threat.battery",
+    "encoding_class": "hard_constraint",
+    "answer": { "lo": 10, "hi": 21, "unit": "days to repair" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2",
+      "single_source": true,
+      "collected_at": 1,
+      "note": "One intercepted maintenance return: radar assessed non-operational. The load-bearing, deceivable assessment (thesis E)."
+    },
+    "criticality": "critical",
+    "waiver": {
+      "granted_by": "J-3",
+      "justification": "W-1: north approach schedule untenable without transit inside the battery arc; risk accepted against a single-source repair assessment. Waiver renders wherever the constraint bites.",
+      "granted_at": 2
+    },
+    "status": "answered"
+  },
+  {
+    "logical_id": "K9",
+    "version": 1,
+    "question": "What are tide and storm conditions D+2–D+9?",
+    "subject": "weather.tide_storm",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 1.1, "hi": 1.8, "unit": "m surge" },
+    "provenance": {
+      "source_class": "reported",
+      "confidence": "high",
+      "owner": "METOC",
+      "single_source": false,
+      "collected_at": 8,
+      "note": "Met-service update, surge peaking D+5–D+7. Supersedes K5 cross-lineage (DEC-21) in the Stage-1 demo."
+    },
+    "criticality": "important",
+    "validity": { "valid_from": 8, "valid_until": 36 },
+    "status": "answered"
+  },
+  {
+    "logical_id": "K10",
+    "version": 1,
+    "question": "Will the garrison capitulate by D+5?",
+    "subject": "threat.will_to_fight",
+    "encoding_class": "hard_constraint",
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "low",
+      "owner": "J-2",
+      "single_source": false,
+      "collected_at": 1,
+      "note": "Émigré political network. Refused encoding_violation at POST /knowledge — an assessment with no waiver claiming certainty about will-to-fight — and withdrawn (the Stage-1 refusal exhibit). Held in fixtures for the demo replay."
+    },
+    "criticality": "important",
+    "status": "retired"
+  },
+  {
+    "logical_id": "K11",
+    "version": 1,
+    "question": "Are mines loaded on the minelayers at Ledger quay?",
+    "subject": "threat.mine_loading",
+    "encoding_class": "banded_soft_cost",
+    "criticality": "critical",
+    "status": "open",
+    "expected_answers": [
+      { "coa": "R1", "band": { "lo": 0.0, "hi": 0.2, "unit": "fraction of stock staged" } },
+      { "coa": "R2", "band": { "lo": 0.7, "hi": 1.0, "unit": "fraction of stock staged" } },
+      { "coa": "R3", "band": { "lo": 0.5, "hi": 0.9, "unit": "fraction of stock staged" } }
+    ],
+    "collection": [
+      {
+        "method": "DET KINGFISHER close reconnaissance of Ledger quay",
+        "cost": { "lo": 2, "hi": 4, "unit": "det-days" },
+        "earliest_result": 8
+      }
+    ]
+  },
+  {
+    "logical_id": "K12a",
+    "version": 1,
+    "question": "How many sea mines does the garrison hold?",
+    "subject": "threat.mine_stock",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 30, "hi": 60, "unit": "mines" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2 red cell",
+      "single_source": false,
+      "collected_at": 2,
+      "note": "Defector debrief. Contested against K12b (G5): neither compiles until resolved."
+    },
+    "criticality": "critical",
+    "status": "contested"
+  },
+  {
+    "logical_id": "K12b",
+    "version": 1,
+    "question": "How many sea mines does the garrison hold?",
+    "subject": "threat.mine_stock",
+    "encoding_class": "banded_soft_cost",
+    "answer": { "lo": 140, "hi": 220, "unit": "mines" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "Allied LNO",
+      "single_source": false,
+      "collected_at": 2,
+      "note": "Pre-war manifests. Contested against K12a (G5)."
+    },
+    "criticality": "critical",
+    "status": "contested"
+  },
+  {
+    "logical_id": "K13",
+    "version": 1,
+    "question": "What is the daily radio-traffic volume from garrison HQ?",
+    "subject": "threat.hq_radio",
+    "encoding_class": "banded_soft_cost",
+    "criticality": "routine",
+    "status": "open",
+    "expected_answers": [
+      { "coa": "R1", "band": { "lo": 40, "hi": 90, "unit": "msgs/day" } },
+      { "coa": "R2", "band": { "lo": 50, "hi": 110, "unit": "msgs/day" } },
+      { "coa": "R3", "band": { "lo": 30, "hi": 100, "unit": "msgs/day" } }
+    ],
+    "collection": [
+      {
+        "method": "Standoff intercept",
+        "cost": { "lo": 0.2, "hi": 0.5, "unit": "det-days" },
+        "earliest_result": 4
+      }
+    ]
+  },
+  {
+    "logical_id": "K14a",
+    "version": 1,
+    "question": "How likely is red COA R1 (Fortress Halcyon)?",
+    "subject": "scenario.likelihood",
+    "encoding_class": "scenario_weight",
+    "answer": { "lo": 45, "hi": 70, "unit": "%" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2 fusion",
+      "single_source": false,
+      "collected_at": 2,
+      "note": "Scenario weight: orders attention and reporting, never compiles into constraint or cost (knowledge model §9)."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K14b",
+    "version": 1,
+    "question": "How likely is red COA R2 (Strait Denial)?",
+    "subject": "scenario.likelihood",
+    "encoding_class": "scenario_weight",
+    "answer": { "lo": 20, "hi": 40, "unit": "%" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2 fusion",
+      "single_source": false,
+      "collected_at": 2,
+      "note": "Overlapping bands across K14a–c: honestly undecided."
+    },
+    "criticality": "important",
+    "status": "answered"
+  },
+  {
+    "logical_id": "K14c",
+    "version": 1,
+    "question": "How likely is red COA R3 (Spoiling Withdrawal)?",
+    "subject": "scenario.likelihood",
+    "encoding_class": "scenario_weight",
+    "answer": { "lo": 10, "hi": 25, "unit": "%" },
+    "provenance": {
+      "source_class": "assessed",
+      "confidence": "moderate",
+      "owner": "J-2 fusion",
+      "single_source": false,
+      "collected_at": 2,
+      "note": "Covers the R3m mining branch."
+    },
+    "criticality": "important",
+    "status": "answered"
+  }
+]
