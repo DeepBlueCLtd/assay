@@ -3,7 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ASSAY — UI wireframes v0.1</title>
+<title>ASSAY — UI wireframes v0.2</title>
+<!--
+  This file is a peer of the canonical set and is covered by batch propagation
+  (ASSAY-DEC-2). Every identifier rendered here (K*, C*, R*, FE-*, P*) is frozen
+  by assay-vignette.md §8; a value or identifier shown here that the vignette
+  does not define is drift and is treated as a defect, not colour.
+  Tableau moment: D+2, scenario step 8 — K9 has just superseded K5; K12 has just
+  been contested; world 7f3a…c91 predates both writes.
+-->
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -92,10 +100,10 @@
 
 <header class="mast">
   <span class="wordmark">ASSAY</span>
-  <span class="vig">Meridian Archipelago · TF ARGENT</span>
-  <span class="clock">D+2 · 14:30Z &nbsp;·&nbsp; world stamp <b>7f3a…c91</b></span>
+  <span class="vig">Meridian Archipelago · CTF MERIDIAN</span>
+  <span class="clock">D+2 · step 8 &nbsp;·&nbsp; world stamp <b>7f3a…c91</b></span>
 </header>
-<p class="subnote">UI wireframes v0.1 — four role surfaces as projections over one store (ASSAY-DEC-5). All figures fictional; assessed values always banded and marked (ASSAY-DEC-9).</p>
+<p class="subnote">UI wireframes v0.2 — four role surfaces as projections over one store (ASSAY-DEC-5). All data from <code>assay-vignette.md</code>; identifiers K*/C*/R*/FE-* frozen by vignette §8. Assessed values always banded and marked (ASSAY-DEC-9). Feed times are display-only envelope fields (ASSAY-DEC-17) — computation runs on the scenario clock.</p>
 
 <h2 class="surf" style="margin-top:8px">Information flow</h2>
 <p class="io">the heartbeat loop: J-2 writes knowledge → planner compiles &amp; plans → commander selects → new PIRs back to J-2 — every write a stamped delta</p>
@@ -104,7 +112,7 @@
   <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#5B6B77" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
   <rect x="320" y="88" width="400" height="76" rx="8" fill="#F1F3F5" stroke="#1B2732" stroke-width="1.2"/>
   <text x="520" y="118" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="15" fill="#1B2732">Store · trace graph · seam</text>
-  <text x="520" y="140" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#5B6B77">compile · plan/score · relax · analyse</text>
+  <text x="520" y="140" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#5B6B77">compile · plan/score · relax · analyse · select</text>
 
   <rect x="30" y="20" width="200" height="52" rx="6" fill="#fff" stroke="#D8DFE4"/>
   <text x="130" y="42" text-anchor="middle" font-family="Archivo" font-weight="600" font-size="13" fill="#1B2732">S1 · J-2 workbench</text>
@@ -123,210 +131,217 @@
   <text x="910" y="220" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">least-worst · why-chain</text>
 
   <line x1="232" y1="55" x2="316" y2="100" stroke="#9A6A14" stroke-width="1.6" marker-end="url(#a)"/>
-  <text x="248" y="66" font-family="IBM Plex Mono" font-size="10" fill="#9A6A14">supersede K9</text>
+  <text x="248" y="66" font-family="IBM Plex Mono" font-size="10" fill="#9A6A14">K9 supersedes K5</text>
   <line x1="722" y1="100" x2="806" y2="55" stroke="#5B6B77" stroke-width="1.4" marker-end="url(#a)"/>
-  <text x="726" y="66" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">handful + flags</text>
+  <text x="726" y="66" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">handful + stale flags</text>
   <line x1="806" y1="196" x2="722" y2="152" stroke="#5B6B77" stroke-width="1.4" marker-end="url(#a)"/>
-  <text x="716" y="196" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77" text-anchor="end">rationale</text>
+  <text x="716" y="196" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77" text-anchor="end">select → rationale</text>
   <line x1="316" y1="152" x2="232" y2="196" stroke="#5B6B77" stroke-width="1.4" marker-end="url(#a)"/>
   <text x="240" y="186" font-family="IBM Plex Mono" font-size="10" fill="#5B6B77">delta feed</text>
 </svg>
 </div>
 
 <!-- ─────────────────────────── S1 ─────────────────────────── -->
-<h2 class="surf">S1 · J-2 workbench <span class="rolechip">ROLE: N2</span></h2>
-<p class="io">reads: /analyse/discrimination · /analyse/sensitivity · /knowledge?status=… &nbsp;&nbsp;writes: /knowledge supersede·contest·resolve</p>
+<h2 class="surf">S1 · J-2 workbench <span class="rolechip">ROLE: J-2</span></h2>
+<p class="io">reads: /knowledge?status=… · /analyse/discrimination · /analyse/sensitivity · /knowledge/{id}/exposure &nbsp;&nbsp;writes: POST /knowledge · supersede · contest · resolve</p>
 <div class="panel">
   <div class="cols">
     <div>
       <p class="qhead">Collect next</p>
       <p class="qsub">Which open question best separates the red COAs (thesis D)</p>
       <div class="krow">
-        <span class="kid">K11 · open · JIPOE step 3</span>
-        <p class="kq">Northmark airstrip surface condition?</p>
+        <span class="kid">K11 · open · banded_soft_cost</span>
+        <p class="kq">Are mines loaded on the minelayers at Ledger quay?</p>
         <div class="chips">
-          <span class="chip open">separates R1 | {R2,R3}</span>
+          <span class="chip open">R1 0.0–0.2 | R2 0.7–1.0 — disjoint</span>
           <span class="chip plain">value ▮▮▮▮▯</span>
-          <span class="chip plain">cost: UAS sortie</span>
+          <span class="chip asmt">cost 2–4 det-days · banded</span>
+          <span class="chip plain">KINGFISHER close recon · earliest step 8</span>
         </div>
       </div>
       <div class="krow">
-        <span class="kid">K13 · open · JIPOE step 2</span>
-        <p class="kq">Strait fishing-pattern baseline?</p>
+        <span class="kid">K13 · open · banded_soft_cost</span>
+        <p class="kq">What is the daily radio-traffic volume from garrison HQ?</p>
         <div class="chips">
-          <span class="chip open">separates R3 | {R1,R2}</span>
-          <span class="chip plain">value ▮▮▮▯▯</span>
-          <span class="chip plain">cost: patrol overlap</span>
+          <span class="chip open">bands nest across R1–R3</span>
+          <span class="chip plain">value ▮▯▯▯▯</span>
+          <span class="chip asmt">cost 0.2–0.5 det-days · banded</span>
+          <span class="chip plain">standoff intercept · earliest step 4</span>
         </div>
       </div>
+      <p class="note">K11 outranks K13 despite costing more — separation and cost are both shown, never collapsed into one number.</p>
     </div>
     <div>
       <p class="qhead">Verify next</p>
       <p class="qsub">Load-bearing assessments — band-edge perturbation flips the decision (thesis E)</p>
       <div class="krow" style="border-color:#E7D3A6">
-        <span class="kid">K8 · answered · hard_constraint (waiver)</span>
-        <p class="kq">Ossen Causeway impassable at all tide states?</p>
+        <span class="kid">K8 · answered · hard_constraint (waiver W-1)</span>
+        <p class="kq">Is the Carrick Head battery's fire-control radar operational?</p>
         <div class="chips">
-          <span class="chip warn">flips handful if false</span>
-          <span class="chip asmt">HUMINT · single-source · moderate</span>
-          <span class="chip plain">owner: N2 HUMINT cell</span>
+          <span class="chip warn">flips north approach if false</span>
+          <span class="chip asmt">assessed · moderate · single-source</span>
           <span class="chip warn">deception exposure</span>
+          <span class="chip plain">waiver W-1 · granted by J-3</span>
+          <span class="chip plain">owner: J-2</span>
         </div>
       </div>
       <div class="krow">
-        <span class="kid">K7 · answered · banded_cost</span>
-        <p class="kq">Red fast-craft strength, Kessel Cove?</p>
+        <span class="kid">K6 · answered · banded_soft_cost</span>
+        <p class="kq">What sortie rate can the FAC squadron sustain?</p>
         <div class="band">
-          <div class="bandlab"><span>0</span><span>8–14 hulls</span><span>20</span></div>
-          <div class="track"><span class="fill" style="left:40%;width:30%"></span></div>
+          <div class="bandlab"><span>0</span><span>2–6 sorties/day</span><span>8</span></div>
+          <div class="track"><span class="fill" style="left:25%;width:50%"></span></div>
         </div>
-        <div class="chips"><span class="chip asmt">IMAGERY · moderate · assessment</span><span class="chip plain">shifts P3 margin only</span></div>
+        <div class="chips"><span class="chip asmt">assessed · low · assessment, not fact</span><span class="chip plain">widens C4 exposure margin</span></div>
       </div>
     </div>
     <div>
       <p class="qhead">Refresh &amp; resolve</p>
-      <p class="qsub">Perishable and contested objects (thesis F)</p>
+      <p class="qsub">Perishable and contested objects (theses F · G5)</p>
       <div class="krow" style="border-color:#E7D3A6">
-        <span class="kid">K9 · answered · banded_cost</span>
-        <p class="kq">Storm window arrival?</p>
+        <span class="kid">K9 · answered · banded_soft_cost · supersedes K5</span>
+        <p class="kq">What are tide and storm conditions D+2–D+9?</p>
         <div class="band">
-          <div class="bandlab"><span>D+7</span><span>D+9 – D+11</span><span>D+14</span></div>
-          <div class="track"><span class="fill" style="left:28%;width:29%"></span></div>
+          <div class="bandlab"><span>0 m</span><span>surge 1.1–1.8 m · peak D+5–D+7</span><span>2.5 m</span></div>
+          <div class="track"><span class="fill" style="left:44%;width:28%"></span></div>
         </div>
-        <div class="chips"><span class="chip asmt">METOC assessed · moderate</span><span class="chip warn">valid 31 h remaining</span></div>
+        <div class="chips"><span class="chip asmt">reported (met service) · high</span><span class="chip plain">valid steps 8–36</span><span class="chip warn">K5 now stale — 3 verdicts flagged</span></div>
       </div>
       <div class="krow" style="border-color:#EFC6C6">
-        <span class="kid">K12 · contested</span>
-        <p class="kq">SAM section location?</p>
+        <span class="kid">K12 · contested · banded_soft_cost</span>
+        <p class="kq">How many sea mines does the garrison hold?</p>
         <div class="chips">
-          <span class="chip fact">SIGINT: The Teeth</span>
-          <span class="chip asmt">assessed: embarked</span>
-          <span class="chip warn">blocking compile — resolve</span>
+          <span class="chip asmt">K12a defector debrief · 30–60 · J-2 red cell</span>
+          <span class="chip asmt">K12b pre-war manifests · 140–220 · allied LNO</span>
+          <span class="chip warn">blocking next compile — resolve</span>
         </div>
       </div>
     </div>
   </div>
-  <p class="note">Exposure strip (collapsed): 9 of your objects sit under live handful 7f3a…c91 — K8 under all four plans.</p>
+  <p class="note">Exposure strip (collapsed): 8 of your objects (K1–K8) sit under live handful 7f3a…c91 — K8 under all four plans; every north-approach route rests on waiver W-1.</p>
 </div>
 
 <!-- ─────────────────────────── S2 ─────────────────────────── -->
 <h2 class="surf">S2 · Planner workbench <span class="rolechip">ROLE: J-3/5</span></h2>
-<p class="io">reads: /plan/handful · /score · /relax · /trace/backward &nbsp;&nbsp;writes: /compile · plan basis (stamped delta)</p>
+<p class="io">reads: /plan/handful · /score · /relax · /trace/backward &nbsp;&nbsp;writes: /compile · comparison basis (stamped deltas)</p>
 <div class="panel">
   <div class="toolbar">
     <span class="stamp">world 7f3a…c91 · engine 0.1.0 · seed 42</span>
-    <span class="toggle on">R1 most likely</span>
-    <span class="toggle on">R2 most dangerous</span>
-    <span class="toggle on">R3 mining</span>
-    <span class="stamp" style="color:#B4541E">⚑ 2 verdicts stale — K9 superseded 14:02Z · recompile when ready</span>
+    <span class="toggle on">R1 fortress</span>
+    <span class="toggle on">R2 strait denial</span>
+    <span class="toggle on">R3 withdrawal (R3m)</span>
+    <span class="stamp" style="color:#B4541E">⚑ 3 verdicts stale — K9 superseded K5 at step 8 · recompile when ready</span>
+    <span class="stamp" style="color:#A33131">next compile blocked: K12 contested</span>
   </div>
   <table class="matrix">
     <tr>
-      <th>Plan</th><th>K1 civilians</th><th>K2 strait D+7</th><th>K3 Sanctuary</th><th>K4 aviation</th><th>K5 pre-storm</th><th>K6 recon</th><th>R1 / R2 / R3</th><th>Sacrifice</th>
+      <th>Plan</th><th>C1 relief D+10</th><th>C2 strait D+7</th><th>C3 no district fires</th><th>C4 ANVIL exposure</th><th>C5 causeway intact</th><th>C6 KINGFISHER out</th><th>R1 / R2 / R3</th><th>Sacrifice</th>
     </tr>
     <tr>
-      <td><span class="plan">P1</span><div class="plansub">mass north early</div></td>
+      <td><span class="plan">P1</span><div class="plansub">north approach · early entry</div></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust ⚑</span></td>
       <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-marg">marginal</span></td>
       <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
-      <td><span class="vchip v-tight">tight ⚑</span></td><td><span class="vchip v-viol">violated</span></td>
       <td><div class="strip"><span class="sbar"><i style="left:6%;width:88%"></i></span><span class="sbar bad"><i style="left:6%;width:22%"></i></span><span class="sbar"><i style="left:6%;width:60%"></i></span></div><div class="slab">collapses under R2</div></td>
-      <td class="sac">K6</td>
+      <td class="sac">—</td>
     </tr>
     <tr>
-      <td><span class="plan">P2</span><div class="plansub">Calder-centric · ISR-first</div></td>
-      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-marg">marginal</span></td>
+      <td><span class="plan">P2</span><div class="plansub">sweep-first · enter D+8</div></td>
+      <td><span class="vchip v-marg">marginal ⚑</span></td><td><span class="vchip v-marg">marginal ⚑</span></td>
       <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
-      <td><span class="vchip v-marg">marginal ⚑</span></td><td><span class="vchip v-rob">robust</span></td>
+      <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
       <td><div class="strip"><span class="sbar"><i style="left:6%;width:66%"></i></span><span class="sbar"><i style="left:6%;width:62%"></i></span><span class="sbar"><i style="left:6%;width:58%"></i></span></div><div class="slab">survives all three</div></td>
       <td class="sac">—</td>
     </tr>
     <tr>
-      <td><span class="plan">P3</span><div class="plansub">strait clearance-led</div></td>
+      <td><span class="plan">P3</span><div class="plansub">parallel sweep surge</div></td>
       <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
       <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-viol">violated</span></td>
       <td><span class="vchip v-marg">marginal</span></td><td><span class="vchip v-rob">robust</span></td>
-      <td><div class="strip"><span class="sbar"><i style="left:6%;width:52%"></i></span><span class="sbar"><i style="left:6%;width:48%"></i></span><span class="sbar"><i style="left:6%;width:80%"></i></span></div><div class="slab">best under R3</div></td>
-      <td class="sac">K4</td>
+      <td><div class="strip"><span class="sbar"><i style="left:6%;width:52%"></i></span><span class="sbar"><i style="left:6%;width:48%"></i></span><span class="sbar"><i style="left:6%;width:80%"></i></span></div><div class="slab">best under R3m</div></td>
+      <td class="sac">C4</td>
     </tr>
     <tr>
-      <td><span class="plan">P4</span><div class="plansub">Sanctuary staging</div></td>
+      <td><span class="plan">P4</span><div class="plansub">FAC berths first</div></td>
       <td><span class="vchip v-rob">robust</span></td><td><span class="vchip v-rob">robust</span></td>
       <td><span class="vchip v-viol">violated</span></td><td><span class="vchip v-rob">robust</span></td>
-      <td><span class="vchip v-marg">marginal</span></td><td><span class="vchip v-rob">robust</span></td>
-      <td><div class="strip"><span class="sbar"><i style="left:6%;width:56%"></i></span><span class="sbar"><i style="left:6%;width:50%"></i></span><span class="sbar"><i style="left:6%;width:76%"></i></span></div><div class="slab">political cost</div></td>
-      <td class="sac">K3</td>
+      <td><span class="vchip v-tight">tight</span></td><td><span class="vchip v-marg">marginal</span></td>
+      <td><div class="strip"><span class="sbar"><i style="left:6%;width:56%"></i></span><span class="sbar"><i style="left:6%;width:50%"></i></span><span class="sbar"><i style="left:6%;width:76%"></i></span></div><div class="slab">harbourfront cost</div></td>
+      <td class="sac">C3</td>
     </tr>
   </table>
-  <p class="note">Within-band plans are co-equal — the matrix narrows, judgement chooses. Any chip opens the trace drawer; mixed stamps grey the matrix (comparability guard).</p>
+  <p class="note">Within-band plans are co-equal — the matrix narrows, judgement chooses. Any chip opens the trace drawer (margin bands on hover); mixed stamps grey the matrix (comparability guard).</p>
 </div>
 
 <!-- ─────────────────────────── S3 ─────────────────────────── -->
 <h2 class="surf">S3 · Commander view <span class="rolechip">ROLE: COMD</span></h2>
-<p class="io">reads: /relax · /trace/backward &nbsp;&nbsp;writes: SelectionRationale (stamped delta)</p>
+<p class="io">reads: /relax · /trace/backward &nbsp;&nbsp;writes: POST /select → SelectionRationale (stamped delta)</p>
 <div class="panel">
-  <p class="qsub" style="font-size:12.5px">If Karev mines the Strait (COA-R3), no plan keeps all six commitments. Three least-worst options — each gives up something different:</p>
+  <p class="qsub" style="font-size:12.5px">If the Kestrel garrison withdraws and mines both approaches (R3m), no plan keeps all of C2–C4. Three least-worst options — each gives up something different:</p>
   <div class="cards">
     <div class="card">
-      <h3>P3 · Clearance surge</h3>
-      <div class="give">Gives up <b>K4</b> — aviation drops below 50% regional readiness for ~5 days</div>
-      <p class="keep">Keeps: strait open D+7 · Sanctuary untouched · civilians protected</p>
+      <h3>P3 · Parallel sweep surge</h3>
+      <div class="give">Gives up <b>C4</b> — BROOM and ANVIL work inside the battery/FAC arc while both approaches are swept</div>
+      <p class="keep">Keeps: strait open D+7 · no fires into the district · causeway approach preserved</p>
       <div class="strip"><span class="sbar"><i style="left:6%;width:52%"></i></span><span class="sbar"><i style="left:6%;width:48%"></i></span><span class="sbar"><i style="left:6%;width:80%"></i></span></div><div class="slab">R1 / R2 / R3 resilience</div>
     </div>
     <div class="card">
-      <h3>P4 · Sanctuary staging</h3>
-      <div class="give">Gives up <b>K3</b> — blue presence on Sanctuary Island; green consent at risk</div>
-      <p class="keep">Keeps: strait open D+7 · aviation readiness · civilians protected</p>
+      <h3>P4 · Clear the berths first</h3>
+      <div class="give">Gives up <b>C3</b> — fires into the harbourfront where the FACs berth among the fishing fleet</div>
+      <p class="keep">Keeps: strait open D+7 · ANVIL outside the arc · convoy timeline</p>
       <div class="strip"><span class="sbar"><i style="left:6%;width:56%"></i></span><span class="sbar"><i style="left:6%;width:50%"></i></span><span class="sbar"><i style="left:6%;width:76%"></i></span></div><div class="slab">R1 / R2 / R3 resilience</div>
     </div>
     <div class="card">
       <h3>P2 · Accept late opening</h3>
-      <div class="give">Gives up <b>K2</b> — strait opens D+9, two days late for relief shipping</div>
+      <div class="give">Gives up <b>C2</b> — sequential safe sweep opens the strait D+9, two days late for relief shipping</div>
       <p class="keep">Keeps: everything else · most robust across all three red COAs</p>
       <div class="strip"><span class="sbar"><i style="left:6%;width:66%"></i></span><span class="sbar"><i style="left:6%;width:62%"></i></span><span class="sbar"><i style="left:6%;width:58%"></i></span></div><div class="slab">R1 / R2 / R3 resilience</div>
     </div>
   </div>
   <div class="whychain">
-    <p class="qhead">Why can't I have K2 and K4? <span style="font-weight:400;color:var(--mut)">— trace, terminating in named assessments</span></p>
+    <p class="qhead">Why can't I keep both C2 and C4? <span style="font-weight:400;color:var(--mut)">— backward trace, terminating in named knowledge with named owners</span></p>
     <div class="wc">
-      <span class="wcnode"><span class="t">K2 verdict: tight/violated</span><br><span class="s">plan P2 · stamp 7f3a…c91</span></span>
+      <span class="wcnode"><span class="t">C2 verdict: marginal → violated under R3m</span><br><span class="s">plan P2 · stamp 7f3a…c91 · scored_from</span></span>
       <span class="wcarr">←</span>
-      <span class="wcnode"><span class="t">Strait mined (COA-R3 branch)</span><br><span class="s">scenario_weight · assessed</span></span>
+      <span class="wcnode"><span class="t">mine-threat channel · both approaches raised</span><br><span class="s">R3m excursion · compiled_into</span></span>
       <span class="wcarr">←</span>
-      <span class="wcnode"><span class="t">Clearance rate 0.8–1.4 nm/day</span><br><span class="s">assessed · moderate · N3 mine warfare — assessment, not fact</span></span>
+      <span class="wcnode"><span class="t">K12 · garrison mine stocks · contested ⚑</span><br><span class="s">30–60 vs 140–220 mines — assessment, not fact</span></span>
       <span class="wcarr">←</span>
-      <span class="wcnode"><span class="t">SAM location contested (K12)</span><br><span class="s">forces standoff profile · owner: N2</span></span>
+      <span class="wcnode"><span class="t">owners: J-2 red cell · allied LNO</span><br><span class="s">resolve before recompile (G5)</span></span>
     </div>
   </div>
 </div>
 
 <!-- ─────────────────────────── S4 ─────────────────────────── -->
 <h2 class="surf">S4 · Bridge view <span class="rolechip">ROLE: OBSERVER</span></h2>
-<p class="io">reads: /deltas · /trace/forward · /analyse/staleness — the J-2/J-3 seam, watched live</p>
+<p class="io">reads: /deltas?since=seq · /trace/forward · /analyse/staleness — the J-2/J-3 seam, watched live</p>
 <div class="panel split">
   <div>
     <p class="qhead">Delta feed</p>
     <div class="feed">
-      <div class="delta hot"><span class="who">N2 · S1</span><span>superseded <b>K9</b> storm window → D+8–D+10 (METOC 14:00Z)</span><span class="t">14:02Z</span></div>
-      <div class="delta"><span class="who">SYS</span><span>staleness walk: <b>2 plans, 3 verdicts</b> flagged (K5-dependent) — no silent recompute</span><span class="t">14:02Z</span></div>
-      <div class="delta"><span class="who">J-3/5 · S2</span><span>compiled world <b>7f3a…c91</b> from 12 knowledge objects · handful of 4</span><span class="t">13:40Z</span></div>
-      <div class="delta"><span class="who">N2 · S1</span><span>contested <b>K12</b>: SIGINT (Teeth) vs assessed (embarked) — compile blocked on K12 paths</span><span class="t">11:15Z</span></div>
-      <div class="delta"><span class="who">COMD · S3</span><span>rationale drafted: P2 v P3 — deciding axis: consent risk</span><span class="t">10:55Z</span></div>
+      <div class="delta hot"><span class="who">J-2 · S1</span><span>contested <b>K12</b>: defector debrief (30–60) vs pre-war manifests (140–220) — mine-threat compile blocked until resolved</span><span class="t">14:10Z</span></div>
+      <div class="delta"><span class="who">SYS</span><span>staleness walk from <b>K9</b>: 2 plans · 3 verdicts flagged (K5-dependent) — no silent recompute</span><span class="t">14:02Z</span></div>
+      <div class="delta"><span class="who">J-2 · S1</span><span>superseded <b>K5 → K9</b>: surge 1.1–1.8 m peaking D+5–D+7 (met-service update · valid steps 8–36)</span><span class="t">14:02Z</span></div>
+      <div class="delta"><span class="who">J-3/5 · S2</span><span>compiled world <b>7f3a…c91</b> from the answered set K1–K8 · handful of 4 (seed 42)</span><span class="t">13:40Z</span></div>
+      <div class="delta"><span class="who">J-3 · S2</span><span>waiver <b>W-1</b> recorded on K8: radar assessed non-operational compiles as hard constraint — north approach open</span><span class="t">09:30Z</span></div>
     </div>
   </div>
   <div>
-    <p class="qhead">Trace: selected delta (K9 supersession)</p>
+    <p class="qhead">Trace: selected delta (K9 supersedes K5)</p>
     <div class="wc" style="flex-direction:column;align-items:flex-start;gap:6px">
-      <span class="wcnode"><span class="t">K9 v2 · storm D+8–D+10</span><br><span class="s">supersedes K9 v1 · METOC · valid 48 h</span></span>
+      <span class="wcnode"><span class="t">K9 · tide &amp; storm D+2–D+9 · surge 1.1–1.8 m</span><br><span class="s">reported (met service) · high · valid steps 8–36</span></span>
+      <span class="wcarr">↓ supersedes (cross-lineage)</span>
+      <span class="wcnode"><span class="t">K5 · tide &amp; storm D+0–D+4 · now stale</span><br><span class="s">validity steps 0–16 · scenario clock, never wall clock</span></span>
       <span class="wcarr">↓ compiled_into</span>
-      <span class="wcnode"><span class="t">storm-severity channel</span><br><span class="s">world 7f3a…c91 now stale-input</span></span>
-      <span class="wcarr">↓ scored_against</span>
-      <span class="wcnode"><span class="t">K5 verdicts: P1 tight ⚑ · P2 marginal ⚑</span><br><span class="s">flagged on S2 — planner decides when to recompile</span></span>
+      <span class="wcnode"><span class="t">tide &amp; storm channels · world 7f3a…c91</span><br><span class="s">stale_input on next compile</span></span>
+      <span class="wcarr">↓ scored_from</span>
+      <span class="wcnode"><span class="t">flagged verdicts: P1·C2 ⚑ · P2·C1 ⚑ · P2·C2 ⚑</span><br><span class="s">planner decides when to recompile — nothing recomputes silently</span></span>
     </div>
-    <p class="note">One object model, both ends thin: the J-2's write becomes the planner's flag with no document, no email, no re-brief.</p>
+    <p class="note">One object model, both ends of the seam: the J-2's write becomes the planner's flag with no document, no email, no re-brief.</p>
   </div>
 </div>
 
-<p class="subnote" style="margin-top:40px">ASSAY v0.1 wireframes · companion to assay-ui-design.md · all data from assay-vignette.md fixtures</p>
+<p class="subnote" style="margin-top:40px">ASSAY v0.2 wireframes · companion to assay-ui-design.md · all data from assay-vignette.md fixtures — identifiers frozen per vignette §8</p>
 </div>
 </body>
 </html>
