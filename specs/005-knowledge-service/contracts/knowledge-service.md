@@ -10,7 +10,7 @@ reference `src/generated/types.ts` and the seam types in `data-model.md`.
 Seam: `POST /knowledge`.
 - **Pre**: `ko` validates against the generated `KnowledgeObject` shape (`validateInstance`).
 - **Refuses**: `encoding_violation` (assumption/any claiming `hard_constraint` unlicensed; `scenario_weight` claiming constraint/cost); `waiver_required` (reported/assessed claiming `hard_constraint`, no `waiver`).
-- **On success**: stores the object (content-addressed), writes a `waives` edge if a waiver licensed a `hard_constraint`, publishes exactly one `create` delta, and attaches any `confidence_width_floor` warnings. A byte-identical re-create returns the same ref and publishes **no** delta.
+- **On success**: stores the object (content-addressed), records the licensing waiver inline on the object where one is present (retrievable — the `waives` trace edge is written at compile time when the constraint is built, seam §4), publishes exactly one `create` delta, and attaches any `confidence_width_floor` warnings. A byte-identical re-create returns the same ref and publishes **no** delta.
 - **Invariants**: FR-001/002/003/004/010/014; G2 (no bare scalar leaves the seam); a refused create persists nothing.
 
 ## `supersede(next: KnowledgeObject, priorId: LogicalId, actor): { ref, stale: Ref[] } | Refusal`
@@ -45,7 +45,7 @@ Seam: `GET /knowledge/{id}/exposure`.
 ## Contract-invariant tests (write first, confirm failing — constitution gate 2)
 
 `tests/knowledge.test.ts` and `tests/encoding.test.ts` assert, before implementation:
-1. K10 (assessed, `hard_constraint`, no waiver) → `create` refuses `encoding_violation`, offending = K10, store unchanged, delta log unchanged. **(SC-001)**
+1. K10 (assumption, `hard_constraint`) → `create` refuses `encoding_violation` (no waiver can license it), offending = K10, store unchanged, delta log unchanged. **(SC-001)**
 2. K8 with waiver W-1 → accepted; without waiver → `waiver_required`. **(SC-005)**
 3. K14a (`scenario_weight`) → any constraint/cost encoding refused; storable as weight. **(FR-003)**
 4. supersede(K9, K5) → `stale == [K5]` exactly; cross-lineage edge present; one delta. **(SC-003)**

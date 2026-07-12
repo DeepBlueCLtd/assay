@@ -175,12 +175,12 @@
     "subject": "threat.will_to_fight",
     "encoding_class": "hard_constraint",
     "provenance": {
-      "source_class": "assessed",
+      "source_class": "assumption",
       "confidence": "low",
       "owner": "J-2",
       "single_source": false,
       "collected_at": 1,
-      "note": "Émigré political network. Refused encoding_violation at POST /knowledge — an assessment with no waiver claiming certainty about will-to-fight — and withdrawn (the Stage-1 refusal exhibit). Held in fixtures for the demo replay."
+      "note": "Émigré political chatter taken up as an analyst assumption about will-to-fight. Refused encoding_violation at POST /knowledge — an assumption may never be a hard constraint and no waiver can license one (knowledge model §9) — and withdrawn (the Stage-1 refusal exhibit). Held in fixtures for the demo replay."
     },
     "criticality": "important",
     "status": "retired"
