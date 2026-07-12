@@ -9,6 +9,8 @@ description: "Task list for SPEC-05 — Knowledge service & encoding discipline"
 **Tests**: REQUIRED — constitution quality gate 2 mandates contract-invariant tests written against the seam shapes and **confirmed failing before implementation** (TDD).
 **Organization**: by user story (priority order) after a shared foundational substrate. Stage-1 exits (build plan) are the acceptance scenarios.
 
+> **Implementation status (2026-07-12):** built and green. `src/{seam,deltas,encoding,lint,knowledge}.ts` + `src/components/{refusalBanner,s1Table}.ts`; tests `tests/{encoding,lint,knowledge,s1Table}.test.ts` (89 passing, typecheck clean); the S1 table + demo moment render in the fixture-backed gallery (`npm run gallery`). All four Stage-1 exits demonstrated on Meridian. Two build-time refinements from the plan, both documented above: lifecycle status is **edge-derived** (`effectiveStatus`) rather than mutated onto immutable objects (DEC-21); the `waives` edge is a **compile-time** artefact (seam §4), so create records the waiver inline and retrievable rather than fabricating a self-edge. The K10 fixture/vignette drift (`assessed` vs the `encoding_violation` refusal) was corrected to `assumption` per §9.
+
 ## Format: `[ID] [P?] [Story] Description`
 - **[P]**: parallelizable (different file, no dependency on an incomplete task)
 - **[Story]**: US1 (refusal/demo, P1) · US2 (waiver, P2) · US5 (banded rendering, P2) · US3 (supersede, P3) · US4 (contest, P3)
@@ -31,7 +33,7 @@ Single project: `src/`, `tests/` at repo root. Reuse `src/store.ts`, `src/trace.
 - [ ] T004 [P] Implement `DeltaLog` in `src/deltas.ts`: append-only with monotonic `seq`; `publish(op, refs, stamp?, actor, role): Delta`; `since(seq): Delta[]`. `at` is display-only (accept an injected clock for determinism; never hashed).
 - [ ] T005 [P] Implement the encoding firewall in `src/encoding.ts`: pure `checkEncoding(ko): Refusal | null` per knowledge model §9 — `assumption`+`hard_constraint` → `encoding_violation` (waiver cannot rescue); `reported`/`assessed`+`hard_constraint` without `waiver` → `waiver_required`; `scenario_weight` may not carry constraint/cost.
 - [ ] T006 [P] Implement the confidence lint in `src/lint.ts`: `confidenceLint(ko): LintWarning[]` with `r = (hi−lo)/max(|lo|,|hi|)`, floors low 0.25 / moderate 0.10 / high 0; `observed` and answer-absent objects exempt; returns warnings only (research note `01-knowledge.md`). No midpoint anywhere.
-- [ ] T007 Write the encoding firewall tests FIRST and confirm failing — `tests/encoding.test.ts`: K10 (assessed+hard_constraint, no waiver) → `encoding_violation`; K8 with/without waiver → accepted / `waiver_required`; `assumption`+`hard_constraint`+waiver → still `encoding_violation`; K14a `scenario_weight` cannot be constraint/cost. (Depends on T003/T005 shapes existing; run before T005 logic is filled to see red.)
+- [ ] T007 Write the encoding firewall tests FIRST and confirm failing — `tests/encoding.test.ts`: K10 (assumption+hard_constraint) → `encoding_violation` even with a waiver present; K8 (assessed+hard_constraint) with/without waiver → accepted / `waiver_required`; K14a `scenario_weight` cannot be constraint/cost. (Depends on T003/T005 shapes existing; run before T005 logic is filled to see red.)
 - [ ] T008 Write the lint tests FIRST and confirm failing — `tests/lint.test.ts`: low-confidence narrow band flagged; K6 (low, wide) not flagged; moderate/high boundaries; `observed` never flagged; degenerate band only for observed/high. (Pairs with T006.)
 - [ ] T009 Scaffold `KnowledgeService` in `src/knowledge.ts`: constructor composes `ObjectStore`, `TraceStore`, `DeltaLog`; private helpers for "live version of a lineage" and edge writes. No acts yet — just the shell the story phases fill.
 
@@ -44,8 +46,8 @@ Single project: `src/`, `tests/` at repo root. Reuse `src/store.ts`, `src/trace.
 **Goal**: `create` enforces the firewall and returns a first-class `Refusal`, rendered in place. Nothing persists on refusal.
 **Independent test**: attempt to create K10 → `encoding_violation`, offending K10, store + delta log unchanged; refusal banner renders reason/ref/explanation.
 
-- [ ] T010 [US1] Write the create-refusal contract test FIRST and confirm failing — `tests/knowledge.test.ts`: `create(K10)` → `Refusal{encoding_violation, offending:[K10]}`; assert store size and delta count unchanged (SC-001); `scenario_weight` create stored but never compilable (FR-003).
-- [ ] T011 [US1] Implement `create(ko, actor): WriteResult` in `src/knowledge.ts`: validate → `checkEncoding` (return Refusal, persist nothing) → store (idempotent) → write `waives` edge if a waiver licensed a hard_constraint → publish exactly one `create` delta (none on byte-identical re-create) → attach `confidenceLint` warnings. Make T010 pass.
+- [ ] T010 [US1] Write the create-refusal contract test FIRST and confirm failing — `tests/knowledge.test.ts`: `create(K10)` (assumption+hard_constraint) → `Refusal{encoding_violation, offending:[K10]}`; assert store size and delta count unchanged (SC-001); `scenario_weight` create stored but never compilable (FR-003).
+- [ ] T011 [US1] Implement `create(ko, actor): WriteResult` in `src/knowledge.ts`: validate → `checkEncoding` (return Refusal, persist nothing) → store (idempotent) → record the inline waiver (retrievable; the `waives` edge is a compile-time artefact, seam §4) → publish exactly one `create` delta (none on byte-identical re-create) → attach `confidenceLint` warnings. Make T010 pass.
 - [ ] T012 [P] [US1] Implement `refusalBanner(refusal): string` in `src/components/refusalBanner.ts` (framework-free HTML; reason, offending refs, explanation — ui-design §3.4.1). Types-only import.
 - [ ] T013 [US1] Write `tests/s1Table.test.ts` refusal case FIRST and confirm failing, then wire the S1 table to render the banner where a refused save was attempted (the demo moment). Assert the banner appears and no row is added for K10.
 
@@ -56,10 +58,10 @@ Single project: `src/`, `tests/` at repo root. Reuse `src/store.ts`, `src/trace.
 ## Phase 4: User Story 2 — A licensed exception is recorded and visible (P2)
 
 **Goal**: the waiver path accepts K8 and every K8 rendering shows waiver + single-source + "assessment, not fact".
-**Independent test**: create K8 with W-1 → accepted, waiver retrievable, `waives` edge present; drop the waiver → `waiver_required`.
+**Independent test**: create K8 with W-1 → accepted, waiver retrievable inline; drop the waiver → `waiver_required`.
 
-- [ ] T014 [US2] Extend `tests/knowledge.test.ts` FIRST (confirm failing): `create(K8 with waiver W-1)` accepted, `waives` edge written, waiver retrievable; `create(K8 without waiver)` → `waiver_required` (SC-005).
-- [ ] T015 [US2] Ensure `create` writes the `waives` edge and preserves the inline `waiver` slot (adjust T011 if needed); expose waiver retrieval on the stored object.
+- [ ] T014 [US2] Extend `tests/knowledge.test.ts` FIRST (confirm failing): `create(K8 with waiver W-1)` accepted, inline waiver retrievable on the stored object; `create(K8 without waiver)` → `waiver_required` (SC-005).
+- [ ] T015 [US2] Ensure `create` preserves the inline `waiver` slot and exposes waiver retrieval on the stored object (the `waives` trace edge is written at compile time — SPEC-06 / seam §4).
 - [ ] T016 [P] [US2] Implement/extend the provenance chip + a waiver chip in `src/components/provenanceChip.ts` (or a sibling) to render the waiver chip and single-source marking wherever a waived/single-source value renders (FR-013). Confirm no bare scalar leaks.
 
 **Checkpoint**: K8's waiver trail is visible everywhere it appears; removing the waiver flips to a refusal.

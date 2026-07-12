@@ -10,7 +10,7 @@ The doctrinal/confidence research is done in `docs/research/01-knowledge.md` (th
 
 ## D2 — Waiver is an inline slot on KnowledgeObject, not a separate stored object
 
-- **Decision**: Use the generated `KnowledgeObject.waiver?: Waiver` slot ({granted_by, justification, granted_at}); the `waives` edge is written from the waived object to itself's licensing record at create time.
+- **Decision**: Use the generated `KnowledgeObject.waiver?: Waiver` slot ({granted_by, justification, granted_at}); the waiver is recorded inline and retrievable at create. The `waives` trace edge belongs to compile time (seam §4) — the edge is written when the constraint is actually built — so knowledge-create fabricates no self-referential edge.
 - **Rationale**: The schema (D2, already generated) models the waiver inline; K8 in the vignette carries "under J-3 waiver W-1" as part of the object. No new stored type is needed. The trace edge still records the licence for G3 traceability.
 - **Alternatives**: a standalone `Waiver` object referenced by hash (rejected — the schema didn't model it that way; would drift types from LinkML, violating the source-of-truth rule).
 

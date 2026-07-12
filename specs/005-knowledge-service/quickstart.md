@@ -27,7 +27,7 @@ Run `npm test` and confirm the Stage-1 suites are green. Each maps to an accepta
 ## The demo moment (DEC-23) — "the system declines laundered judgement"
 
 1. Render the minimal S1 table over the Meridian K1–K14 fixtures (the gallery/demo harness).
-2. Attempt to save K10 (garrison *will* capitulate by D+5 — assessed, claimed `hard_constraint`, no waiver).
+2. Attempt to save K10 (garrison *will* capitulate by D+5 — an `assumption`, claimed `hard_constraint`; no waiver can license one).
 3. Observe: the refusal banner appears where the save was attempted, naming `encoding_violation`, the offending ref (K10), and the one-sentence explanation. Nothing is stored.
 4. Contrast with K8: the same "hard constraint from an assessment" shape, but with waiver W-1 recorded — accepted, and rendered with its waiver chip and single-source marking.
 
