@@ -16,6 +16,10 @@ export type LogicalId = string;
 
 export type ContentHash = string;
 
+/** Named region on the grid (MCOO overlay region). Geometry lives once in VignetteConfig (research note 02-compile.md). */
+
+export type RegionName = string;
+
 /** ASSAY-DEC-14. Only 'observed' is fact and may render unbanded. */
 
 export type SourceClass = 'observed' | 'reported' | 'assessed' | 'assumption';
@@ -171,19 +175,25 @@ export interface GridSpec {
   horizon_steps: number;
 }
 
+/** One named, optionally time-boxed deviation from a channel default (sparse channels, research note 02-compile.md). Values are banded because their sources are (G2); source names the KnowledgeObject the value derives from (G3). */
 
-export interface ChannelCell {
-  x: number;
-  y: number;
-  t: Timestep;
+export interface RegionOverride {
+  region: RegionName;
   value: Band;
+  from_step?: Timestep;
+  until_step?: Timestep;
+  /** The KnowledgeObject this override derives from; complements the compiled_into edge (G3). */
+  source?: LogicalId;
 }
 
+/** A compile layer stored sparse — a default plus deviations, the MCOO idiom (research note 02-compile.md). Dense per-cell channels are never stored or hashed (retired ChannelCell; resolves seam open item 2). */
 
 export interface Channel {
   name: string;
   kind: ChannelKind;
-  cells?: ChannelCell[];
+  /** The quiet baseline; region overrides deviate from it. */
+  default: Band;
+  regions?: RegionOverride[];
 }
 
 
@@ -196,11 +206,45 @@ export interface ConsumedRef {
 
 export interface CompiledWorld extends StoredObject {
   grid: GridSpec;
-  channels?: Channel[];
+  channels: Channel[];
   consumed: ConsumedRef[];
   scenario?: LogicalId;
   engine_version: string;
   stamp: string;
+}
+
+/** The quiet baseline band for a channel kind, held once in VignetteConfig (research note 02-compile.md). */
+
+export interface ChannelDefault {
+  kind: ChannelKind;
+  default: Band;
+}
+
+/** A named region's extent as a bounding rect on the grid (demonstrator-sufficient geometry, research note 02-compile.md). */
+
+export interface RegionGeometry {
+  name: RegionName;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/** Routes a KnowledgeObject subject (topic key, knowledge-model §5) to a channel region at compile. scenario.* subjects are absent (firewalled). */
+
+export interface SubjectMapEntry {
+  subject: string;
+  channel: ChannelKind;
+  region: RegionName;
+}
+
+/** The single home of grid, per-channel defaults, region geometry, and subject routing consumed by compile (research note 02-compile.md; seam §4 config). */
+
+export interface VignetteConfig extends StoredObject {
+  grid: GridSpec;
+  channels: ChannelDefault[];
+  regions: RegionGeometry[];
+  subject_map: SubjectMapEntry[];
 }
 
 
@@ -314,6 +358,7 @@ export const SCHEMA: {
     Timestep: 'number',
     LogicalId: 'string',
     ContentHash: 'string',
+    RegionName: 'string',
   },
   enums: {
     SourceClass: ['observed', 'reported', 'assessed', 'assumption'],
@@ -340,10 +385,14 @@ export const SCHEMA: {
     ChannelOverride: { attributes: { channel: { range: 'ChannelKind', required: true, multivalued: false }, region: { range: 'string', required: false, multivalued: false }, override: { range: 'Band', required: true, multivalued: false } } },
     ScenarioCOA: { parent: 'StoredObject', attributes: { name: { range: 'string', required: true, multivalued: false }, narrative: { range: 'string', required: true, multivalued: false }, excursion: { range: 'ChannelOverride', required: false, multivalued: true }, likelihood: { range: 'LogicalId', required: false, multivalued: false } } },
     GridSpec: { attributes: { cols: { range: 'integer', required: true, multivalued: false }, rows: { range: 'integer', required: true, multivalued: false }, cell_km: { range: 'float', required: true, multivalued: false }, timestep_hours: { range: 'integer', required: true, multivalued: false }, horizon_steps: { range: 'integer', required: true, multivalued: false } } },
-    ChannelCell: { attributes: { x: { range: 'integer', required: true, multivalued: false }, y: { range: 'integer', required: true, multivalued: false }, t: { range: 'Timestep', required: true, multivalued: false }, value: { range: 'Band', required: true, multivalued: false } } },
-    Channel: { attributes: { name: { range: 'string', required: true, multivalued: false }, kind: { range: 'ChannelKind', required: true, multivalued: false }, cells: { range: 'ChannelCell', required: false, multivalued: true } } },
+    RegionOverride: { attributes: { region: { range: 'RegionName', required: true, multivalued: false }, value: { range: 'Band', required: true, multivalued: false }, from_step: { range: 'Timestep', required: false, multivalued: false }, until_step: { range: 'Timestep', required: false, multivalued: false }, source: { range: 'LogicalId', required: false, multivalued: false } } },
+    Channel: { attributes: { name: { range: 'string', required: true, multivalued: false }, kind: { range: 'ChannelKind', required: true, multivalued: false }, default: { range: 'Band', required: true, multivalued: false }, regions: { range: 'RegionOverride', required: false, multivalued: true } } },
     ConsumedRef: { attributes: { logical_id: { range: 'LogicalId', required: true, multivalued: false }, content_hash: { range: 'ContentHash', required: true, multivalued: false } } },
-    CompiledWorld: { parent: 'StoredObject', attributes: { grid: { range: 'GridSpec', required: true, multivalued: false }, channels: { range: 'Channel', required: false, multivalued: true }, consumed: { range: 'ConsumedRef', required: true, multivalued: true }, scenario: { range: 'LogicalId', required: false, multivalued: false }, engine_version: { range: 'string', required: true, multivalued: false }, stamp: { range: 'string', required: true, multivalued: false } } },
+    CompiledWorld: { parent: 'StoredObject', attributes: { grid: { range: 'GridSpec', required: true, multivalued: false }, channels: { range: 'Channel', required: true, multivalued: true }, consumed: { range: 'ConsumedRef', required: true, multivalued: true }, scenario: { range: 'LogicalId', required: false, multivalued: false }, engine_version: { range: 'string', required: true, multivalued: false }, stamp: { range: 'string', required: true, multivalued: false } } },
+    ChannelDefault: { attributes: { kind: { range: 'ChannelKind', required: true, multivalued: false }, default: { range: 'Band', required: true, multivalued: false } } },
+    RegionGeometry: { attributes: { name: { range: 'RegionName', required: true, multivalued: false }, x0: { range: 'integer', required: true, multivalued: false }, y0: { range: 'integer', required: true, multivalued: false }, x1: { range: 'integer', required: true, multivalued: false }, y1: { range: 'integer', required: true, multivalued: false } } },
+    SubjectMapEntry: { attributes: { subject: { range: 'string', required: true, multivalued: false }, channel: { range: 'ChannelKind', required: true, multivalued: false }, region: { range: 'RegionName', required: true, multivalued: false } } },
+    VignetteConfig: { parent: 'StoredObject', attributes: { grid: { range: 'GridSpec', required: true, multivalued: false }, channels: { range: 'ChannelDefault', required: true, multivalued: true }, regions: { range: 'RegionGeometry', required: true, multivalued: true }, subject_map: { range: 'SubjectMapEntry', required: true, multivalued: true } } },
     ForceElement: { parent: 'StoredObject', attributes: { name: { range: 'string', required: true, multivalued: false }, kind: { range: 'string', required: true, multivalued: false }, mobility_class: { range: 'string', required: true, multivalued: false }, notes: { range: 'string', required: false, multivalued: false } } },
     RouteLeg: { attributes: { x: { range: 'integer', required: true, multivalued: false }, y: { range: 'integer', required: true, multivalued: false }, enter_step: { range: 'Timestep', required: true, multivalued: false }, exit_step: { range: 'Timestep', required: true, multivalued: false } } },
     TaskWindow: { attributes: { task: { range: 'string', required: true, multivalued: false }, x: { range: 'integer', required: true, multivalued: false }, y: { range: 'integer', required: true, multivalued: false }, from_step: { range: 'Timestep', required: true, multivalued: false }, until_step: { range: 'Timestep', required: true, multivalued: false } } },

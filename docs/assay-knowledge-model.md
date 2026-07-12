@@ -94,8 +94,8 @@ One adversary course of action, held as a first-class scenario. `{name, narrativ
 **CompiledWorld** — the deterministic product of compile (DEC-5): `{grid, channels, consumed, scenario, engine_version, stamp}`.
 
 - `grid` — `{cols, rows, cell_km, timestep_hours, horizon_steps}` (Meridian: 60×60, 2 km, 6 h, 56).
-- `channels` — named layers (`mobility`, `tide`, `storm`, `civil_density`, `sensor`, `threat`), each a set of `{x, y, t, value: Band}` cells. Channel values are banded because their sources are; a channel cell built solely from `observed` inputs carries a degenerate band.
-- `consumed` — the exact set of `{logical_id, content_hash}` knowledge versions the compile read. The `stamp` is a hash over `consumed` + vignette config + engine version: same knowledge set ⇒ byte-identical stamp (G1). `compiled_into` edges are written per consumed object at compile time.
+- `channels` — named layers (`mobility`, `tide`, `storm`, `civil_density`, `sensor`, `threat`), each stored **sparse**: a `default: Band` plus a set of `RegionOverride {region, value: Band, from_step?, until_step?, source?}` — named, optionally time-boxed deviations from the default, the MCOO idiom (research note `02-compile.md`; **retires the dense `{x, y, t, value}` cell array**, resolving seam open item 2). Channel values are banded because their sources are; an override built solely from `observed` inputs carries a degenerate band; `source` names the KnowledgeObject the value derives from (G3). Region→cell geometry lives once in the **VignetteConfig** (`{grid, channels: ChannelDefault[], regions: RegionGeometry[], subject_map: SubjectMapEntry[]}`), never per world; region→cell materialisation is a lazy, unstored, score-time function — no dense per-cell channel is ever stored or hashed.
+- `consumed` — the exact set of `{logical_id, content_hash}` knowledge versions the compile read (sorted, so the stamp is order-independent). The `stamp` is a hash over `consumed` + vignette config + engine version (+ any scenario excursion): same knowledge set ⇒ byte-identical stamp (G1) — the stamp is over *inputs*, never over materialised cells. `compiled_into` edges are written per consumed object at compile time.
 
 **Plan** (DEC-20) — `{name, seed, generator, elements: ElementPlan[]}`; `ElementPlan {force_element, route: RouteLeg[], tasks: TaskWindow[]}`; `RouteLeg {x, y, enter_step, exit_step}`; `TaskWindow {task, x, y, from_step, until_step}`. Nothing richer: no inter-element dependencies, no abstract action language in v1.
 
@@ -166,6 +166,9 @@ types:
   ContentHash:
     typeof: string
     description: SHA-256 of canonical JSON; the store address. Not part of the hashed payload.
+  RegionName:
+    typeof: string
+    description: Named region on the grid (MCOO overlay region). Geometry lives once in VignetteConfig (research note 02-compile.md).
 
 enums:
   SourceClass:
@@ -304,18 +307,22 @@ classes:
       timestep_hours: {range: integer, required: true}
       horizon_steps: {range: integer, required: true}
 
-  ChannelCell:
+  RegionOverride:
+    description: One named, optionally time-boxed deviation from a channel default (sparse channels, research note 02-compile.md). Values are banded because their sources are (G2); source names the KnowledgeObject the value derives from (G3).
     attributes:
-      x: {range: integer, required: true}
-      y: {range: integer, required: true}
-      t: {range: Timestep, required: true}
+      region: {range: RegionName, required: true}
       value: {range: Band, required: true}
+      from_step: {range: Timestep}
+      until_step: {range: Timestep}
+      source: {range: LogicalId, description: The KnowledgeObject this override derives from; complements the compiled_into edge (G3).}
 
   Channel:
+    description: A compile layer stored sparse — a default plus deviations, the MCOO idiom (research note 02-compile.md). Dense per-cell channels are never stored or hashed (retired ChannelCell; resolves seam open item 2).
     attributes:
       name: {required: true}
       kind: {range: ChannelKind, required: true}
-      cells: {range: ChannelCell, multivalued: true, inlined_as_list: true}
+      default: {range: Band, required: true, description: The quiet baseline; region overrides deviate from it.}
+      regions: {range: RegionOverride, multivalued: true, inlined_as_list: true}
 
   ConsumedRef:
     attributes:
@@ -327,11 +334,42 @@ classes:
     description: Deterministic compile product; stamp semantics in seam contract §1 (G1).
     attributes:
       grid: {range: GridSpec, required: true}
-      channels: {range: Channel, multivalued: true, inlined_as_list: true}
+      channels: {range: Channel, multivalued: true, inlined_as_list: true, required: true}
       consumed: {range: ConsumedRef, multivalued: true, inlined_as_list: true, required: true}
       scenario: {range: LogicalId}
       engine_version: {required: true}
       stamp: {required: true}
+
+  ChannelDefault:
+    description: The quiet baseline band for a channel kind, held once in VignetteConfig (research note 02-compile.md).
+    attributes:
+      kind: {range: ChannelKind, required: true}
+      default: {range: Band, required: true}
+
+  RegionGeometry:
+    description: A named region's extent as a bounding rect on the grid (demonstrator-sufficient geometry, research note 02-compile.md).
+    attributes:
+      name: {range: RegionName, required: true}
+      x0: {range: integer, required: true}
+      y0: {range: integer, required: true}
+      x1: {range: integer, required: true}
+      y1: {range: integer, required: true}
+
+  SubjectMapEntry:
+    description: Routes a KnowledgeObject subject (topic key, knowledge-model §5) to a channel region at compile. scenario.* subjects are absent (firewalled).
+    attributes:
+      subject: {required: true}
+      channel: {range: ChannelKind, required: true}
+      region: {range: RegionName, required: true}
+
+  VignetteConfig:
+    is_a: StoredObject
+    description: The single home of grid, per-channel defaults, region geometry, and subject routing consumed by compile (research note 02-compile.md; seam §4 config).
+    attributes:
+      grid: {range: GridSpec, required: true}
+      channels: {range: ChannelDefault, multivalued: true, inlined_as_list: true, required: true}
+      regions: {range: RegionGeometry, multivalued: true, inlined_as_list: true, required: true}
+      subject_map: {range: SubjectMapEntry, multivalued: true, inlined_as_list: true, required: true}
 
   ForceElement:
     is_a: StoredObject
