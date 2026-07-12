@@ -152,6 +152,7 @@ Examples of foundational tasks (adjust based on your project):
 **Purpose**: Improvements that affect multiple user stories
 
 - [ ] TXXX [P] Documentation updates in docs/
+- [ ] TXXX Home-page currency (plans → achievements): if this spec moves a thesis or stage from planned to demonstrated, update `docs/assay-home.html` so the plan reads as an achievement (objectives/theses state + progress tracker), under banded honesty — nothing shown as done the repository does not contain. See comms plan §9 and the flagged candidate concept §6.12. Skip only if the spec demonstrates no new user-visible capability.
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
