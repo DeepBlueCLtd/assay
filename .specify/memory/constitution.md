@@ -1,18 +1,29 @@
 <!--
 Sync Impact Report
-- Version change: (none) → 1.0.0 (initial ratification)
-- Source of authority: docs/assay-register.md (ASSAY-DEC-1 … ASSAY-DEC-11); this
+- Version change: 1.0.0 → 1.1.0 (batch 3 projection: G6 ratified, six new decisions)
+- Source of authority: docs/assay-register.md (ASSAY-DEC-1 … ASSAY-DEC-27); this
   constitution is a projection of the register into spec-kit form, not a rival body of law.
-- Modified principles: n/a (initial version)
-- Added sections: Core Principles (I–VI); Additional Constraints; Development
-  Workflow & Quality Gates; Governance
+- Modified principles: n/a (no principle text redefined)
+- Added / materially expanded sections:
+  · Additional Constraints — "Contract invariants" now G1–G6; G6 (propagation honesty)
+    added as a standing acceptance criterion (ASSAY-DEC-25).
+  · Governance — compliance verification now covers G1–G6.
+- Batch 3 decisions projected (docs/assay-register.md): ASSAY-DEC-22 (walkthrough
+  canonical), DEC-23 (per-stage demo moments as a standing exit requirement), DEC-24
+  (seam v0.2 additions ratified), DEC-25 (G6), DEC-26 (findings ledger canonical),
+  DEC-27 (SME checkpoints as thesis-transition gates).
 - Removed sections: n/a
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates should cite G1–G5
+  ✅ .specify/templates/plan-template.md — Constitution Check gates should cite G1–G6
      and Principles I–IV (pending first /speckit.plan run)
   ✅ .specify/templates/spec-template.md — specs must reference register DEC ids where
      a requirement restates a decision (pending first /speckit.specify run)
 - Follow-up TODOs: none. No deferred placeholders.
+
+Prior versions:
+- (none) → 1.0.0 (2026-07-11): initial ratification; Core Principles I–VI; Additional
+  Constraints; Development Workflow & Quality Gates; Governance; projection of
+  ASSAY-DEC-1 … ASSAY-DEC-11.
 -->
 
 # ASSAY Constitution
@@ -87,11 +98,14 @@ principles enter the register as ASSAY-DEC entries first. (ASSAY-DEC-2)
 - **Fixtures**: the Meridian Archipelago vignette (`docs/assay-vignette.md`) is the
   sole fixture source; its coverage matrix (§7) is normative, and a change that breaks
   a matrix row is a register matter. (ASSAY-DEC-8)
-- **Contract invariants G1–G5** (seam contract §G) are standing acceptance criteria
+- **Contract invariants G1–G6** (seam contract §G) are standing acceptance criteria
   for every feature: determinism (G1); no bare assessed scalars at the seam (G2);
   complete trace chains (G3); infeasibility returns least-worst plans with `sacrificed`
   populated, never an empty set or a silent constraint drop (G4); contested knowledge
-  never compiles (G5).
+  never compiles (G5); propagation honesty — widening any input band never narrows any
+  output band, and every point-realisation of the inputs scores inside the output band
+  (G6, ASSAY-DEC-25; hand-computed oracle cases in vignette §9, binding on SPEC-07 and
+  re-asserted by the spine-complete gate).
 - **Writes are events**: every cross-surface write is a stamped delta; no surface
   writes to another surface's state directly. Nothing recomputes silently on
   knowledge change — staleness flags, humans decide. (ASSAY-DEC-5)
@@ -109,7 +123,7 @@ principles enter the register as ASSAY-DEC entries first. (ASSAY-DEC-2)
   spot-checked for every new computed artefact type.
 - **Spec hygiene**: `spec.md` states WHAT/WHY in domain language and cites register
   DEC ids where it restates decisions; `plan.md` holds HOW. The Constitution Check in
-  every plan MUST evaluate Principles I–IV explicitly and cite G1–G5 where applicable.
+  every plan MUST evaluate Principles I–IV explicitly and cite G1–G6 where applicable.
 - **Repo conventions**: branch-per-batch (`docs/<batch>`, `feat/<slice>`); guarded
   patch scripts for canonical-document edits; milestone notifications to
   ntfy.sh/iancc2025; Claude Code as the development environment.
@@ -123,9 +137,9 @@ it, with a Sync Impact Report and a semantic version bump (MAJOR: principle remo
 redefined incompatibly; MINOR: principle or section added or materially expanded;
 PATCH: clarification or wording); (3) dependent templates and specs are swept in the
 same batch. All PRs and `/speckit.analyze` runs MUST verify compliance with Principles
-I–VI and invariants G1–G5; complexity beyond the current stage MUST be justified
+I–VI and invariants G1–G6; complexity beyond the current stage MUST be justified
 against the build plan or rejected. Runtime development guidance lives in the
 canonical documents under `docs/`, which remain the authoritative elaboration of
 every rule stated here.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-11 | **Last Amended**: 2026-07-11
+**Version**: 1.1.0 | **Ratified**: 2026-07-11 | **Last Amended**: 2026-07-12
