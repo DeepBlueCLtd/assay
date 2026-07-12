@@ -1,6 +1,6 @@
 # ASSAY — Walkthrough: One Heartbeat on Meridian
 
-Status: draft for review · v0.1 · 2026-07-11 · candidate addition to the canonical set (concept §6)
+Status: canonical · v0.2 · 2026-07-12 · joined the canonical set as ASSAY-DEC-22 (register batch 3); its §0 contract-defect rule now binds
 Authority: this document **originates nothing**. It elaborates ASSAY-DEC-5 (writes are stamped deltas; trace graph first-class), DEC-9/15 (banded honesty), DEC-17 (scenario clock; lifecycle), DEC-19 (relaxation honesty), DEC-21 (supersession as edge) by playing them end-to-end. Every step names the endpoint, payload shapes, and trace edges defined in `assay-seam-contract.md` and `assay-knowledge-model.md`; every instance is a vignette identifier frozen by `assay-vignette.md` §8.
 Companions: `assay-ui-design.md` (which surface renders each step), `assay-ui-wireframes.html` (the tableau frozen between beats 1 and 2 below).
 

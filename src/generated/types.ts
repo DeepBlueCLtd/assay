@@ -21,7 +21,7 @@ export type ContentHash = string;
 export type SourceClass = 'observed' | 'reported' | 'assessed' | 'assumption';
 export const SourceClassValues = ['observed', 'reported', 'assessed', 'assumption'] as const;
 
-/** ICD 203 confidence levels (ASSAY-DEC-16). Numeric width mapping deferred to research note 01-knowledge.md. */
+/** ICD 203 confidence levels (ASSAY-DEC-16). Width mapping decided in research note 01-knowledge.md — minimum relative width per level (low 0.25 / moderate 0.10 / high 0), enforced as a warning-level lint at write (observed exempt). */
 
 export type ConfidenceBand = 'low' | 'moderate' | 'high';
 export const ConfidenceBandValues = ['low', 'moderate', 'high'] as const;

@@ -1,6 +1,6 @@
 # ASSAY — Findings Ledger
 
-Status: draft for review · v0.1 · 2026-07-11 · candidate addition to the canonical set (concept §6)
+Status: canonical · v0.2 · 2026-07-12 · joined the canonical set as ASSAY-DEC-26 (register batch 3); sole home of findings — a finding may be cited for what an exploration concluded, never as the origin of a decision
 Authority: ASSAY-DEC-1 (theses as explorations), DEC-3 (convergence/divergence findings reported back as REMIT register candidates, never silent coupling), DEC-7 (theses are explorations, not builds). This ledger **originates no decisions**; it records what the explorations *conclude*, which is the one output no other document owns.
 Companions: `assay-concept.md` §1 (the thesis catalogue), `assay-register.md` (decisions this ledger's entries trace to), `docs/status.yml` when it exists (thesis states on the public site project from §2 here, never from optimism).
 
@@ -56,6 +56,6 @@ Appended as explorations conclude: thesis outcomes at stage exits, SME checkpoin
 ## 4. Open items
 
 1. ~~The two `pending` entries (FIND-2, FIND-4) need their REMIT-side citations~~ — **closed 2026-07-12**: the REMIT register was consulted directly (REMIT DEC-22, DEC-13/NF3, DEC-21, DEC-25, NF10/DEC-14); FIND-2 concluded divergent, FIND-4 convergent, and FIND-1's REMIT-side citation was tightened from recollection to the register text.
-2. Whether this ledger joins the canonical set is a register candidate (concept §6.10); until ratified, nothing may cite a finding as authority — findings inform REMIT *candidates*, which is exactly the DEC-3 firewall.
+2. ~~Whether this ledger joins the canonical set is a register candidate (concept §6.10)~~ — **resolved 2026-07-12**: ratified as ASSAY-DEC-26 (register batch 3). The ledger is canonical and the sole home of findings; a finding may now be cited for what an exploration *concluded*, but never as the origin of a decision — findings still inform REMIT *candidates* only, which is exactly the DEC-3 firewall.
 3. Whether `did-not-hold` conclusions publish to the site's thesis states verbatim (honesty says yes; comms plan §3 already forbids claiming theses as proven — the symmetric case should be stated).
 4. A shared upstream dependency worth watching, not yet a finding: REMIT NF10 requires band widths "derived from channel confidence/freshness, not arbitrary constants" (its K2), and ASSAY DEC-16 defers the same confidence→band-width mapping to research note `01-knowledge.md`. Both projects currently owe the same homework; whichever lands first should inform the other — through the candidate channel, not silent coupling (DEC-3).

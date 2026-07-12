@@ -1,7 +1,7 @@
 # ASSAY — Knowledge Model
 
 **Founding doc 2** · LinkML schema + commentary
-Status: draft for review · v0.1 · 2026-07-11
+Status: draft for review · v0.2 · 2026-07-12 · DEC-16 confidence → band-width mapping decided in research note `01-knowledge.md` (relative-width floor; §3 Provenance)
 Authority: ASSAY-DEC-3 (independent schema), DEC-6 (knowledge object as central type), DEC-9/15 (banded honesty; pure intervals), DEC-14 (fact/assessment split), DEC-16 (ICD 203 confidence enum), DEC-17 (embedded question; lifecycle; scenario clock), DEC-18 (expected-answer-per-COA), DEC-19 (commitment tiers), DEC-20 (plan shape), DEC-21 (two-tier identity).
 Companions: `assay-seam-contract.md` (how these shapes move), `assay-vignette.md` (the Meridian instances K1–K14, C1–C6, R1–R3).
 
@@ -40,7 +40,7 @@ Revision is supersession: a new object version is `PUT`, and a `supersedes` Trac
 `{source_class, confidence, owner, single_source, collected_at, note}`.
 
 - `source_class`: `observed | reported | assessed | assumption`. `observed` is fact — directly charted, surveyed, or own-force, never inferred — and is the only class that may render unbanded. Everything else is banded and carries the "assessment, not fact" marking on every surface (constitution II).
-- `confidence`: `low | moderate | high` — ICD 203's confidence levels, fixed now; the numeric confidence → band-width mapping is deferred to research note `01-knowledge.md` (DEC-16) and will arrive as a schema annotation, not a shape change.
+- `confidence`: `low | moderate | high` — ICD 203's confidence levels, fixed now. The confidence → band-width mapping DEC-16 deferred is **decided in research note `01-knowledge.md`**: a minimum relative width per level (`low ≥ 0.25, moderate ≥ 0.10, high ≥ 0`, with `r = (hi−lo)/max(|lo|,|hi|)` — no midpoint, DEC-15-safe), enforced at `POST /knowledge` as a warning-level lint (`observed` exempt). It enters the schema as an `annotations:` note on `ConfidenceBand` — a metadata annotation, not a shape change — under SPEC-05.
 - `single_source: boolean` — set when corroboration is absent; drives the deception flag in sensitivity ranking (thesis E). Mandatory rendering wherever the value renders.
 - `owner` — the accountable analyst/staff cell. Trace chains terminate in named owners (constitution III).
 - `collected_at` — scenario timestep of collection/observation.
@@ -172,7 +172,7 @@ enums:
     description: ASSAY-DEC-14. Only 'observed' is fact and may render unbanded.
     permissible_values: {observed: {}, reported: {}, assessed: {}, assumption: {}}
   ConfidenceBand:
-    description: ICD 203 confidence levels (ASSAY-DEC-16). Numeric width mapping deferred to research note 01-knowledge.md.
+    description: ICD 203 confidence levels (ASSAY-DEC-16). Width mapping decided in research note 01-knowledge.md — minimum relative width per level (low 0.25 / moderate 0.10 / high 0), enforced as a warning-level lint at write (observed exempt).
     permissible_values: {low: {}, moderate: {}, high: {}}
   EncodingClass:
     description: ASSAY-DEC-6; compile firewall rules in knowledge-model §9.

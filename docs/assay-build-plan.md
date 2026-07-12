@@ -5,7 +5,7 @@ Authority: ASSAY-DEC-4 (in-browser mock behind seam), DEC-5 (spine architecture)
 
 The plan is a **lap then depth**: seven stages thread the spine end-to-end against the Meridian vignette; a spine-complete gate; then narrative polish. Every stage opens with its ASSAY-DEC-11 research task — implementation does not start until the stage's research note exists in `docs/research/`.
 
-**Demo moments.** Each stage's exit criteria come in two registers: the machine-observable assertion (unchanged below) and a **user-observable twin** — what a watcher sees on a surface when the criterion holds. Each stage closes with a scripted **two-minute demo moment** drawn from the vignette's coverage matrix, shown from the running build; the Stage-7 ten-minute narratives *assemble* these moments, they do not replace them. This is presentation of the exits the vignette already engineers (DEC-7/DEC-8's demo configurations), not new methodology; adopting it as a standing exit requirement is a register candidate (concept §6).
+**Demo moments.** Each stage's exit criteria come in two registers: the machine-observable assertion (unchanged below) and a **user-observable twin** — what a watcher sees on a surface when the criterion holds. Each stage closes with a scripted **two-minute demo moment** drawn from the vignette's coverage matrix, shown from the running build; the Stage-7 ten-minute narratives *assemble* these moments, they do not replace them. This is presentation of the exits the vignette already engineers (DEC-7/DEC-8's demo configurations), not new methodology; adopting it as a standing exit requirement is **ratified as ASSAY-DEC-23** (register batch 3, 2026-07-12).
 
 ---
 

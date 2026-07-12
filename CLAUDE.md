@@ -32,4 +32,4 @@ The oracle cases (vignette §9, `O-1…O-4`) are hand-computed and must never be
 
 ## Current phase (update this line when it changes)
 
-Stage 0 complete on branch `claude/docs-value-delivery-review-2sdat0` (PR #8, awaiting review). Stage 1 (SPEC-05 via spec-kit; research note `01-knowledge.md` first) is paused until PR #8 is reviewed. Register batch 3 (candidates §6.6–6.11) drafts after #8 merges.
+Stage 0 complete; PR #8 merged to `main`. Register batch 3 ratified (ASSAY-DEC-22…27, closing concept §6.6–6.11) on branch `claude/specs-review-3yxirx` — walkthrough and findings ledger now canonical, G6 a standing invariant. Stage 1 in progress (issue #10): research note `docs/research/01-knowledge.md` landed (DEC-11 gate — decides the DEC-16 confidence→band-width floor); SPEC-05 specified via spec-kit (`specs/005-knowledge-service/` spec + plan + research + data-model + contracts + quickstart + tasks). **Next: execute SPEC-05 tasks.md** (`/speckit.implement`, TDD-first) to build the knowledge service, encoding firewall, lint, and minimal S1 table — then close #10 on the Stage-1 exits.

@@ -56,13 +56,13 @@ All canonical documents live in `docs/`:
 | [`assay-knowledge-model.md`](docs/assay-knowledge-model.md) | LinkML schema + commentary; source of truth for every data shape |
 | [`assay-seam-contract.md`](docs/assay-seam-contract.md) | REST shapes and semantics; system invariants (§G) |
 | [`assay-vignette.md`](docs/assay-vignette.md) | The Meridian Archipelago scenario — the sole fixture source |
-| [`assay-walkthrough.md`](docs/assay-walkthrough.md) | One heartbeat end-to-end on Meridian; standing contract validation (candidate addition, concept §6.6) |
+| [`assay-walkthrough.md`](docs/assay-walkthrough.md) | One heartbeat end-to-end on Meridian; standing contract validation (canonical, ASSAY-DEC-22) |
 | [`assay-ui-design.md`](docs/assay-ui-design.md) | Surfaces, information flows, discipline-moment interactions, shared components |
 | [`assay-ui-wireframes.html`](docs/assay-ui-wireframes.html) | Populated wireframes of all four surfaces |
 | [`assay-build-plan.md`](docs/assay-build-plan.md) | Stage sequencing, gates (machine- and user-observable), demo moments, research prompts |
 | [`assay-delivery-plan.md`](docs/assay-delivery-plan.md) | Spec slicing, dependency graph, parallel lanes |
 | [`assay-comms-plan.md`](docs/assay-comms-plan.md) | Public GitHub Pages site plan, including the SME evaluation checkpoints |
-| [`assay-findings.md`](docs/assay-findings.md) | Findings ledger — thesis states and transition criteria, re-derivation verdicts, REMIT candidates (candidate addition, concept §6.10) |
+| [`assay-findings.md`](docs/assay-findings.md) | Findings ledger — thesis states and transition criteria, re-derivation verdicts, REMIT candidates (canonical, ASSAY-DEC-26) |
 
 `assay-architecture.md` is deferred by decision (ASSAY-DEC-13) until the knowledge model and seam contract stabilise; orientation lives in the concept §3.
 

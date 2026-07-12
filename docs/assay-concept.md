@@ -1,7 +1,7 @@
 # ASSAY — Concept
 
 **Assessment Semantics & Scenario Analysis**
-Status: canonical · v0.2 · 2026-07-11 · retitled from `assay-scaffold.md` per §4 (batch 2)
+Status: canonical · v0.3 · 2026-07-12 · retitled from `assay-scaffold.md` per §4 (batch 2); §6 candidates 6–11 ratified as ASSAY-DEC-22…27 (batch 3)
 Regime: full register discipline (ASSAY-DEC-2). The register has been split out to `assay-register.md`, which is now the sole home of decisions; this document carries purpose, theses, narratives, and principles.
 
 ---
@@ -74,8 +74,8 @@ Target set (peers, batch-propagated):
 | `assay-seam-contract.md` | REST shapes and semantics | authored, draft for review |
 | `assay-vignette.md` | the Meridian Archipelago scenario | authored, draft for review |
 | `assay-ui-design.md` | surfaces, information flows, shared components | authored, draft for review |
-| `assay-walkthrough.md` | one heartbeat end-to-end on Meridian; standing contract validation | authored, draft for review; candidate addition (§6.6) |
-| `assay-findings.md` | findings ledger — thesis states, transition criteria, re-derivation verdicts, REMIT candidates | authored, draft for review; candidate addition (§6.10) |
+| `assay-walkthrough.md` | one heartbeat end-to-end on Meridian; standing contract validation | canonical (ASSAY-DEC-22); §0 contract-defect rule binds |
+| `assay-findings.md` | findings ledger — thesis states, transition criteria, re-derivation verdicts, REMIT candidates | canonical (ASSAY-DEC-26); sole home of findings |
 | `assay-build-plan.md` | stage sequencing, gates, per-stage research prompts | authored, draft for review |
 | `assay-delivery-plan.md` | spec slicing, dependency graph, parallel lanes | authored, draft for review |
 | `assay-comms-plan.md` | public GitHub Pages site | authored, draft for review |
@@ -97,12 +97,12 @@ Target set (peers, batch-propagated):
 3. Whether thesis G (interdependency) admits *any* honest v1 slice, or is horizon-only.
 4. Surface implementation: literal tabs in one SPA vs routed micro-frontends over the shared store.
 5. Vignette authoring format: hand-authored JSON fixtures vs a light authoring surface.
-6. Whether `assay-walkthrough.md` joins the canonical set as the standing end-to-end validation of interactions, structures, and flows (its §0 discipline rule — "a step the contract can't perform is a contract defect" — would then bind).
-7. Per-stage **demo moments** (build plan) as a standing exit requirement: every stage exit paired with a user-observable twin and a scripted two-minute demonstration from the running build.
-8. Ratifying seam contract v0.2's additions (`POST /select`, `GET /objects?class=`, delta publication on all knowledge writes) as a register entry — currently draft-document content under DEC-5's authority, adopted to close walkthrough §9's gaps.
-9. **G6 — propagation honesty** (seam contract §G candidate; vignette §9 oracle cases): widening any input band never narrows any output band, and every point-realisation of inputs scores inside the output band. G2 stated mathematically; ratification would make it a standing acceptance criterion alongside G1–G5.
-10. Whether `assay-findings.md` joins the canonical set as the sole home of findings — thesis states with transition criteria, re-derivation verdicts, and the DEC-3 REMIT-candidate channel (until ratified, nothing may cite a finding as authority).
-11. SME evaluation checkpoints (comms plan §12) as standing gates in the thesis-transition rules: no thesis concludes without at least one checkpoint having seen it.
+6. ~~Whether `assay-walkthrough.md` joins the canonical set…~~ — **ratified 2026-07-12 as ASSAY-DEC-22** (batch 3): it joins the canonical set and its §0 contract-defect rule binds.
+7. ~~Per-stage **demo moments** as a standing exit requirement…~~ — **ratified as ASSAY-DEC-23**: every stage exit is paired with a user-observable twin and a scripted two-minute demonstration from the running build.
+8. ~~Ratifying seam contract v0.2's additions…~~ — **ratified as ASSAY-DEC-24**: `POST /select`, `GET /objects?class=`, and delta publication on all knowledge writes are register content, no longer resting on DEC-5 by implication.
+9. ~~**G6 — propagation honesty**…~~ — **ratified as ASSAY-DEC-25**: G6 is a standing seam invariant alongside G1–G5; oracle cases in vignette §9.
+10. ~~Whether `assay-findings.md` joins the canonical set…~~ — **ratified as ASSAY-DEC-26**: it joins the canonical set as the sole home of findings; a finding may be cited for what an exploration concluded, never as the origin of a decision.
+11. ~~SME evaluation checkpoints as standing gates…~~ — **ratified as ASSAY-DEC-27**: no thesis concludes without at least one checkpoint having seen it; reactions land in the findings ledger within a day.
 
 ## 7. Research starting points (ASSAY-DEC-11)
 

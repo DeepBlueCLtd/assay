@@ -191,7 +191,7 @@ Everything above broadcasts; nothing yet listens. The primary audience is doctri
 
 **Checkpoint 2 — after the spine-complete gate**: the full narratives (concept §1) run for the same or a widened SME group, one narrative per session slot, with the §6-style embeds available for hands-on use.
 
-**Capture rule (the point of the exercise):** every SME reaction that bears on a thesis or principle is recorded within a day, verbatim where possible, as an entry or annotation in the findings ledger (`assay-findings.md` §1.3) — and, where it challenges a decision, as a register candidate. An SME session that produces no ledger entries is a session that wasn't listened to. Reactions are evidence in the thesis-transition rules (findings ledger §2): no thesis concludes without at least one checkpoint having seen it.
+**Capture rule (the point of the exercise):** every SME reaction that bears on a thesis or principle is recorded within a day, verbatim where possible, as an entry or annotation in the findings ledger (`assay-findings.md` §1.3) — and, where it challenges a decision, as a register candidate. An SME session that produces no ledger entries is a session that wasn't listened to. Reactions are evidence in the thesis-transition rules (findings ledger §2): no thesis concludes without at least one checkpoint having seen it — **ratified as a standing gate in ASSAY-DEC-27** (register batch 3, 2026-07-12).
 
 Session outputs feed the site only through the ledger and register (the §1 "site arranges, does not invent" rule applies to praise as much as progress); a favourable SME quote is publishable only as a dated, attributed ledger-backed item, never as marketing garnish.
 
