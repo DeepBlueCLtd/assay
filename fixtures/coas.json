@@ -1,0 +1,78 @@
+[
+  {
+    "logical_id": "R1",
+    "version": 1,
+    "name": "Fortress Halcyon",
+    "narrative": "Concentrate in the port district; battery active as area denial; FACs held as port screen; little or no mining. The strait stays physically clear; the fight is at the waterline.",
+    "excursion": [
+      {
+        "channel": "threat",
+        "region": "port_district",
+        "override": { "lo": 0.7, "hi": 0.9, "unit": "threat index" }
+      }
+    ],
+    "likelihood": "K14a"
+  },
+  {
+    "logical_id": "R2",
+    "version": 1,
+    "name": "Strait Denial",
+    "narrative": "Mine Halcyon Strait early and deep; FAC harassment of sweep operations; cede the town, deny the port's use. The strait is the battlefield; MCM under attack.",
+    "excursion": [
+      {
+        "channel": "threat",
+        "region": "halcyon_strait",
+        "override": { "lo": 0.6, "hi": 0.95, "unit": "threat index" }
+      },
+      {
+        "channel": "mobility",
+        "region": "halcyon_strait",
+        "override": { "lo": 0.1, "hi": 0.4, "unit": "transit factor" }
+      }
+    ],
+    "likelihood": "K14b"
+  },
+  {
+    "logical_id": "R3",
+    "version": 1,
+    "name": "Spoiling Withdrawal",
+    "narrative": "Demolish port cranes and the causeway; withdraw the garrison to Carrick; harass with FACs. Infrastructure destruction.",
+    "excursion": [
+      {
+        "channel": "mobility",
+        "region": "causeway",
+        "override": { "lo": 0, "hi": 0, "unit": "transit factor" }
+      },
+      {
+        "channel": "threat",
+        "region": "carrick",
+        "override": { "lo": 0.5, "hi": 0.8, "unit": "threat index" }
+      }
+    ],
+    "likelihood": "K14c"
+  },
+  {
+    "logical_id": "R3m",
+    "version": 1,
+    "name": "Spoiling Withdrawal — mining branch",
+    "narrative": "R3 with remaining mine stocks laid in both approaches during withdrawal. The commitment-breaker: under R3m no plan satisfies all of C2–C4 (vignette §6, thesis B).",
+    "excursion": [
+      {
+        "channel": "mobility",
+        "region": "causeway",
+        "override": { "lo": 0, "hi": 0, "unit": "transit factor" }
+      },
+      {
+        "channel": "threat",
+        "region": "halcyon_strait",
+        "override": { "lo": 0.5, "hi": 0.9, "unit": "threat index" }
+      },
+      {
+        "channel": "threat",
+        "region": "voss_chain",
+        "override": { "lo": 0.4, "hi": 0.8, "unit": "threat index" }
+      }
+    ],
+    "likelihood": "K14c"
+  }
+]

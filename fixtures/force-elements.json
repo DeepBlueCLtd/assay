@@ -1,0 +1,42 @@
+[
+  {
+    "logical_id": "FE-ANVIL",
+    "version": 1,
+    "name": "TG ANVIL",
+    "kind": "amphibious group + embarked landing force",
+    "mobility_class": "amphibious",
+    "notes": "Lodgement, port seizure."
+  },
+  {
+    "logical_id": "FE-BROOM",
+    "version": 1,
+    "name": "TG BROOM",
+    "kind": "mine countermeasures group",
+    "mobility_class": "mcm",
+    "notes": "Sweeping the strait and approaches; the C2 clock runs on them."
+  },
+  {
+    "logical_id": "FE-FALCON",
+    "version": 1,
+    "name": "TG FALCON",
+    "kind": "embarked strike/aviation element",
+    "mobility_class": "aviation",
+    "notes": "Suppression of battery and FACs; fires constrained by C3."
+  },
+  {
+    "logical_id": "FE-PACKHORSE",
+    "version": 1,
+    "name": "TG PACKHORSE",
+    "kind": "relief convoy + escort",
+    "mobility_class": "deep_draught",
+    "notes": "The mission's payload; strait-dependent."
+  },
+  {
+    "logical_id": "FE-KINGFISHER",
+    "version": 1,
+    "name": "DET KINGFISHER",
+    "kind": "special reconnaissance detachment",
+    "mobility_class": "small_boat_foot",
+    "notes": "The collection asset behind K11; extraction deadline C6."
+  }
+]

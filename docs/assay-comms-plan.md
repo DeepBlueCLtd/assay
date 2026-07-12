@@ -1,6 +1,6 @@
 # ASSAY — Communications Plan
 
-Status: draft for review · v0.2 · 2026-07-11 (v0.2 adds §6: blog articles with working interactive embeds)
+Status: draft for review · v0.3 · 2026-07-11 (v0.2 adds §6: blog articles with working interactive embeds; v0.3 adds §12: the SME listening loop, and the schema namespace on the Documents page)
 Authority: ASSAY-DEC-9 (banded honesty — re-derived here as *communications* honesty), ASSAY-DEC-2 (register discipline; the site surfaces the register, never replaces it), ASSAY-DEC-7 (theses as explorations; the site reports thesis *state*, not thesis *products* claimed as shipped).
 
 The vehicle is a **public GitHub Pages site** whose single job is to communicate ASSAY's goals and demonstrate its progress — honestly, always-current, and doctrinally literate — to the audiences who will judge it. The site is not a product page; it is the demonstrator's accountable public face, and it inherits ASSAY's signature discipline: **nothing is shown as done that is not, and nothing assessed is shown as fact.**
@@ -54,7 +54,7 @@ Seven pages, each a projection of a canonical source. Kept flat and few — a de
 | 4 | **The Vignette** | `assay-vignette.md` (when authored) | Meridian Archipelago: setting, forces, the engineered conflicts each narrative exercises. |
 | 5 | **Demo** | `assay-ui-wireframes.html`, `assay-ui-design.md`, the SPEC-14 gallery | Embedded wireframes of the four surfaces now; the fixture-backed component gallery as it lands (real Meridian objects, honestly labelled as components-not-product); the live demonstrator post-gate. |
 | 6 | **Register** | `assay-register.md` (when split out) | The DEC log — transparency is the project's signature, so the decisions are a feature, not an appendix. |
-| 7 | **Documents** | canonical set | Linked index of the canonical documents with status and version. |
+| 7 | **Documents** | canonical set | Linked index of the canonical documents with status and version; includes the LinkML schema at its published namespace (`deepbluecltd.github.io/assay/schema/`) — the schema is a durable asset in its own right, and referencable by others at near-zero cost to us. |
 
 ## 5. Progress mechanism — the single status file
 
@@ -183,7 +183,19 @@ Mirroring ASSAY's own lap-then-depth discipline:
 5. Does the live demonstrator embed in the Demo page (iframe) or link out, once it exists?
 6. ~~Do article embeds freeze at their publication date, or track the living component library?~~ **Resolved: frozen.** Each article's embed is a snapshot of the component as shipped at publication — an article is a dated claim (now §6.2 rule 6).
 
-## 12. Success criteria
+## 12. The listening loop — SME evaluation checkpoints
+
+Everything above broadcasts; nothing yet listens. The primary audience is doctrine SMEs, the band pill is "the thing SMEs will test first" (delivery plan §1.3), and the Stage-7 research note worries about how bands are misread — yet no artefact plans an actual SME encounter or captures its result. This section closes that loop. It is deliberately lightweight: two checkpoints, one capture rule.
+
+**Checkpoint 1 — after the Stage-1 exit** (band pill, provenance chip, the K10 refusal live: precisely the artefacts SMEs judge first). One session, 2–3 SMEs with J-2/J-3 backgrounds, ~1 hour, structured around the Stage-1 demo moment plus free exploration of the S1 table. Questions are fixed in advance and few: *Does the band pill read as honest or as hedging? Is the refusal legible as discipline or as obstruction? Would you trust the waiver trail?*
+
+**Checkpoint 2 — after the spine-complete gate**: the full narratives (concept §1) run for the same or a widened SME group, one narrative per session slot, with the §6-style embeds available for hands-on use.
+
+**Capture rule (the point of the exercise):** every SME reaction that bears on a thesis or principle is recorded within a day, verbatim where possible, as an entry or annotation in the findings ledger (`assay-findings.md` §1.3) — and, where it challenges a decision, as a register candidate. An SME session that produces no ledger entries is a session that wasn't listened to. Reactions are evidence in the thesis-transition rules (findings ledger §2): no thesis concludes without at least one checkpoint having seen it.
+
+Session outputs feed the site only through the ledger and register (the §1 "site arranges, does not invent" rule applies to praise as much as progress); a favourable SME quote is publishable only as a dated, attributed ledger-backed item, never as marketing garnish.
+
+## 13. Success criteria
 
 - An SME landing cold understands, within one screen, what ASSAY claims and that it claims it honestly.
 - A stakeholder can answer "where is it and is it moving?" from the Roadmap page alone.

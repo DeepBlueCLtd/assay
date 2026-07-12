@@ -1,0 +1,283 @@
+# Extracted verbatim from docs/assay-knowledge-model.md §11 (the source of truth).
+# A change here without the same change there is a defect (knowledge model preamble).
+id: https://deepbluecltd.github.io/assay/schema/assay-knowledge-model
+name: assay-knowledge-model
+description: >-
+  ASSAY canonical shapes (ASSAY-DEC-3, DEC-6). Source of truth for generated
+  TypeScript types (SPEC-03). Independent of REMIT by decision.
+license: https://opensource.org/license/mit
+prefixes:
+  linkml: https://w3id.org/linkml/
+  assay: https://deepbluecltd.github.io/assay/schema/
+default_prefix: assay
+default_range: string
+imports:
+  - linkml:types
+
+types:
+  Timestep:
+    typeof: integer
+    description: Scenario-clock timestep, D-day origin (ASSAY-DEC-17). Never wall clock.
+  LogicalId:
+    typeof: string
+    description: Stable human-assigned id (K9, C2, R1, ...) (ASSAY-DEC-21).
+  ContentHash:
+    typeof: string
+    description: SHA-256 of canonical JSON; the store address. Not part of the hashed payload.
+
+enums:
+  SourceClass:
+    description: ASSAY-DEC-14. Only 'observed' is fact and may render unbanded.
+    permissible_values: {observed: {}, reported: {}, assessed: {}, assumption: {}}
+  ConfidenceBand:
+    description: ICD 203 confidence levels (ASSAY-DEC-16). Numeric width mapping deferred to research note 01-knowledge.md.
+    permissible_values: {low: {}, moderate: {}, high: {}}
+  EncodingClass:
+    description: ASSAY-DEC-6; compile firewall rules in knowledge-model §9.
+    permissible_values: {hard_constraint: {}, banded_soft_cost: {}, scenario_weight: {}}
+  LifecycleStatus:
+    description: ASSAY-DEC-17.
+    permissible_values: {open: {}, answered: {}, superseded: {}, stale: {}, contested: {}, resolved: {}, retired: {}}
+  Criticality:
+    permissible_values: {routine: {}, important: {}, critical: {}}
+  CommitmentTier:
+    description: ASSAY-DEC-19. Ordinal only; no numeric weights exist.
+    permissible_values: {must: {}, should: {}, prefer: {}}
+  Comparator:
+    permissible_values: {at_most: {}, at_least: {}, by_step: {}, never: {}}
+  VerdictBand:
+    description: Four stops, no decimals (ASSAY-DEC-9).
+    permissible_values: {robust: {}, marginal: {}, tight: {}, violated: {}}
+  ChannelKind:
+    permissible_values: {mobility: {}, tide: {}, storm: {}, civil_density: {}, sensor: {}, threat: {}}
+  TraceEdgeType:
+    permissible_values:
+      compiled_into: {}
+      scored_from: {}
+      cited_in: {}
+      sacrificed_in: {}
+      supersedes: {}
+      contests: {}
+      resolves: {}
+      waives: {}
+
+classes:
+  Band:
+    description: Closed interval, lo <= hi. No midpoint slot may ever be added (ASSAY-DEC-15).
+    attributes:
+      lo: {range: float, required: true}
+      hi: {range: float, required: true}
+      unit: {required: true}
+
+  Provenance:
+    attributes:
+      source_class: {range: SourceClass, required: true}
+      confidence: {range: ConfidenceBand, required: true}
+      owner: {required: true, description: Accountable analyst/staff cell; trace chains terminate here.}
+      single_source: {range: boolean, required: true}
+      collected_at: {range: Timestep}
+      note: {}
+
+  ValidityWindow:
+    attributes:
+      valid_from: {range: Timestep, required: true}
+      valid_until: {range: Timestep, required: true}
+
+  Waiver:
+    description: Licenses an assessed/reported source to compile as hard_constraint (knowledge-model §9).
+    attributes:
+      granted_by: {required: true}
+      justification: {required: true}
+      granted_at: {range: Timestep, required: true}
+
+  ExpectedAnswer:
+    description: One row of the miniature event matrix (ASSAY-DEC-18).
+    attributes:
+      coa: {range: LogicalId, required: true}
+      band: {range: Band, required: true}
+
+  CollectionOption:
+    attributes:
+      method: {required: true}
+      cost: {range: Band, required: true, description: An estimate, therefore banded.}
+      earliest_result: {range: Timestep}
+
+  StoredObject:
+    abstract: true
+    description: Two-tier identity (ASSAY-DEC-21). Relationships are TraceEdges, never slots.
+    attributes:
+      logical_id: {range: LogicalId, required: true}
+      version: {range: integer, required: true}
+
+  KnowledgeObject:
+    is_a: StoredObject
+    description: The central type (ASSAY-DEC-6, DEC-17); commentary in knowledge-model §4.
+    attributes:
+      question: {required: true}
+      subject: {required: true}
+      encoding_class: {range: EncodingClass, required: true}
+      answer: {range: Band}
+      provenance: {range: Provenance}
+      criticality: {range: Criticality, required: true}
+      validity: {range: ValidityWindow}
+      status: {range: LifecycleStatus, required: true}
+      waiver: {range: Waiver}
+      expected_answers: {range: ExpectedAnswer, multivalued: true, inlined_as_list: true}
+      collection: {range: CollectionOption, multivalued: true, inlined_as_list: true}
+
+  Commitment:
+    is_a: StoredObject
+    description: ASSAY-DEC-19; threshold is scalar fact-of-intent (ASSAY-DEC-14).
+    attributes:
+      statement: {required: true}
+      tier: {range: CommitmentTier, required: true}
+      metric: {required: true}
+      comparator: {range: Comparator, required: true}
+      threshold: {range: float, required: true}
+      unit: {required: true}
+      owner: {required: true}
+      scope: {}
+
+  ChannelOverride:
+    attributes:
+      channel: {range: ChannelKind, required: true}
+      region: {}
+      override: {range: Band, required: true}
+
+  ScenarioCOA:
+    is_a: StoredObject
+    attributes:
+      name: {required: true}
+      narrative: {required: true}
+      excursion: {range: ChannelOverride, multivalued: true, inlined_as_list: true}
+      likelihood:
+        range: LogicalId
+        description: Ref to a scenario_weight KnowledgeObject. Never compiles into constraint or cost (knowledge-model §9).
+
+  GridSpec:
+    attributes:
+      cols: {range: integer, required: true}
+      rows: {range: integer, required: true}
+      cell_km: {range: float, required: true}
+      timestep_hours: {range: integer, required: true}
+      horizon_steps: {range: integer, required: true}
+
+  ChannelCell:
+    attributes:
+      x: {range: integer, required: true}
+      y: {range: integer, required: true}
+      t: {range: Timestep, required: true}
+      value: {range: Band, required: true}
+
+  Channel:
+    attributes:
+      name: {required: true}
+      kind: {range: ChannelKind, required: true}
+      cells: {range: ChannelCell, multivalued: true, inlined_as_list: true}
+
+  ConsumedRef:
+    attributes:
+      logical_id: {range: LogicalId, required: true}
+      content_hash: {range: ContentHash, required: true}
+
+  CompiledWorld:
+    is_a: StoredObject
+    description: Deterministic compile product; stamp semantics in seam contract §1 (G1).
+    attributes:
+      grid: {range: GridSpec, required: true}
+      channels: {range: Channel, multivalued: true, inlined_as_list: true}
+      consumed: {range: ConsumedRef, multivalued: true, inlined_as_list: true, required: true}
+      scenario: {range: LogicalId}
+      engine_version: {required: true}
+      stamp: {required: true}
+
+  ForceElement:
+    is_a: StoredObject
+    attributes:
+      name: {required: true}
+      kind: {required: true}
+      mobility_class: {required: true}
+      notes: {}
+
+  RouteLeg:
+    attributes:
+      x: {range: integer, required: true}
+      y: {range: integer, required: true}
+      enter_step: {range: Timestep, required: true}
+      exit_step: {range: Timestep, required: true}
+
+  TaskWindow:
+    attributes:
+      task: {required: true}
+      x: {range: integer, required: true}
+      y: {range: integer, required: true}
+      from_step: {range: Timestep, required: true}
+      until_step: {range: Timestep, required: true}
+
+  ElementPlan:
+    attributes:
+      force_element: {range: LogicalId, required: true}
+      route: {range: RouteLeg, multivalued: true, inlined_as_list: true}
+      tasks: {range: TaskWindow, multivalued: true, inlined_as_list: true}
+
+  Plan:
+    is_a: StoredObject
+    description: Timed routes + task windows, nothing richer in v1 (ASSAY-DEC-20).
+    attributes:
+      name: {required: true}
+      seed: {range: integer, required: true}
+      generator: {required: true}
+      elements: {range: ElementPlan, multivalued: true, inlined_as_list: true, required: true}
+
+  CommitmentVerdict:
+    is_a: StoredObject
+    attributes:
+      plan: {range: LogicalId, required: true}
+      commitment: {range: LogicalId, required: true}
+      scenario: {range: LogicalId, required: true}
+      world_stamp: {required: true}
+      verdict: {range: VerdictBand, required: true}
+      margin: {range: Band}
+      engine_version: {required: true}
+
+  PlanScore:
+    is_a: StoredObject
+    attributes:
+      plan: {range: LogicalId, required: true}
+      scenario: {range: LogicalId, required: true}
+      world_stamp: {required: true}
+      criterion: {required: true}
+      score: {range: Band, required: true}
+      engine_version: {required: true}
+
+  RelaxationCandidate:
+    attributes:
+      plan: {range: LogicalId, required: true}
+      sacrificed: {range: LogicalId, multivalued: true, required: true, description: Non-empty by G4.}
+      narrative: {required: true, description: The sacrifice in command language.}
+
+  RelaxationReport:
+    is_a: StoredObject
+    description: G4 — never empty, never a silent drop; tie-breaks stated (ASSAY-DEC-19).
+    attributes:
+      world_stamp: {required: true}
+      scenario: {range: LogicalId, required: true}
+      candidates: {range: RelaxationCandidate, multivalued: true, inlined_as_list: true, required: true}
+      tie_break: {description: Required prose whenever same-tier sacrifices were ordered.}
+
+  SelectionRationale:
+    is_a: StoredObject
+    attributes:
+      selected_plan: {range: LogicalId, required: true}
+      relaxation_report: {range: LogicalId}
+      statement: {required: true}
+      decided_by: {required: true}
+
+  TraceEdge:
+    description: Written at compute time, never reconstructed (constitution III).
+    attributes:
+      from_hash: {range: ContentHash, required: true}
+      to_hash: {range: ContentHash, required: true}
+      edge_type: {range: TraceEdgeType, required: true}
+      stamp: {}
+      written_by: {required: true}

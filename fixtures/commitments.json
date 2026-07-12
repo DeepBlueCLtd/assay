@@ -1,0 +1,71 @@
+[
+  {
+    "logical_id": "C1",
+    "version": 1,
+    "statement": "Relief ships alongside Port Halcyon by D+10",
+    "tier": "must",
+    "metric": "port_open_step",
+    "comparator": "at_most",
+    "threshold": 40,
+    "unit": "step",
+    "owner": "COMD CTF-M"
+  },
+  {
+    "logical_id": "C2",
+    "version": 1,
+    "statement": "Halcyon Strait swept and open to deep-draught traffic by D+7",
+    "tier": "must",
+    "metric": "strait_open_step",
+    "comparator": "at_most",
+    "threshold": 28,
+    "unit": "step",
+    "owner": "COMD CTF-M"
+  },
+  {
+    "logical_id": "C3",
+    "version": 1,
+    "statement": "No fires into the populated port district",
+    "tier": "should",
+    "metric": "civil_harm_exposure",
+    "comparator": "at_most",
+    "threshold": 0,
+    "unit": "district cells fired upon",
+    "owner": "COMD CTF-M",
+    "scope": "port_district"
+  },
+  {
+    "logical_id": "C4",
+    "version": 1,
+    "statement": "Amphibious group not exposed to unsuppressed battery or FAC threat",
+    "tier": "should",
+    "metric": "threat_exposure",
+    "comparator": "at_most",
+    "threshold": 12,
+    "unit": "band-hours",
+    "owner": "COMD CTF-M",
+    "scope": "FE-ANVIL"
+  },
+  {
+    "logical_id": "C5",
+    "version": 1,
+    "statement": "The Ledger causeway is taken intact",
+    "tier": "prefer",
+    "metric": "causeway_intact",
+    "comparator": "at_least",
+    "threshold": 1,
+    "unit": "boolean",
+    "owner": "COMD CTF-M"
+  },
+  {
+    "logical_id": "C6",
+    "version": 1,
+    "statement": "DET KINGFISHER extracted by D+12",
+    "tier": "prefer",
+    "metric": "extraction_step",
+    "comparator": "at_most",
+    "threshold": 48,
+    "unit": "step",
+    "owner": "COMD CTF-M",
+    "scope": "FE-KINGFISHER"
+  }
+]
