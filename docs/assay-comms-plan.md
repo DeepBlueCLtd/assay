@@ -1,6 +1,6 @@
 # ASSAY — Communications Plan
 
-Status: draft for review · v0.3 · 2026-07-11 (v0.2 adds §6: blog articles with working interactive embeds; v0.3 adds §12: the SME listening loop, and the schema namespace on the Documents page)
+Status: draft for review · v0.4 · 2026-07-12 (v0.2 adds §6: blog articles with working interactive embeds; v0.3 adds §12: the SME listening loop, and the schema namespace on the Documents page; v0.4 wires the per-spec home-page-currency step into §9 — flagged candidate, concept §6.12, pending ratification — and the `docs/assay-home.html` Home page it maintains)
 Authority: ASSAY-DEC-9 (banded honesty — re-derived here as *communications* honesty), ASSAY-DEC-2 (register discipline; the site surfaces the register, never replaces it), ASSAY-DEC-7 (theses as explorations; the site reports thesis *state*, not thesis *products* claimed as shipped).
 
 The vehicle is a **public GitHub Pages site** whose single job is to communicate ASSAY's goals and demonstrate its progress — honestly, always-current, and doctrinally literate — to the audiences who will judge it. The site is not a product page; it is the demonstrator's accountable public face, and it inherits ASSAY's signature discipline: **nothing is shown as done that is not, and nothing assessed is shown as fact.**
@@ -156,6 +156,7 @@ Illustrative, not binding — the embed is chosen per article by whoever closes 
 ## 9. Cadence & ownership
 
 - **On every stage gate** (exit criteria met in the build plan): update `status.yml`, publish the stage's research note to the Roadmap index, add an updates-feed entry. Where the stage introduced a new component or a graphically-expressible algorithm, that entry is a full blog article carrying its working embed (§6) — choosing and shipping the embed is part of authoring the article, not a separate task. This ties site currency to the build's own gates — no separate reporting ritual.
+- **On every spec that demonstrates new capability** — the home-page-currency step: a single SPEC can turn a planned capability into a demonstrated one *within* a stage. When it does, revising the public Home page (`docs/assay-home.html`) so the plan reads as an achievement — the objectives/theses state and the progress tracker reflecting what the repository now contains — is part of that spec's definition of "done," under the same banded-honesty guardrail (nothing shown as done the repository does not contain). This extends the stage-gate cadence above to *spec* granularity so the site never lags the build by a whole stage. *(Flagged candidate, concept §6.12 — pending register ratification; wired here provisionally under the same delegated-authority pattern as the DEC-16 floor.)*
 - **On each research note written:** flip `research_published: true`; the note appears in the index.
 - **At the spine-complete gate:** swap the Demo page from wireframes to the live demonstrator; add a milestone entry.
 - **Milestones** continue to fire to `ntfy.sh/iancc2025` (concept §5); the updates feed is the durable written record of the same events.
