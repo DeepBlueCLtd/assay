@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+# Publish the demonstrator's static surfaces (component gallery + wireframes,
+# assembled by `npm run build:site`) to the gh-pages branch on every push to
+# main. Per-PR previews live under pr-preview/ on the same branch and are
+# preserved here via clean-exclude, so a main deploy never wipes open previews.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Serialise deploys to the same branch; do not cancel an in-flight publish.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Assemble static site
+        run: npm run build:site
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: site
+          # Preserve per-PR preview subtrees when refreshing the main site.
+          clean-exclude: pr-preview/

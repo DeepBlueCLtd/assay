@@ -10,6 +10,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "gallery": "tsx scripts/build-gallery.ts",
+    "build:site": "npm run gallery && tsx scripts/build-site.ts",
     "bench": "tsx scripts/bench-canonical.ts"
   },
   "dependencies": {
