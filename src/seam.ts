@@ -79,3 +79,30 @@ export interface ScoreSuccess {
 }
 
 export type ScoreResult = ScoreSuccess | Refusal;
+
+/**
+ * SPEC-08 — handful movement types (seam §6). `/plan/handful` generates a
+ * strategy-biased fan-out, scores each via §5, and organises by banded
+ * non-domination into 3–5 genuinely distinct plans. `count` is clamped to the
+ * contract band [3,5]. `organisation.distinct_because` is a DERIVED view (one
+ * reason per returned plan, aligned to `plans`), never a hand-authored caption.
+ */
+export interface HandfulRequest {
+  world: Ref;
+  seed: number;
+  count?: number; // clamped to [3,5]; default 5
+  engine_version: string;
+}
+
+export interface HandfulOrganisation {
+  distinct_because: string[]; // aligned index-for-index with `plans`
+}
+
+export interface HandfulSuccess {
+  plans: Ref[];
+  scores: PlanScore[];
+  organisation: HandfulOrganisation;
+  stamp: string;
+}
+
+export type HandfulResult = HandfulSuccess | Refusal;

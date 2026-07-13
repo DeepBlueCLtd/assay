@@ -63,6 +63,8 @@ Stage column maps to `assay-build-plan.md`. Research note is the DEC-11 prerequi
 | **SPEC-15** | Spine-complete gate harness — asserts content-addressing, stamp determinism, and invariants G2–G5 end-to-end on Meridian; re-asserts the vignette §9 oracle cases and the O-4 propagation-honesty property (candidate G6) | gate | SPEC-05…13 | — |
 | **SPEC-16** | Surfaces S1–S4 as config-declared bundles + five narrative scripts + banded-honesty polish pass | 7 | SPEC-14, SPEC-15, services | `07-narratives.md` |
 
+> **Status (2026-07-13, spine through Stage 3):** SPEC-01…04 (Stage 0) and SPEC-05/06/07/08 (Stages 1–3) built and merged/branch-open. The spine `δ` (SPEC-05 → SPEC-06 → SPEC-07 → SPEC-08) is complete: the scorer stands and the honest generator organises a computed handful over it. SPEC-08's *sacrificial-scope* latitude was spent — the canned fallback (`fixtures/plans.json`) is retained for the SPEC-07 suite; the gallery's honest matrix now runs the generated handful. **Next: the depth fan-out `ε` (SPEC-09…13) opens on the landed scorer.**
+
 ## 3. Dependency graph & critical path
 
 ```mermaid

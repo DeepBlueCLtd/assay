@@ -17,11 +17,13 @@ import { s1Table, type S1Row } from '../src/components/s1Table.js';
 import { channelTrace } from '../src/components/channelTrace.js';
 import { refusalBanner } from '../src/components/refusalBanner.js';
 import { s2Matrix, type S2Cell } from '../src/components/s2Matrix.js';
+import { handfulStrip, type HandfulStripRow } from '../src/components/handfulStrip.js';
 import { checkEncoding } from '../src/encoding.js';
 import { confidenceLint } from '../src/lint.js';
 import { KnowledgeService } from '../src/knowledge.js';
 import { CompileService } from '../src/compile.js';
 import { ScoreService } from '../src/score.js';
+import { HandfulService } from '../src/handful.js';
 import { isRefusal } from '../src/seam.js';
 import type {
   Commitment,
@@ -41,9 +43,6 @@ const coas = JSON.parse(
 const commitments = JSON.parse(
   readFileSync(new URL('../fixtures/commitments.json', import.meta.url), 'utf8'),
 ) as Commitment[];
-const plans = JSON.parse(
-  readFileSync(new URL('../fixtures/plans.json', import.meta.url), 'utf8'),
-) as Plan[];
 const vignetteConfig = JSON.parse(
   readFileSync(new URL('../fixtures/vignette-config.json', import.meta.url), 'utf8'),
 ) as VignetteConfig;
@@ -119,33 +118,38 @@ const stampLine =
     ? `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">stamp ${compiled.stamp.slice(0, 16)}… · ${world.consumed.length} knowledge objects consumed · sparse channels (no dense cell stored)</span>`
     : '';
 
-// SPEC-07 — the Stage-3 demo moment, "the honest matrix", run by the ACTUAL
-// scorer over the canned Meridian handful (P1/P2) against the resolved base
-// world. Four-stop chips, margin bands on hover, no decimals; every verdict was
-// written with a `scored_from` edge back to the world it rests on (G3).
+// SPEC-07/08 — the Stage-3 demo moment, "the honest matrix", now run over the
+// GENERATED handful (SPEC-08) rather than a hand-authored one. /plan/handful
+// fans out over Meridian's four axes, scores each candidate with the ACTUAL
+// scorer, and organises by banded non-domination into 3–5 genuinely distinct
+// plans — no author picked the set. The S2 matrix renders the survivors as
+// four-stop chips (margins on hover, no decimals); the handful strip shows the
+// organiser's derived reason each plan is in the set.
 for (const c of commitments) await svc.store.put(c as unknown as Record<string, unknown>);
-const planRefs = new Map<string, { logical_id: string; content_hash: string }>();
-for (const p of plans) planRefs.set(p.logical_id, await svc.store.put(p as unknown as Record<string, unknown>));
 const scorer = new ScoreService({ store: svc.store, trace: svc.trace, config: vignetteConfig, commitments });
+const handfulSvc = new HandfulService({ store: svc.store, scorer, config: vignetteConfig, commitments });
 const matrixRows: S2Cell[] = [];
-let scoreStamp = '';
+const stripRows: HandfulStripRow[] = [];
+let handfulStamp = '';
 if (!isRefusal(compiled)) {
-  for (const p of plans) {
-    const scored = await scorer.score({
-      plan: planRefs.get(p.logical_id)!,
-      world: compiled.world,
-      scenario: 'BASE',
-      engine_version: '0.1.0',
+  const h = await handfulSvc.handful({ world: compiled.world, seed: 1, engine_version: '0.1.0' });
+  if (!isRefusal(h)) {
+    handfulStamp = h.stamp;
+    h.plans.forEach((planRef, i) => {
+      const plan = svc.store.get(planRef.content_hash) as Plan;
+      stripRows.push({ plan: planRef, name: plan.name, distinct_because: h.organisation.distinct_because[i]! });
     });
-    if (!isRefusal(scored)) {
-      matrixRows.push({ plan: `${p.logical_id} · ${p.name}`, verdicts: scored.verdicts });
-      scoreStamp = scored.stamp;
+    for (const planRef of h.plans) {
+      const scored = await scorer.score({ plan: planRef, world: compiled.world, scenario: 'BASE', engine_version: '0.1.0' });
+      const plan = svc.store.get(planRef.content_hash) as Plan;
+      if (!isRefusal(scored)) matrixRows.push({ plan: `${plan.logical_id} · ${plan.name}`, verdicts: scored.verdicts });
     }
   }
 }
 const s2 = matrixRows.length > 0 ? s2Matrix(['C1', 'C2', 'C3', 'C4', 'C5', 'C6'], matrixRows) : '';
-const scoreStampLine = scoreStamp
-  ? `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">score stamp ${scoreStamp.slice(0, 16)}… · every verdict carries a scored_from edge to the world (G3) · margins on hover, no decimals (G2)</span>`
+const strip = stripRows.length > 0 ? handfulStrip(stripRows) : '';
+const scoreStampLine = handfulStamp
+  ? `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">handful stamp ${handfulStamp.slice(0, 16)}… · ${matrixRows.length} genuinely distinct plans, organised not authored · same stamp + seed ⇒ identical handful (G1) · every verdict carries a scored_from edge to the world (G3)</span>`
   : '';
 
 const html = `<!DOCTYPE html>
@@ -170,8 +174,10 @@ ${rows}
 <div style="margin:10px 0">${compileRefusalHtml}</div>
 <p style="font-size:12.5px;color:#5B6B77">Resolve the contest, and the recompile builds the world. Channels are stored <b>sparse</b> — a per-channel default plus named region overrides (the MCOO idiom; no dense 1.2M-cell surface is ever stored or hashed). Every channel value walks back to the named knowledge it came from, with its owner (G3). ${stampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${channelHtml}</div>
-<h2 style="font-size:16px;margin-top:32px">Score — the honest matrix (SPEC-07)</h2>
-<p style="font-size:12.5px;color:#5B6B77">The Stage-3 demo moment, run by the actual scorer over the canned Meridian handful against the base world. Verdicts are a <b>four-stop scale</b> — robust / marginal / tight / violated, one colour language, <b>no decimals</b> anywhere; the banded <code>margin</code> rides on hover, never as a headline number (G2). Each commitment's verdict propagates its metric by interval arithmetic — worst-and-best-case on pure bands, no midpoint (DEC-15) — and is validated by the vignette §9 oracle cases (O-1–O-3 exact, O-4 containment). <i>Pick a verdict, walk it to the assessment and owner it rests on:</i> every cell was written with a <code>scored_from</code> edge back to the world, whose channels trace to named knowledge above. ${scoreStampLine}</p>
+<h2 style="font-size:16px;margin-top:32px">Score & organise — the honest matrix (SPEC-07 · SPEC-08)</h2>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-3 demo moment, run end-to-end by the actual machinery: <code>/plan/handful</code> (SPEC-08) fans out over Meridian's four axes — approach, suppression, causeway, extraction — scores every candidate with the SPEC-07 scorer, and <b>organises by banded non-domination</b> into the genuinely distinct plans below. <b>No author picked the set</b>: a plan is kept only when no other conservatively beats it on every commitment (overlapping bands are honestly incomparable and both survive), and dropped only when strictly beaten everywhere — never on a scalar total (DEC-19). Each plan's reason is <i>derived</i> from the organiser, not captioned:</p>
+<div style="margin:10px 0">${strip}</div>
+<p style="font-size:12.5px;color:#5B6B77">The same handful, as the S2 planner matrix. Verdicts are a <b>four-stop scale</b> — robust / marginal / tight / violated, one colour language, <b>no decimals</b> anywhere; the banded <code>margin</code> rides on hover, never a headline number (G2). Each verdict propagates its metric by interval arithmetic — worst-and-best-case on pure bands, no midpoint (DEC-15) — validated by the vignette §9 oracle cases (O-1–O-3 exact, O-4 containment). <i>Pick a verdict, walk it to the assessment and owner it rests on:</i> every cell was written with a <code>scored_from</code> edge back to the world, whose channels trace to named knowledge above. ${scoreStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${s2}</div>
 <p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code></p>
 </div>
