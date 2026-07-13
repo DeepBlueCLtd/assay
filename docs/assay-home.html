@@ -11,7 +11,10 @@
 
   DEPLOYMENT: the publish pipeline (scripts/build-site.ts, `npm run build:site`)
   copies this file to the site root as index.html; its relative links `gallery/`,
-  `wireframes.html`, and `blog/` then resolve to the published surfaces. The
+  `wireframes.html`, `flow-wireframes.html`, and `blog/` then resolve to the
+  published surfaces. Every shippable UI artefact is BOTH copied by build-site.ts
+  AND linked from a card here, so a reviewer reaches it from the preview by
+  clicking, never by typing a URL (comms plan §1.6). The
   current-stage label in the hero must match docs/status.yml — build-site.ts
   fails the build on drift (comms plan §5).
 
@@ -146,7 +149,8 @@
   /* ---- Card grid ---- */
   .grid { display: grid; gap: 16px; }
   .grid.two { grid-template-columns: 1fr 1fr; }
-  @media (max-width: 680px) { .grid.two { grid-template-columns: 1fr; } }
+  .grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 680px) { .grid.two, .grid.three { grid-template-columns: 1fr; } }
   .card {
     display: block; text-decoration: none; color: inherit; background: var(--panel);
     border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px;
@@ -332,7 +336,7 @@
       ASSAY has no compiled app — its shippable surfaces are static HTML rendered over real
       Meridian fixtures. These are live, running on the same code the build uses.
     </p>
-    <div class="grid two">
+    <div class="grid three">
       <a class="card" href="gallery/">
         <div class="eyebrow">Live components</div>
         <h3>Component gallery <span class="arw">&rarr;</span></h3>
@@ -346,6 +350,13 @@
         <p>The four role surfaces on Meridian data at the D+2 tableau moment: K9 supersedes K5,
            K12 contested. Frozen vignette identifiers only — a rendered value the vignette does not
            define is treated as a defect.</p>
+      </a>
+      <a class="card" href="flow-wireframes.html">
+        <div class="eyebrow">Proposal · in review</div>
+        <h3>System-flow infographic <span class="arw">&rarr;</span></h3>
+        <p>A wireframe for a stakeholder explainer of how information flows — objects, typed
+           connectors, and gates — with a tour and a bounded sandbox. Proposed, not yet built
+           (PR&nbsp;#25); its behaviours are a flagged register candidate.</p>
       </a>
     </div>
     <p class="note" style="margin-top:16px">

@@ -97,7 +97,7 @@ Build the flow view **once** as a self-contained, inline-everything component (t
 - **in-app** as an **S4 "systems-map" mode** (the wall-projection open question, ui-design §6.4, resolved into a first-class mode);
 - **on the public site** as a standalone Pages explainer (comms plan).
 
-Same code, embedded twice; single source of truth.
+Same code, embedded twice; single source of truth. Per comms-plan §1.6, the artefact is **copied into the site *and* linked from a navigable Home-page card** — reviewers reach it from the per-PR preview by clicking, never by typing a URL. (The wireframe companion already ships this way via `scripts/build-site.ts`.)
 
 ### 4.7 Determinism & data source
 All state derives from the frozen Meridian tableau (D+2, step 8) via the seam; all randomness flows from explicit seeds (G1). Tour and sandbox share one canvas and one store.
