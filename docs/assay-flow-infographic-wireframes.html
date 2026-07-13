@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASSAY — System-flow infographic wireframes v0.1</title>
+<!--
+  Companion to assay-flow-infographic-spec.md and a peer of assay-ui-wireframes.html.
+  Covered by batch propagation (ASSAY-DEC-2). Every identifier rendered here
+  (K*, C*, R*, FE-*, P*, W-1, stamps, delta seq) is frozen by assay-vignette.md §8;
+  any value the vignette does not define is drift and is a defect, not colour.
+  Tableau: D+2, scenario step 8 — K9 has just superseded K5; K12 is contested;
+  world 7f3a…c91 predates both writes; recompile lands 9b2e…44a.
+  Self-contained by intent (spec §4.6 embed constraint) apart from the shared web font.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#EDF0F2; --card:#FFFFFF; --ink:#1B2732; --mut:#5B6B77; --line:#D8DFE4;
+    --fact:#14655F; --factbg:#E2EFEA;
+    --asmt:#9A6A14; --asmtbg:#F7EDD8;
+    --rob:#1D7A46; --robbg:#E1F0E6;
+    --marg:#9A6A14; --margbg:#F7EDD8;
+    --tight:#B4541E; --tightbg:#FAE8DC;
+    --viol:#A33131; --violbg:#F8E2E2;
+    --open:#3E5D8A; --openbg:#E6ECF6;
+    --gate:#6B4C9A; --gatebg:#EEE7F6;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace; --disp:'Archivo',sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 24px 64px}
+  header.mast{display:flex;align-items:baseline;gap:18px;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:8px;flex-wrap:wrap}
+  .wordmark{font-family:var(--disp);font-weight:700;font-size:30px;letter-spacing:.04em}
+  .mast .vig{font-family:var(--disp);font-weight:500;font-size:15px;color:var(--mut)}
+  .mast .clock{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .subnote{font-size:12.5px;color:var(--mut);margin:6px 0 24px}
+  h2.sec{font-family:var(--disp);font-weight:600;font-size:18px;margin:40px 0 4px;display:flex;align-items:center;gap:10px}
+  h2.sec .tag{font-family:var(--mono);font-size:11px;background:var(--ink);color:#fff;padding:2px 8px;border-radius:3px;letter-spacing:.05em}
+  .lead{font-size:12.5px;color:var(--mut);margin:2px 0 14px;max-width:78ch}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+
+  /* control strip */
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 22px}
+  .seg{display:flex;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+  .seg button{font-family:var(--mono);font-size:11px;border:0;background:#fff;color:var(--ink);padding:5px 11px;cursor:default;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--ink);color:#fff}
+  .ctl-lab{font-family:var(--mono);font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+  .stamp{font-family:var(--mono);font-size:11px;background:#F1F3F5;border:1px solid var(--line);padding:3px 8px;border-radius:3px;color:var(--mut)}
+  .stamp b{color:var(--ink);font-weight:500}
+  .spacer{margin-left:auto}
+
+  /* legend */
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .legend .col h3{font-family:var(--disp);font-weight:600;font-size:13px;margin:0 0 8px}
+  .edge{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px}
+  .edge code{font-family:var(--mono);font-size:11px;background:#F1F3F5;border:1px solid var(--line);padding:1px 6px;border-radius:3px;min-width:104px;text-align:center}
+  .edge .desc{color:var(--mut);font-size:11.5px}
+  .gate{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px}
+  .gpill{font-family:var(--mono);font-size:10.5px;background:var(--gatebg);color:var(--gate);border:1px solid #D3C6E8;padding:2px 8px;border-radius:10px;white-space:nowrap;min-width:104px;text-align:center}
+  .gate .desc{color:var(--mut);font-size:11.5px}
+
+  /* flow canvas — role lanes */
+  .lanes{display:flex;flex-direction:column;gap:0}
+  .lane{display:grid;grid-template-columns:150px 1fr;border-top:1px dashed var(--line)}
+  .lane:last-child{border-bottom:1px dashed var(--line)}
+  .lanehead{padding:14px 12px;border-right:2px solid var(--ink);display:flex;flex-direction:column;gap:4px;background:#FAFBFC}
+  .rolechip{font-family:var(--mono);font-size:10.5px;background:var(--ink);color:#fff;padding:2px 7px;border-radius:3px;letter-spacing:.05em;align-self:flex-start}
+  .rolename{font-family:var(--disp);font-weight:600;font-size:13px}
+  .rolejob{font-size:11px;color:var(--mut)}
+  .lanebody{padding:14px 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+  .node{border:1px solid var(--line);border-radius:5px;padding:8px 10px;background:#FCFDFD;min-width:104px}
+  .node .nid{font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .node .nlab{font-size:12px;font-weight:600;margin-top:1px}
+  .node.k{border-left:3px solid var(--fact)}
+  .node.ch{border-left:3px solid var(--open)}
+  .node.v{border-left:3px solid var(--rob)}
+  .node.rat{border-left:3px solid var(--ink)}
+  .node.stale{border-left:3px solid var(--asmt);background:#FffdF5}
+  .arrow{font-family:var(--mono);font-size:11px;color:var(--mut);display:flex;flex-direction:column;align-items:center;line-height:1.1;padding:0 2px}
+  .arrow b{color:var(--gate);font-weight:500;font-size:9.5px}
+  .arrow span{font-size:14px}
+
+  /* band pill + chips (reused vocabulary) */
+  .band{margin-top:6px}
+  .bandlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .track{position:relative;height:7px;background:#EDF0F2;border:1px solid var(--line);border-radius:4px;margin-top:2px}
+  .fill{position:absolute;top:1px;bottom:1px;background:var(--asmt);opacity:.55;border-radius:3px}
+  .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+  .chip{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid transparent;white-space:nowrap}
+  .chip.asmt{background:var(--asmtbg);color:var(--asmt);border-color:#E7D3A6}
+  .chip.warn{background:var(--violbg);color:var(--viol);border-color:#EFC6C6}
+  .chip.waiv{background:var(--gatebg);color:var(--gate);border-color:#D3C6E8}
+  .chip.plain{background:#F1F3F5;color:var(--mut);border-color:var(--line)}
+  .vchip{display:inline-block;min-width:58px;text-align:center;font-family:var(--mono);font-size:10px;padding:3px 6px;border-radius:3px}
+  .v-rob{background:var(--robbg);color:var(--rob)} .v-marg{background:var(--margbg);color:var(--marg)}
+  .v-tight{background:var(--tightbg);color:var(--tight)} .v-viol{background:var(--violbg);color:var(--viol)}
+  .flag{font-family:var(--mono);font-size:10px;color:var(--asmt)}
+
+  /* delta feed */
+  .feed{margin-top:0}
+  .feed h3{font-family:var(--disp);font-weight:600;font-size:13px;margin:0 0 8px}
+  .drow{display:grid;grid-template-columns:52px 74px 1fr;gap:8px;font-family:var(--mono);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--line);align-items:center}
+  .drow .seq{color:var(--mut)}
+  .drow .role{color:var(--ink)}
+  .drow.new{background:var(--gatebg)}
+  .drow .op b{color:var(--gate)}
+
+  /* refusal banner (honest-outcome styling, not error toast) */
+  .refusal{border:1px solid var(--gate);border-left:5px solid var(--gate);background:var(--gatebg);border-radius:6px;padding:12px 14px;margin-top:4px}
+  .refusal .rhead{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--gate);display:flex;align-items:center;gap:8px}
+  .refusal .reason{font-family:var(--mono);font-size:11px;color:var(--gate)}
+  .refusal .rex{font-size:12.5px;color:var(--ink);margin-top:6px}
+  .refusal .refs{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  .refbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--gate);color:var(--gate);background:#fff;padding:3px 9px;border-radius:3px}
+
+  /* trace chain (L2) */
+  .chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;font-size:12px}
+  .cstep{border:1px solid var(--line);background:#FCFDFD;border-radius:5px;padding:9px 11px;min-width:150px}
+  .cstep .cid{font-family:var(--mono);font-size:10px;color:var(--mut)}
+  .cstep .clab{font-weight:600;font-size:12px;margin-top:1px}
+  .cstep .cown{font-size:11px;color:var(--mut);margin-top:3px}
+  .cedge{display:flex;align-items:center;font-family:var(--mono);font-size:10px;color:var(--gate);padding:0 8px}
+
+  /* sandbox palette */
+  .palette{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .act{border:1px solid var(--line);border-radius:5px;padding:10px 12px;background:#FCFDFD}
+  .act .atitle{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink)}
+  .act .aconseq{font-size:11.5px;color:var(--mut);margin-top:4px}
+  .act .aconseq b{color:var(--gate);font-weight:500}
+  .toggles{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .tg{font-family:var(--mono);font-size:10.5px;border:1px solid var(--ink);padding:2px 8px;border-radius:3px;color:var(--ink)}
+  .tg.on{background:var(--ink);color:#fff}
+  .note{font-size:11.5px;color:var(--mut);margin-top:10px;font-style:italic}
+  .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}.legend{grid-template-columns:1fr}.lane{grid-template-columns:1fr}.lanehead{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <span class="wordmark">ASSAY</span>
+    <span class="vig">System-flow infographic — Meridian Archipelago</span>
+    <span class="clock">D+2 · step 8 · wireframe v0.1</span>
+  </header>
+  <div class="subnote">
+    S4 Bridge grown into a stakeholder explainer. One canvas, three zoom layers, two modes.
+    Wireframe indicative — connectors drawn as labelled glyphs, not final geometry.
+    All values frozen by <code>assay-vignette.md</code> §8.
+  </div>
+
+  <!-- CONTROL STRIP -->
+  <div class="controls">
+    <span class="ctl-lab">zoom</span>
+    <div class="seg"><button>L0 · orient</button><button class="on">L1 · heartbeat</button><button>L2 · detail</button></div>
+    <span class="ctl-lab" style="margin-left:10px">mode</span>
+    <div class="seg"><button class="on">Tour</button><button>Sandbox</button></div>
+    <span class="spacer"></span>
+    <span class="stamp">world <b>7f3a…c91</b> → <b>9b2e…44a</b></span>
+    <span class="stamp">seed <b>42</b></span>
+  </div>
+
+  <!-- LEGEND -->
+  <h2 class="sec"><span class="tag">LEGEND</span> Connectors &amp; gates — the durable vocabulary</h2>
+  <div class="lead">Seven typed connectors make every claim walkable both directions to a named owner (G3). Six gates are the points where the discipline bites — a refusal is an honest outcome, not an error.</div>
+  <div class="panel legend">
+    <div class="col">
+      <h3>Connectors (edges)</h3>
+      <div class="edge"><code>supersedes</code><span class="desc">a newer answer overtakes an older one (K9→K5)</span></div>
+      <div class="edge"><code>contests</code><span class="desc">two answers irreconcilable (K12a↔K12b)</span></div>
+      <div class="edge"><code>resolves</code><span class="desc">an adjudication closes a contest</span></div>
+      <div class="edge"><code>compiled_into</code><span class="desc">knowledge → world channel</span></div>
+      <div class="edge"><code>scored_from</code><span class="desc">channel → verdict / score</span></div>
+      <div class="edge"><code>cited_in</code><span class="desc">verdict → relaxation report / rationale</span></div>
+      <div class="edge"><code>waives</code><span class="desc">a J-3 waiver licenses a constraint use (W-1)</span></div>
+    </div>
+    <div class="col">
+      <h3>Gates</h3>
+      <div class="gate"><span class="gpill">encoding lint</span><span class="desc">bad answer refused at write — K10</span></div>
+      <div class="gate"><span class="gpill">waiver gate</span><span class="desc">hard constraint needs a licence — K8/W-1</span></div>
+      <div class="gate"><span class="gpill">contest · G5</span><span class="desc">contested never compiles — K12</span></div>
+      <div class="gate"><span class="gpill">comparability · G1</span><span class="desc">cross-stamp greys, never lies</span></div>
+      <div class="gate"><span class="gpill">staleness · F</span><span class="desc">flags, no silent recompute</span></div>
+      <div class="gate"><span class="gpill">least-worst · G4</span><span class="desc">infeasible → report, never empty</span></div>
+    </div>
+  </div>
+
+  <!-- L1 HEARTBEAT CANVAS -->
+  <h2 class="sec"><span class="tag">L1</span> Heartbeat canvas — one turn, four roles, live consequence</h2>
+  <div class="lead">A mock operator injects a write; the fan-out is instant (a read). Recompute is automatic <em>and</em> stamped — the badge flips, a delta lands, the gate pulses. Never silent (spec §2.2).</div>
+  <div class="panel" style="padding:0">
+    <div class="lanes">
+
+      <!-- J-2 lane -->
+      <div class="lane">
+        <div class="lanehead">
+          <span class="rolechip">S1 · J-2</span>
+          <span class="rolename">Intelligence</span>
+          <span class="rolejob">injects &amp; revises knowledge</span>
+        </div>
+        <div class="lanebody">
+          <div class="node stale">
+            <div class="nid">K5 → K9 · supersedes</div>
+            <div class="nlab">Storm surge</div>
+            <div class="band"><div class="bandlab"><span>1.1</span><span>1.8 m</span></div><div class="track"><div class="fill" style="left:18%;right:32%"></div></div></div>
+            <div class="chips"><span class="chip asmt">reported·high</span></div>
+          </div>
+          <div class="arrow"><b>supersedes</b><span>→</span></div>
+          <div class="node k">
+            <div class="nid">K12a ⇄ K12b · contested</div>
+            <div class="nlab">Mine stock</div>
+            <div class="chips"><span class="chip warn">contested · G5</span></div>
+          </div>
+          <div class="arrow"><b>waives</b><span>→</span></div>
+          <div class="node k">
+            <div class="nid">K8 · W-1</div>
+            <div class="nlab">Battery state</div>
+            <div class="chips"><span class="chip waiv">waiver W-1</span><span class="chip plain">single-source</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planner lane -->
+      <div class="lane">
+        <div class="lanehead">
+          <span class="rolechip">S2 · J-3/5</span>
+          <span class="rolename">Planner</span>
+          <span class="rolejob">compiles world · scores handful</span>
+        </div>
+        <div class="lanebody">
+          <div class="node ch">
+            <div class="nid">compiled_into · 9b2e…44a</div>
+            <div class="nlab">Tide / storm channel</div>
+            <div class="chips"><span class="chip plain">consumes K9 (not K5)</span></div>
+          </div>
+          <div class="arrow"><b>scored_from</b><span>→</span></div>
+          <div class="node v">
+            <div class="nid">P2 · C1 / C2</div>
+            <div class="nlab">Verdicts</div>
+            <div class="chips"><span class="vchip v-marg">marginal</span><span class="flag">⚑ was robust @7f3a</span></div>
+          </div>
+          <div class="arrow"><b>staleness · F</b><span>→</span></div>
+          <div class="node v">
+            <div class="nid">P1 · C2</div>
+            <div class="nlab">Flagged</div>
+            <div class="chips"><span class="flag">⚑ recompute when ready</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commander lane -->
+      <div class="lane">
+        <div class="lanehead">
+          <span class="rolechip">S3 · CMD</span>
+          <span class="rolename">Commander</span>
+          <span class="rolejob">selects · asks &ldquo;why?&rdquo;</span>
+        </div>
+        <div class="lanebody">
+          <div class="node v">
+            <div class="nid">/relax · R3m · G4</div>
+            <div class="nlab">Least-worst cards</div>
+            <div class="chips"><span class="chip warn">sacrifice C4 · C3 · C2</span></div>
+          </div>
+          <div class="arrow"><b>cited_in</b><span>→</span></div>
+          <div class="node rat">
+            <div class="nid">P2 · SelectionRationale</div>
+            <div class="nlab">The decision, recorded</div>
+            <div class="chips"><span class="chip plain">decided_by · CMD</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bridge lane -->
+      <div class="lane">
+        <div class="lanehead">
+          <span class="rolechip">S4 · BRG</span>
+          <span class="rolename">Bridge</span>
+          <span class="rolejob">watches — never writes</span>
+        </div>
+        <div class="lanebody" style="display:block">
+          <div class="feed">
+            <div class="drow new"><span class="seq">seq 45</span><span class="role">Planner</span><span class="op"><b>compile</b> → world 9b2e…44a · handful P1–P4 re-scored</span></div>
+            <div class="drow new"><span class="seq">seq 44</span><span class="role">J-2</span><span class="op"><b>resolve</b> K12a → surviving K12b · contest closed</span></div>
+            <div class="drow"><span class="seq">seq 43</span><span class="role">J-2</span><span class="op"><b>contest</b> K12a ⇄ K12b · compile blocked (G5)</span></div>
+            <div class="drow"><span class="seq">seq 42</span><span class="role">J-2</span><span class="op"><b>supersede</b> K5 → K9 · staleness fan-out: P1·C2, P2·C1, P2·C2</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GATE FIRING + TRACE -->
+  <div class="grid2" style="margin-top:22px">
+    <div>
+      <h2 class="sec"><span class="tag">GATE</span> A gate firing — the K12 contest blocks compile</h2>
+      <div class="lead">Seq 43: the planner asks for the K9-fresh world while K12 is contested. Rendered where the compile action was — honest-outcome styling, never an error toast.</div>
+      <div class="panel">
+        <div class="refusal">
+          <div class="rhead">⛔ Compile refused <span class="reason">reason: contested_knowledge</span></div>
+          <div class="rex">Two live answers to &ldquo;how many sea mines?&rdquo; cannot both stand. Resolve the contest before this world can compile — no channel is built from contested knowledge (G5).</div>
+          <div class="refs">
+            <span class="refbtn">K12a · 30–60 · defector debrief</span>
+            <span class="refbtn">K12b · 140–220 · pre-war manifests</span>
+            <span class="refbtn">view contest ▸</span>
+          </div>
+        </div>
+        <div class="note">Resolve (seq 44) writes a <code>resolves</code> edge; the next compile succeeds on 9b2e…44a. The whole exchange travels S1→S2→S1 as typed objects — no email, no caveat that evaporates.</div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="sec"><span class="tag">L2</span> Drill-in — the &ldquo;why?&rdquo; chain</h2>
+      <div class="lead">Any node opens the trace drawer backward, terminating in a named owner (G3).</div>
+      <div class="panel">
+        <div class="chain">
+          <div class="cstep"><div class="cid">K8 · knowledge</div><div class="clab">Battery fire-control state</div><div class="cown">owner · J-2 · single-source · W-1</div></div>
+          <div class="cedge">▼<br>compiled_into</div>
+          <div class="cstep"><div class="cid">threat channel · 9b2e…44a</div><div class="clab">North-approach exposure</div><div class="cown">waiver chip travels here</div></div>
+          <div class="cedge">▼<br>scored_from</div>
+          <div class="cstep"><div class="cid">P2 · C4 · verdict</div><div class="clab"><span class="vchip v-tight">tight</span></div><div class="cown">margin band on hover</div></div>
+          <div class="cedge">▼<br>cited_in</div>
+          <div class="cstep"><div class="cid">SelectionRationale</div><div class="clab">Commander&rsquo;s choice</div><div class="cown">decided_by · CMD</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SANDBOX PALETTE -->
+  <h2 class="sec"><span class="tag">SANDBOX</span> Bounded injection — you become the operator</h2>
+  <div class="lead">Switch to Sandbox mode and drive a bounded action palette against the real seam. Every action lands a delta, flips the stamp, and is undoable by re-seeding to the frozen tableau (spec §4.3).</div>
+  <div class="panel">
+    <div class="palette">
+      <div class="act">
+        <div class="atitle">Toggle red COA excursion</div>
+        <div class="toggles"><span class="tg on">R1</span><span class="tg">R2</span><span class="tg">R3</span><span class="tg">R3m</span></div>
+        <div class="aconseq">recompiles channels → re-scores the handful; per-scenario strips update. <b>stamped, delta logged.</b></div>
+      </div>
+      <div class="act">
+        <div class="atitle">Contest / resolve K12</div>
+        <div class="toggles"><span class="tg on">contested</span><span class="tg">resolve → K12b</span></div>
+        <div class="aconseq">contested ⇒ compile <b>refuses (G5)</b>; resolve ⇒ compile succeeds. The gate is the show.</div>
+      </div>
+      <div class="act">
+        <div class="atitle">Supersede K5 → K9</div>
+        <div class="toggles"><span class="tg on">K9 live</span><span class="tg">revert K5</span></div>
+        <div class="aconseq">staleness fan-out flags <b>exactly</b> P1·C2, P2·C1, P2·C2 — nothing else, nothing silent.</div>
+      </div>
+      <div class="act">
+        <div class="atitle">Grant / withhold W-1</div>
+        <div class="toggles"><span class="tg on">granted</span><span class="tg">withhold</span></div>
+        <div class="aconseq">withhold ⇒ K8 <b>refuses waiver_required</b>; grant ⇒ waiver chip appears wherever the north-approach constraint bites.</div>
+      </div>
+    </div>
+    <div class="note">Palette bounded on purpose — free-form authoring would wander into states the vignette does not define (drift). Auto-recompute is on by default here; a truly-silent &ldquo;you-are-the-optimiser&rdquo; toggle is a deferred register candidate (spec §6).</div>
+  </div>
+
+</div>
+</body>
+</html>
