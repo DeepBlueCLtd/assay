@@ -26,7 +26,7 @@ const GLOW_MS = 10_000;
 const STYLES = `
 :root{--ink:#1B2732;--muted:#5B6B77;--line:#D8DFE4;--glow:#F4C430;}
 *{box-sizing:border-box}
-.assay-app{max-width:960px;margin:0 auto;padding:20px 20px 64px;font-family:system-ui,sans-serif;color:var(--ink);font-size:14px;line-height:1.5}
+.assay-app{max-width:1600px;margin:0 auto;padding:20px 28px 64px;font-family:system-ui,sans-serif;color:var(--ink);font-size:14px;line-height:1.5}
 .assay-tabbar{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--ink);margin:14px 0 0}
 .assay-tab{appearance:none;border:1px solid var(--line);border-bottom:none;background:#F1F3F5;color:var(--muted);padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;position:relative}
 .assay-tab[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 -2px 0 var(--ink) inset}
