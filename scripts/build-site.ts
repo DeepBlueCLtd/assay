@@ -16,13 +16,57 @@
  * replaced with a honest preview label when — and only when — the build is a
  * PR preview (`PR_NUMBER` present). A production (main) or local build carries
  * no badge: a preview must announce itself; the real site needs no label.
+ *
+ * Progress is single-sourced from `docs/status.yml` (comms plan §5). This script
+ * reads it and enforces two honesty guardrails at BUILD time, so drift fails the
+ * build rather than shipping quietly (§1.1, "the site polices its own optimism"):
+ *   1. the hand-authored Home page must carry status.yml's current-stage label;
+ *   2. no stage may be `building`/`done` in status.yml with its research note
+ *      unpublished — the research-first gate (DEC-11) made mechanical.
+ * The parsed status is also emitted as `site/status.json` for data-driven pages.
  */
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { parse } from 'yaml';
 
 const root = new URL('../', import.meta.url);
 const site = new URL('site/', root);
 const gallery = new URL('gallery/', site);
+
+interface Stage {
+  id: number;
+  name: string;
+  status: 'not-started' | 'research' | 'building' | 'done';
+  research_published: boolean;
+}
+interface Status {
+  current_stage_label: string;
+  stages: Stage[];
+}
+
+// --- Honesty gates over the single source of truth (comms plan §5) ---
+const status = parse(
+  readFileSync(fileURLToPath(new URL('docs/status.yml', root)), 'utf8'),
+) as Status;
+
+const homeSrc = readFileSync(
+  fileURLToPath(new URL('docs/assay-home.html', root)),
+  'utf8',
+);
+if (!homeSrc.includes(status.current_stage_label)) {
+  throw new Error(
+    `status.yml current_stage_label "${status.current_stage_label}" is not on the Home page — ` +
+      `progress has drifted. Update docs/assay-home.html and docs/status.yml together.`,
+  );
+}
+for (const s of status.stages) {
+  if ((s.status === 'building' || s.status === 'done') && !s.research_published) {
+    throw new Error(
+      `Stage ${s.id} (${s.name}) is "${s.status}" but its research note is unpublished — ` +
+        `research-first gate (DEC-11) violated in status.yml.`,
+    );
+  }
+}
 
 mkdirSync(fileURLToPath(gallery), { recursive: true });
 
@@ -34,6 +78,20 @@ copyFileSync(
 copyFileSync(
   fileURLToPath(new URL('docs/assay-ui-wireframes.html', root)),
   fileURLToPath(new URL('wireframes.html', site)),
+);
+
+// The blog and its standalone embeds, copied verbatim (self-contained static;
+// comms plan §8). Markdown sources (README, backlog) are dev-facing and skipped.
+cpSync(
+  fileURLToPath(new URL('docs/blog/', root)),
+  fileURLToPath(new URL('blog/', site)),
+  { recursive: true, filter: (src) => !src.endsWith('.md') },
+);
+
+// The parsed status as JSON, for any future data-driven page.
+writeFileSync(
+  fileURLToPath(new URL('status.json', site)),
+  JSON.stringify(status, null, 2),
 );
 
 const esc = (s: string): string =>
