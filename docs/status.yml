@@ -99,6 +99,14 @@ theses:                      # state vocabulary is the register's own
 updates:
   - date: 2026-07-13
     note: >-
+      Interactive system-flow infographic built (SPEC-14 flow-view sub-slice) —
+      the S4 Bridge grown into a stakeholder explainer with a guided tour and a
+      bounded sandbox driving the real seam (compile/score/relax), one
+      self-contained embed in two homes. Auto-recompute is stamped and
+      attributed, never silent; unbuilt computations (staleness fan-out,
+      selection) are scripted and visibly labelled. Reachable from the Home page.
+  - date: 2026-07-13
+    note: >-
       Communications scaffold landed — status.yml single source of truth, the
       blog + standalone-embed pipeline, and the first pattern-setter article
       (the band pill, live).

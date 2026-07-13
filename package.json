@@ -11,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "gallery": "tsx scripts/build-gallery.ts",
     "embeds": "tsx scripts/build-embeds.ts",
+    "flow": "tsx scripts/build-flow.ts",
     "build:app": "tsx scripts/build-app.ts",
-    "build:site": "npm run gallery && npm run embeds && npm run build:app && tsx scripts/build-site.ts",
+    "build:site": "npm run gallery && npm run embeds && npm run flow && npm run build:app && tsx scripts/build-site.ts",
     "bench": "tsx scripts/bench-canonical.ts"
   },
   "dependencies": {

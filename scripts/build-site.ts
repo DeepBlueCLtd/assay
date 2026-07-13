@@ -91,9 +91,13 @@ copyFileSync(
   fileURLToPath(new URL('docs/assay-ui-wireframes.html', root)),
   fileURLToPath(new URL('wireframes.html', site)),
 );
+// The interactive system-flow infographic (SPEC-14 flow-view sub-slice) —
+// the built explainer, `npm run flow`. Same self-contained component in two
+// homes: this Pages embed and the in-app S4 "systems-map" mode. Linked from a
+// Home-page card (below / comms plan §1.6).
 copyFileSync(
-  fileURLToPath(new URL('docs/assay-flow-infographic-wireframes.html', root)),
-  fileURLToPath(new URL('flow-wireframes.html', site)),
+  fileURLToPath(new URL('docs/assets/flow/index.html', root)),
+  fileURLToPath(new URL('flow.html', site)),
 );
 // The same spec rendered in the engineering-drawing / systems-schematic idiom
 // (an alternative to the role-swimlane form above; both feed the design choice).
