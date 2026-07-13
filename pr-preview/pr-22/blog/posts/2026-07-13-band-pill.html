@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!--
+  ASSAY blog article — pattern-setter (comms plan §6).
+
+  This is the first article and exists to establish the convention every later
+  one follows: dated claim, honesty labels, source links, fictional-vignette
+  framing, and — the point of the medium — a WORKING embed of the slice it
+  reports, not a screenshot. The embed is the shipped band pill (SPEC-14) mounted
+  from ../embeds/band-pill/, which build-embeds.ts generates from the real
+  component over real Meridian fixtures.
+
+  Self-contained and static (inline CSS, no external assets). The embed is
+  mounted with a single <iframe> to a self-contained bundle — the honest version
+  of §8's "<div> plus one <script>" for an embed that is itself a whole page.
+
+  Embeds freeze at publication (§6.2 rule 6): this article is a dated snapshot of
+  the band pill as shipped on 2026-07-13. If a later change makes it misleading,
+  the fix is a dated editorial note here — never a silent rebuild of the embed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The band pill: why a range is more honest than a number — ASSAY</title>
+<meta name="description" content="ASSAY's signature component and the discipline behind it: an assessed quantity is shown as a band, never laundered into a false-precision scalar.">
+<style>
+  :root { color-scheme: light dark;
+    --ink:#1B2732; --ink-soft:#33414D; --muted:#5B6B77; --page:#EDF0F2; --panel:#FCFDFD;
+    --panel-2:#F1F3F5; --line:#D8DFE4; --line-soft:#E4E9ED;
+    --band-ink:#9A6A14; --band-fill:#F7EDD8; --band-line:#E7D3A6;
+    --robust-ink:#14655F; --robust-fill:#E2EFEA; --robust-line:#BFDCD3;
+    --blue-ink:#3E5D8A; --blue-fill:#E6ECF6; --blue-line:#C8D5EA;
+    --shadow:0 1px 2px rgba(27,39,50,.05),0 8px 24px rgba(27,39,50,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark){ :root{
+    --ink:#E7ECF0; --ink-soft:#C4CED6; --muted:#93A2AE; --page:#10171D; --panel:#17212A;
+    --panel-2:#131C24; --line:#2A3945; --line-soft:#222E38;
+    --band-ink:#E0B457; --band-fill:#2E2513; --band-line:#4A3C1C;
+    --robust-ink:#63C3B6; --robust-fill:#122824; --robust-line:#1F3F39;
+    --blue-ink:#8FB0DE; --blue-fill:#182333; --blue-line:#2A3A52;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans);
+    font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a { color:var(--blue-ink); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+  header.top { background:var(--panel); border-bottom:1px solid var(--line); }
+  header.top .wrap { padding:30px 24px 28px; }
+  .crumbs { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .crumbs a { text-decoration:none; } .crumbs a:hover { color:var(--blue-ink); }
+  .meta { font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:16px 0 0; }
+  .chip { padding:2px 9px; border-radius:999px; border:1px solid; }
+  .chip.live { border-color:var(--robust-line); background:var(--robust-fill); color:var(--robust-ink); }
+  .chip.spec { border-color:var(--line); background:var(--panel-2); color:var(--muted); }
+  h1 { font-size:clamp(26px,4.4vw,34px); letter-spacing:-.02em; line-height:1.15; margin:14px 0 6px; }
+  article { padding:32px 0 10px; }
+  article p { margin:0 0 18px; color:var(--ink-soft); }
+  article h2 { font-size:21px; letter-spacing:-.01em; margin:34px 0 10px; }
+  article b { color:var(--ink); }
+  .embed-frame { width:100%; border:0; border-radius:12px; box-shadow:var(--shadow);
+    background:var(--panel); }
+  .embed-cap { font-size:13px; color:var(--muted); margin:8px 2px 26px; }
+  .embed-cap b { color:var(--robust-ink); }
+  .note { border:1px solid var(--band-line); background:var(--band-fill); color:var(--band-ink);
+    border-radius:12px; padding:15px 18px; font-size:14.5px; line-height:1.6; margin:6px 0 26px; }
+  .note b { color:var(--band-ink); }
+  .sources { border-top:1px solid var(--line-soft); margin-top:28px; padding-top:18px;
+    font-size:14px; color:var(--muted); }
+  .sources a { text-decoration:none; }
+  .sources li { margin-bottom:5px; }
+  footer { border-top:1px solid var(--line); background:var(--panel); margin-top:26px; }
+  footer .wrap { padding:24px; color:var(--muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="crumbs"><a href="../">&larr; Blog</a> &nbsp;·&nbsp; <a href="../../">ASSAY home</a></div>
+    <div class="meta">
+      <span>2026-07-13</span>
+      <span class="chip live">live component — the demonstrator's actual code</span>
+      <span class="chip spec">SPEC-05 / SPEC-14</span>
+    </div>
+    <h1>The band pill: why a range is more honest than a number</h1>
+  </div>
+</header>
+
+<div class="wrap">
+<article>
+  <p>
+    Intelligence preparation answers questions — how deep is the approach, how much can the causeway
+    carry, how many defenders are dug in — and almost none of those answers is a fact. They are
+    <b>assessments</b>: judged from partial, ageing, sometimes single-source reporting. The moment
+    such a judgement is written down as a single crisp number, it starts to lie. A planner three
+    desks away reads "30 tonnes" and treats it as surveyed truth, because nothing on the screen says
+    otherwise.
+  </p>
+  <p>
+    ASSAY's answer is the <b>band pill</b>: the demonstrator's smallest and most-used component, and
+    the first thing a subject-matter expert will test. It renders an assessed quantity as the closed
+    interval the source actually supports — <span class="mono">lo–hi unit</span> — with no midpoint
+    anywhere. Not in a marker, not in a centre tick, not in a hidden tooltip average. A midpoint is
+    an invitation to false precision, and it <em>will</em> end up on a surface (ASSAY-DEC-15).
+  </p>
+
+  <h2>Drag it yourself</h2>
+  <p>
+    Below is the <b>actual shipped component</b> — the same <span class="mono">bandPill()</span> the
+    gallery and wireframes use — rendering the Meridian causeway-capacity assessment (K2, source
+    class <span class="mono">assessed</span>). Drag the control: every frame is what the real
+    component produced for that band. Pull it all the way down and you reach the scalar — the
+    tempting single number the assessment cannot honestly support.
+  </p>
+  <iframe class="embed-frame" src="../embeds/band-pill/index.html" height="360" loading="lazy"
+          title="Interactive band pill embed — the shipped component over Meridian fixtures"></iframe>
+  <p class="embed-cap">
+    <b>Live component, fixture data.</b> The pill is the demonstrator's own code
+    (<span class="mono">src/components/bandPill.ts</span>); the numbers are real Meridian fixtures
+    (K1, K2). Only the slider chrome is embed-local. Frozen as shipped on 2026-07-13.
+  </p>
+
+  <h2>The one exemption, kept narrow</h2>
+  <p>
+    Not everything is an assessment. A directly-observed value — a charted controlling depth, an
+    own-force figure — is <b>fact</b>, and banding it would be an absurdity that discredits the very
+    discipline it is meant to protect. So <span class="mono">observed</span> values (and a
+    commander's directive thresholds) may render unbanded (ASSAY-DEC-14). The embed shows one: K1's
+    controlling depth, carried as a degenerate band and coloured differently so the eye can tell a
+    fact from a judgement at a glance. The exemption is deliberately narrow — only what is directly
+    charted, surveyed, or own-force — so it cannot leak.
+  </p>
+
+  <div class="note">
+    <b>Assessment, not fact — and demonstrator, not product.</b> Every number here renders the
+    <b>Meridian Archipelago</b>, an engineered fiction (ASSAY-DEC-8). Nothing on this page reflects
+    any real operational picture. A thesis in ASSAY is only ever <em>explored</em>, never claimed
+    proven.
+  </div>
+
+  <h2>Why it is load-bearing</h2>
+  <p>
+    The band pill is not decoration. Because assessed quantities stay banded all the way through —
+    representation, scoring, and rendering — plan verdicts are judged in banded space, and a verdict
+    only flips at a band edge, never inside one. One SME seeing a confident number they know is
+    guesswork would discredit the whole pipeline (ASSAY-DEC-9). The pill is where that promise is
+    kept in the first pixel.
+  </p>
+
+  <div class="sources">
+    <p style="margin-bottom:10px"><b>Sources &amp; trace</b></p>
+    <ul>
+      <li>Component — <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/components/bandPill.ts">src/components/bandPill.ts</a> (SPEC-14)</li>
+      <li>Banded honesty — ASSAY-DEC-9, DEC-14, DEC-15 in the <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/assay-register.md">decision register</a></li>
+      <li>Research note — <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/research/01-knowledge.md">01-knowledge.md</a> (the ICD 203 confidence reading)</li>
+      <li>Fixtures — K1, K2 in the <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/assay-vignette.md">Meridian vignette</a></li>
+    </ul>
+  </div>
+</article>
+</div>
+
+<footer>
+  <div class="wrap">
+    ASSAY — a docs-first demonstrator. <a href="https://github.com/DeepBlueCLtd/assay">github.com/DeepBlueCLtd/assay</a>
+  </div>
+</footer>
+</body>
+</html>
