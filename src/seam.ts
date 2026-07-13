@@ -8,7 +8,7 @@
  * rather than in the generated schema.
  */
 import type { Ref } from './store.js';
-import type { Band, CommitmentVerdict, PlanScore } from './generated/types.js';
+import type { Band, CommitmentVerdict, PlanScore, RelaxationReport } from './generated/types.js';
 
 export type RefusalReason =
   | 'contested_knowledge'
@@ -106,3 +106,26 @@ export interface HandfulSuccess {
 }
 
 export type HandfulResult = HandfulSuccess | Refusal;
+
+/**
+ * SPEC-09 — relaxation movement types (seam §7). `/relax` is called on an
+ * infeasible commitment set; it returns a `RelaxationReport` whose candidates each
+ * name their `sacrificed` commitments (non-empty, G4), ranked least-worst first.
+ * `feasible` is set ONLY when a candidate needs no sacrifice at all — feasibility
+ * is reported first-class rather than as a candidate with an empty `sacrificed`
+ * (G4 requires `sacrificed` non-empty). Scenario is derived from the world (DEC-10).
+ */
+export interface RelaxRequest {
+  world: Ref;
+  commitments: Ref[];
+  seed: number;
+  engine_version: string;
+}
+
+export interface RelaxSuccess {
+  report: RelaxationReport;
+  stamp: string;
+  feasible?: { plan: Ref }; // present only when the set turned out to be satisfiable
+}
+
+export type RelaxResult = RelaxSuccess | Refusal;
