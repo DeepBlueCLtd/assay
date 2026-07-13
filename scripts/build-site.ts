@@ -95,6 +95,12 @@ copyFileSync(
   fileURLToPath(new URL('docs/assay-flow-infographic-wireframes.html', root)),
   fileURLToPath(new URL('flow-wireframes.html', site)),
 );
+// The same spec rendered in the engineering-drawing / systems-schematic idiom
+// (an alternative to the role-swimlane form above; both feed the design choice).
+copyFileSync(
+  fileURLToPath(new URL('docs/assay-flow-schematic-wireframes.html', root)),
+  fileURLToPath(new URL('flow-schematic.html', site)),
+);
 
 // The live interactive app (SPEC-16) — a self-contained bundle. Placed at
 // site/assets/app/ so the blog article's relative embed (../../assets/app/…)
