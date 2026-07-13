@@ -1,6 +1,6 @@
 # Implementation Plan: Interactive surfaces (SPEC-16)
 
-**Spec**: `specs/016-surfaces/spec.md` · **Research note**: `docs/research/05-surfaces.md` (DEC-11 gate) · **Register**: concept §6 items 15–17 (flagged)
+**Spec**: `specs/016-surfaces/spec.md` · **Research note**: `docs/research/05-surfaces.md` (DEC-11 gate) · **Register**: concept §6 items 16–18 (flagged)
 
 ## Architecture — the shell / pure-component split
 

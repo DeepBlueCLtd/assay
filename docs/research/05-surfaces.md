@@ -1,7 +1,7 @@
 # Research note 05 — Interactive surfaces, live and honest
 
 Front-end lane (SPEC-16) · per ASSAY-DEC-11 · 2026-07-13 · bounded to hours, one page preferred
-Prompts (delivery plan §SPEC-16; concept §6 items 4/5; ui-design §6 item 2): decide the surface shell (tabs vs role-switch vs micro-frontends); decide whether the published app can run the real pipeline in the browser and how; decide how operator edits stay honest; decide how downstream change is made visible without lying about it; decide how a reader interrogates the relationships between chunks of knowledge/logic. Output feeds SPEC-16 (`src/app/*` shell + the interactive published surfaces) and a SPEC-14 delta (per-component legends, trace-menu mount hooks). Register candidates: concept §6 items 15–17.
+Prompts (delivery plan §SPEC-16; concept §6 items 4/5; ui-design §6 item 2): decide the surface shell (tabs vs role-switch vs micro-frontends); decide whether the published app can run the real pipeline in the browser and how; decide how operator edits stay honest; decide how downstream change is made visible without lying about it; decide how a reader interrogates the relationships between chunks of knowledge/logic. Output feeds SPEC-16 (`src/app/*` shell + the interactive published surfaces) and a SPEC-14 delta (per-component legends, trace-menu mount hooks). Register candidates: concept §6 items 16–18.
 
 ## 1. The pipeline is already a browser program — this is the load-bearing finding
 

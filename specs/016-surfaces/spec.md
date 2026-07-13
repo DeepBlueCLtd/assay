@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Stage**: Front-end lane (SPEC-16 — Surfaces S1–S4 + banded-honesty polish) · **Depends on**: SPEC-14 (the eight pure components), SPEC-05…09 (the live services: `Knowledge/Compile/Score/Handful/Relax`, `ObjectStore`, `TraceStore`, `DeltaLog`), D3 (seam contract) · **Research note**: `docs/research/05-surfaces.md` (DEC-11 gate — present; decides in-browser bundling, the shell/pure-component split, edit honesty, glow semantics, the edge-orientation map, and the legend copy) · **Register candidates**: concept §6 items 15 (tabs/SPA), 16 (live pipeline + editable), 17 (glow + trace menu)
+**Stage**: Front-end lane (SPEC-16 — Surfaces S1–S4 + banded-honesty polish) · **Depends on**: SPEC-14 (the eight pure components), SPEC-05…09 (the live services: `Knowledge/Compile/Score/Handful/Relax`, `ObjectStore`, `TraceStore`, `DeltaLog`), D3 (seam contract) · **Research note**: `docs/research/05-surfaces.md` (DEC-11 gate — present; decides in-browser bundling, the shell/pure-component split, edit honesty, glow semantics, the edge-orientation map, and the legend copy) · **Register candidates**: concept §6 items 16 (tabs/SPA), 17 (live pipeline + editable), 18 (glow + trace menu)
 
 **Input**: The published app is static (build-time HTML, zero client interactivity). This slice makes it a **live single-page app** running the *actual* pipeline in the browser: four role tabs over one shared client store, full editability gated by the existing honesty machinery, propagation made visible as a "glow", per-component legends, and a one-hop "informs / influenced by" trace menu on any item. No schema change (`npm run gen` not run — all shapes exist); the services, store, trace walk, and components are reused, not re-implemented.
 

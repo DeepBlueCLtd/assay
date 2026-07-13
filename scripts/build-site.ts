@@ -75,6 +75,14 @@ mkdirSync(fileURLToPath(gallery), { recursive: true });
 mkdirSync(fileURLToPath(appDir), { recursive: true });
 
 // The demonstrator's static surfaces, copied verbatim.
+//
+// CONVENTION (review-access): any shippable UI artefact — a surface, a
+// wireframe, an explainer — must be BOTH copied here AND linked from a
+// navigable page (the Home page cards, `docs/assay-home.html`). A reviewer
+// must be able to reach it from the per-PR preview by clicking, never by
+// hand-typing a URL. Copy-without-link ships a page that only its author can
+// find; that is the same drift the §5 honesty gates exist to prevent, applied
+// to reachability. (Comms plan §1.6.)
 copyFileSync(
   fileURLToPath(new URL('docs/assets/gallery/index.html', root)),
   fileURLToPath(new URL('index.html', gallery)),
@@ -82,6 +90,10 @@ copyFileSync(
 copyFileSync(
   fileURLToPath(new URL('docs/assay-ui-wireframes.html', root)),
   fileURLToPath(new URL('wireframes.html', site)),
+);
+copyFileSync(
+  fileURLToPath(new URL('docs/assay-flow-infographic-wireframes.html', root)),
+  fileURLToPath(new URL('flow-wireframes.html', site)),
 );
 
 // The live interactive app (SPEC-16) — a self-contained bundle. Placed at
