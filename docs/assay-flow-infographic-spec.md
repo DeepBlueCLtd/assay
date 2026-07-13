@@ -1,6 +1,6 @@
 # ASSAY — System-Flow Infographic: Specification
 
-Status: draft for review · v0.1 · 2026-07-13 · candidate addition to the canonical set · seeds a spec-kit SPEC (SPEC-14 site/gallery neighbourhood) when scheduled
+Status: draft for review · v0.2 · 2026-07-13 · candidate addition to the canonical set · seeds a spec-kit SPEC (SPEC-14 site/gallery neighbourhood) when scheduled · v0.2 adds the implementation-facing sections (§7 interaction contract, §8 view-state & tour script, §9 acceptance intent, §10 implementation notes & build-stage dependencies) so the proposal can be picked up cold in a later session
 Authority: this document **originates nothing**. It projects ASSAY-DEC-5 (surfaces are config-declared projections; writes are stamped deltas), DEC-9/15 (banded honesty), DEC-7 (narratives are configurations), and the §G invariants (seam contract §G) into a stakeholder-facing explainer. The one behaviour it proposes that is *not* already decided — live/auto recompute in this view — is recorded as a **flagged register candidate** (concept §6, item 15), never asserted here.
 Companions: `assay-flow-infographic-wireframes.html` (the sketches below, rendered on Meridian data in the frozen D+2/step-8 tableau); `assay-walkthrough.md` (the six-beat heartbeat this view animates); `assay-ui-design.md` §4 (S4 Bridge, of which this is the grown-up form); `assay-comms-plan.md` (the public site and SME checkpoints this feeds).
 
@@ -118,7 +118,85 @@ See `assay-flow-infographic-wireframes.html` — the L1 heartbeat canvas with th
   3. **The map/geospatial panel** (ui-design §6.1 open question) — the flow view is a natural home for the grid/causeway/strait; pulling it in is a live decision, not settled here.
   4. **A truly-silent teaching toggle** ("you are the optimiser") — deferred for an SME to react to before it hardens.
 
-## 7. Definition of done (proposal-stage)
+## 7. Interaction contract — seam calls and consequences
+
+Every interaction is a call to the in-browser seam (the mock services under `src/`, which *are* the seam — README) followed by a projection of the result. No consequence is hand-authored (§2.4/2.5). Real symbols, so a future session can wire directly:
+
+**Writes (sandbox actions and tour beats):**
+
+| Action | Seam call(s) | Result | View consequence |
+|---|---|---|---|
+| Toggle COA excursion R1→R2/R3/R3m | `CompileService.compile({knowledge, scenario, config, engine_version})` → `HandfulService.handful({world, seed:42})` (or `ScoreService.score` for a single plan) | new `world` stamp + re-scored verdicts | scenario strip + verdict chips update; **stamp badge flips**; delta row appended |
+| Contest K12 | `KnowledgeService.contest('K12a','K12b')`, then the planner's `CompileService.compile(…)` | `ContestResult` (both `contested`), then `Refusal{reason:'contested_knowledge', offending:[K12a,K12b]}` | refusal banner renders **where the compile action was** (G5); delta row; **no new world stamp** |
+| Resolve K12 | `KnowledgeService.resolve('K12b', note)`, then `compile` | `resolves` edge; `CompileSuccess` | banner clears; stamp flips to `9b2e…44a`; delta row |
+| Supersede K5→K9 | `KnowledgeService.supersede(K9, 'K5')`; then staleness fan-out | `SupersedeResult{ref, stale}`; *(staleness — see §10 dependency)* | ⚑ flags on affected verdicts; delta row |
+| Grant / withhold W-1 | `KnowledgeService.create`/`supersede` with/without `waiver`; `checkEncoding` gates; compile writes `waives` | `Refusal{reason:'waiver_required'}` when withheld; `waives` edge when granted | waiver chip appears/disappears **wherever the constraint bites** (matrix cells, why-chain, not only the K8 row); refusal when withheld |
+| Relax under R3m | `RelaxService.relax({world, commitments:[C1…C6], seed})` | `RelaxSuccess` — 3 candidates, each `sacrificed` non-empty (G4) | three least-worst cards; `cited_in` edges; `tie_break` shown |
+| Select P2 | `POST /select` equivalent (seam §11) — writes `SelectionRationale` + `cited_in` edges | `{rationale}` | rationale node; S1 exposure re-prioritises K8 |
+
+**Reads (live projections, never a write):**
+
+| Panel | Seam call | Result | Render |
+|---|---|---|---|
+| Delta feed (S4) | `DeltaLog` since `seq` | `Delta[]` | delta rows (actor · role · op · refs) |
+| Trace drawer (L2) | `TraceStore.chain(ref, 'backward')` | `TraceChain` | the L2 chain, terminating in a named owner (G3) |
+| Exposure strip (S1) | `KnowledgeService.exposure(id)` | `{chains}` | which of my objects sit under the live handful |
+| Staleness fan-out | *(staleness analysis — §10 dependency)* | `{invalidated, chains}` | exactly the dependent artefacts flagged |
+
+## 8. View-state model & tour script
+
+**State.** The view holds one small, explicit object; the render is a pure function of `(store, view-state)` — this *is* ui-design principle 4 (surfaces arrange, never compute):
+
+```
+{ zoom: 'L0'|'L1'|'L2',
+  mode: 'tour'|'sandbox',
+  tour_step: 0..6,                     // tour only
+  sandbox: { coa, contested, superseded, waiver }  // each maps 1:1 to a seam write
+}
+```
+
+Sandbox actions are seam writes against a store seeded to the frozen tableau; **undo = re-seed the store** (deterministic, G1). Tour steps are pre-set state snapshots that replay the same writes in the canonical order.
+
+**Tour beat script** (the ordered steps L1 plays; each maps to a walkthrough beat and is oracle-consistent, vignette §9):
+
+| Step | Beat (walkthrough) | Shown |
+|---|---|---|
+| 0 | §1 opening state | D+2, step 8 · world `7f3a…c91` · handful P1–P4 |
+| 1 | §2 beat 1 | supersede K5→K9 → fan-out flags **P1·C2, P2·C1, P2·C2** |
+| 2 | §3 beat 2 (contest) | contest K12 → planner compile **blocked**, refusal `contested_knowledge` |
+| 3 | §3 beat 2 (resolve) | resolve K12→K12b → `resolves` edge |
+| 4 | §4 beat 3 | recompile → world `9b2e…44a`; handful re-scored, stamped |
+| 5 | §5 beat 4 | relax under R3m → 3 least-worst cards, sacrifice **C4 · C3 · C2** |
+| 6 | §6–7 beats 5–6 | select P2 → `SelectionRationale`; exposure raises **K8**'s verification priority |
+
+## 9. Acceptance intent (feeds the spec-kit acceptance scenarios)
+
+Testable given/when/then intent; these become the spec-kit spec's acceptance scenarios when the SPEC is written (this proposal is not itself that SPEC — §6). Each asserts one honesty constraint or interaction:
+
+- **AS-1 · banded honesty (G2).** *Given* any node holding an assessed value, *then* it renders a band pill welded to its provenance chip — no bare scalar anywhere in the DOM.
+- **AS-2 · recompute attribution (§2.2).** *When* a sandbox recompute fires, *then* a new delta row exists **and** the stamp badge changed; a verdict never changes without both.
+- **AS-3 · contest gate (G5).** *Given* K12 contested, *when* compile is attempted, *then* a refusal banner names the pair and **no** new world stamp appears.
+- **AS-4 · staleness fan-out (F).** *When* K5 is superseded, *then* exactly `{P1·C2, P2·C1, P2·C2}` flag — nothing else.
+- **AS-5 · waiver travel (DEC-9).** *When* W-1 is granted, *then* the waiver chip renders on **every** north-approach artefact; *when* withheld, K8 refuses `waiver_required`.
+- **AS-6 · least-worst (G4).** *When* relax runs under R3m, *then* 3 cards return, each `sacrificed` non-empty, none empty, tie-break stated.
+- **AS-7 · comparability (G1).** *Given* two stamps, *when* placed side by side, *then* the cross-stamp comparison greys rather than renders a value.
+- **AS-8 · zoom register.** *At L0* no doctrinal node is shown; *at L2* every node opens a backward chain terminating in a named owner.
+- **AS-9 · determinism (G1).** Same seed + same tableau ⇒ byte-identical handful/verdicts across reloads.
+- **AS-10 · undo.** Re-seeding returns the store to the frozen tableau exactly.
+- **AS-11 · self-containment.** The embed loads and functions with **zero external network requests** (embed constraint, §4.6).
+
+## 10. Implementation notes & build-stage dependencies
+
+- **Self-contained (embed constraint).** Inline all CSS/JS; no external fetches at runtime. The wireframe's one external reference (the shared web font) must be inlined or replaced with a system-font stack in the built embed (offline + CSP).
+- **Reuse, don't re-implement.** Pull the shipped components from `src/components/*` — `bandPill`, `provenanceChip`, `refusalBanner`, `channelTrace`, `s2Matrix`, `s3Cards`, `handfulStrip` — so banded honesty is inherited, not re-litigated.
+- **Seam access.** Call the in-browser services directly: `CompileService`, `ScoreService`, `HandfulService`, `RelaxService`, `KnowledgeService`, plus `DeltaLog` / `TraceStore` / `ObjectStore`. The mock *is* the seam.
+- **Build-stage dependencies (honest gating — what is buildable today vs. what waits):**
+  - **Buildable now (Stages 0–4, `done`):** compile · score · handful · relax · knowledge writes (create/supersede/contest/resolve/exposure) · deltas · trace · store. The **tour** and most of the **sandbox** (COA toggle, contest/resolve, waiver, relax) are buildable against these today.
+  - **Not yet built:** the **staleness fan-out** (`/analyse/staleness`, thesis F) is **Stage 6 · Analysis loops (`not-started`)**; full **scenario-robustness** score-strip fidelity leans on **Stage 5 (`not-started`)**. Until they land: the *tour* shows the walkthrough's known, oracle-consistent results (scripted); the *computed* sandbox variants for supersede-fan-out and the full R-strip **gate on Stages 5–6**. State this limit visibly in the view — a scripted result must not masquerade as a computed one.
+  - **Stage placement.** The flow view proper is **Stage 7 · Surfaces & narratives** territory; it must not claim `building`/`done` in `docs/status.yml` before its research note publishes (DEC-11, enforced by `build-site.ts`).
+- **Two homes, one component.** S4 mode (in-app) + Pages embed, wired into `build-site.ts` and linked from a Home-page card (§4.6, comms §1.6). The wireframe already ships this way.
+
+## 11. Definition of done (proposal-stage)
 
 - This spec + its wireframe companion reviewed; the four register candidates ratified (or amended) in a register batch before implementation.
 - A research note lands (DEC-11) before the build slice opens.
