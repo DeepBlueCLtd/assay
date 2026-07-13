@@ -34,7 +34,11 @@ recommendation is noted in the flagged comms candidate, concept §6.14.)
    fonts/scripts/CDNs, so it serves from Pages and works offline.
 2. Header carries the date, one embed label (`live component` or `illustrative widget`), and the
    slice IDs. Body ends with a **Sources & trace** list — every claim links to a document, research
-   note, or component file.
+   note, or component file. Deep-link the **named item**, not just its document: a DEC to its exact
+   register row (`assay-register.md#L25`), a K-object to its vignette table row, a component to its
+   source line. GitHub blob line anchors are precise, and — since the register is append-only and an
+   article freezes at publication (§6.2 rule 6) — durable enough; a drifted link is fixed with a
+   dated editorial note, never a silent rebuild.
 3. Carry the fictional-vignette disclaimer (Meridian is engineered fiction, ASSAY-DEC-8) and the
    "assessment, not fact / explored, not proven" stance.
 4. Add the article to `index.html` (Articles + updates feed) and to `docs/status.yml`'s `blog:` and
