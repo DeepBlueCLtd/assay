@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { validateInstance } from '../src/validate.js';
-import type { Commitment, KnowledgeObject, ScenarioCOA } from '../src/generated/types.js';
+import type { Commitment, KnowledgeObject, ScenarioCOA, VignetteConfig } from '../src/generated/types.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -10,6 +10,9 @@ const knowledge = load<KnowledgeObject>('knowledge');
 const commitments = load<Commitment>('commitments');
 const coas = load<ScenarioCOA>('coas');
 const forceElements = load<Record<string, unknown>>('force-elements');
+const vignetteConfig = JSON.parse(
+  readFileSync(new URL('../fixtures/vignette-config.json', import.meta.url), 'utf8'),
+) as VignetteConfig;
 
 describe('Meridian fixtures validate against generated types (SPEC-04; Stage-0 exit)', () => {
   it.each(knowledge.map((k) => [k.logical_id, k] as const))('%s validates', (_id, k) => {
@@ -38,6 +41,30 @@ describe('fixture set is complete against vignette identifiers (§5, §6, §3)',
     expect(forceElements.map((f) => f.logical_id)).toEqual([
       'FE-ANVIL', 'FE-BROOM', 'FE-FALCON', 'FE-PACKHORSE', 'FE-KINGFISHER',
     ]);
+  });
+
+  it('the vignette config (SPEC-06) validates and routes every compilable subject to a known region', () => {
+    expect(validateInstance('VignetteConfig', vignetteConfig)).toEqual([]);
+    const regionNames = new Set(vignetteConfig.regions.map((g) => g.name));
+    // every subject_map entry names a region the config gives geometry for
+    for (const entry of vignetteConfig.subject_map) {
+      expect(regionNames.has(entry.region), `subject_map ${entry.subject} → ${entry.region}`).toBe(true);
+    }
+    // every answered, spatial (non scenario_weight) knowledge subject has a route
+    const routed = new Set(vignetteConfig.subject_map.map((e) => e.subject));
+    for (const k of knowledge) {
+      if (k.encoding_class === 'scenario_weight') continue; // firewalled — never routed
+      if (k.subject === 'threat.will_to_fight') continue; // K10 — refused/retired, never compiled
+      expect(routed.has(k.subject), `${k.logical_id} subject ${k.subject} is routable`).toBe(true);
+    }
+    // every COA excursion region has geometry
+    for (const coa of coas) {
+      for (const ov of coa.excursion ?? []) {
+        expect(regionNames.has(ov.region!), `${coa.logical_id} excursion → ${ov.region}`).toBe(true);
+      }
+    }
+    // scenario.likelihood is firewalled by omission from the subject map
+    expect(routed.has('scenario.likelihood')).toBe(false);
   });
 
   it('expected_answers reference existing COAs', () => {

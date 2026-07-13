@@ -122,7 +122,7 @@ Every engineered feature exists to exercise a named claim. **A change to the vig
 
 ## 8. Fixtures & authoring
 
-Fixtures are hand-authored JSON instances of the LinkML classes, validated against the generated types (SPEC-04); a light authoring surface remains an open register candidate (concept §6.5) and is explicitly out of the v1 lap (build plan §deferred). Numbers not tabled here (channel cell values, route geometry) are fixture-authoring latitude *within* the constraints this document sets; where a fixture value would decide a §7 row's outcome, this document wins.
+Fixtures are hand-authored JSON instances of the LinkML classes, validated against the generated types (SPEC-04); a light authoring surface remains an open register candidate (concept §6.5) and is explicitly out of the v1 lap (build plan §deferred). Numbers not tabled here (channel defaults and region geometry — held in `fixtures/vignette-config.json` per the sparse-channel decision, research note `02-compile.md`; route geometry) are fixture-authoring latitude *within* the constraints this document sets; where a fixture value would decide a §7 row's outcome, this document wins.
 
 Narrative colour (place names, unit nicknames) is free to grow for demo polish; identifiers (`K*`, `C*`, `R*`, `FE-*`, and the oracle ids `O-*` below) are frozen — the build plan's exit criteria and the demo scripts cite them.
 

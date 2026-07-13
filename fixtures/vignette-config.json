@@ -1,0 +1,42 @@
+{
+  "logical_id": "VC-MERIDIAN",
+  "version": 1,
+  "grid": { "cols": 60, "rows": 60, "cell_km": 2, "timestep_hours": 6, "horizon_steps": 56 },
+  "channels": [
+    { "kind": "mobility", "default": { "lo": 1, "hi": 1, "unit": "transit factor" } },
+    { "kind": "tide", "default": { "lo": 0, "hi": 0, "unit": "m surge" } },
+    { "kind": "storm", "default": { "lo": 0, "hi": 0, "unit": "m surge" } },
+    { "kind": "civil_density", "default": { "lo": 0, "hi": 0, "unit": "persons" } },
+    { "kind": "sensor", "default": { "lo": 0, "hi": 0, "unit": "coverage index" } },
+    { "kind": "threat", "default": { "lo": 0, "hi": 0, "unit": "threat index" } }
+  ],
+  "regions": [
+    { "name": "approach", "x0": 0, "y0": 0, "x1": 20, "y1": 20 },
+    { "name": "causeway", "x0": 18, "y0": 18, "x1": 26, "y1": 24 },
+    { "name": "port_district", "x0": 24, "y0": 30, "x1": 40, "y1": 46 },
+    { "name": "garrison", "x0": 28, "y0": 34, "x1": 38, "y1": 44 },
+    { "name": "open_water", "x0": 0, "y0": 44, "x1": 59, "y1": 59 },
+    { "name": "fac_waters", "x0": 30, "y0": 20, "x1": 50, "y1": 34 },
+    { "name": "air_defence", "x0": 40, "y0": 40, "x1": 52, "y1": 52 },
+    { "name": "battery", "x0": 44, "y0": 10, "x1": 52, "y1": 20 },
+    { "name": "mine_stock", "x0": 30, "y0": 24, "x1": 44, "y1": 34 },
+    { "name": "ledger_quay", "x0": 28, "y0": 22, "x1": 36, "y1": 30 },
+    { "name": "hq", "x0": 30, "y0": 36, "x1": 36, "y1": 42 },
+    { "name": "halcyon_strait", "x0": 20, "y0": 20, "x1": 40, "y1": 30 },
+    { "name": "carrick", "x0": 42, "y0": 8, "x1": 54, "y1": 22 },
+    { "name": "voss_chain", "x0": 8, "y0": 30, "x1": 20, "y1": 50 }
+  ],
+  "subject_map": [
+    { "subject": "mobility.approach", "channel": "mobility", "region": "approach" },
+    { "subject": "mobility.causeway", "channel": "mobility", "region": "causeway" },
+    { "subject": "civil_density.port_district", "channel": "civil_density", "region": "port_district" },
+    { "subject": "threat.garrison", "channel": "threat", "region": "garrison" },
+    { "subject": "weather.tide_storm", "channel": "storm", "region": "open_water" },
+    { "subject": "threat.fac_sorties", "channel": "threat", "region": "fac_waters" },
+    { "subject": "threat.air_defence", "channel": "threat", "region": "air_defence" },
+    { "subject": "threat.battery", "channel": "sensor", "region": "battery" },
+    { "subject": "threat.mine_stock", "channel": "threat", "region": "mine_stock" },
+    { "subject": "threat.mine_loading", "channel": "threat", "region": "ledger_quay" },
+    { "subject": "threat.hq_radio", "channel": "sensor", "region": "hq" }
+  ]
+}
