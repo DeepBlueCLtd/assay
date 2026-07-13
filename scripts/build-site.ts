@@ -1,12 +1,14 @@
 /**
  * Assembles the publishable static site into `site/` for GitHub Pages.
  *
- * ASSAY has no compiled SPA — the demonstrator's shippable surfaces are static
- * HTML: the fixture-backed component gallery (SPEC-14, `npm run gallery`) and
- * the role-surface wireframes (a peer of the canonical set). This script
- * gathers those into one directory under the hand-authored Home page
- * (`docs/assay-home.html`, comms plan §4 page 1), so the whole thing can be
- * served from a single Pages root (or a per-PR preview subtree).
+ * The demonstrator's shippable surfaces are: the fixture-backed component
+ * gallery (SPEC-14, `npm run gallery`), the role-surface wireframes (a peer of
+ * the canonical set), the live interactive app (SPEC-16, `npm run build:app` —
+ * a self-contained in-browser run of the real pipeline), and the blog (comms
+ * plan §6, articles with working embeds). This script gathers those into one
+ * directory under the hand-authored Home page (`docs/assay-home.html`, comms
+ * plan §4 page 1), so the whole thing can be served from a single Pages root
+ * (or a per-PR preview subtree).
  *
  * Run via `npm run build:site` (which regenerates the gallery first). Output is
  * generated and git-ignored; the CI workflows publish it, nothing is committed.
@@ -17,16 +19,18 @@
  * PR preview (`PR_NUMBER` present). A production (main) or local build carries
  * no badge: a preview must announce itself; the real site needs no label.
  */
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const root = new URL('../', import.meta.url);
 const site = new URL('site/', root);
 const gallery = new URL('gallery/', site);
+const appDir = new URL('assets/app/', site);
 
 mkdirSync(fileURLToPath(gallery), { recursive: true });
+mkdirSync(fileURLToPath(appDir), { recursive: true });
 
-// The demonstrator's two static surfaces, copied verbatim.
+// The demonstrator's static surfaces, copied verbatim.
 copyFileSync(
   fileURLToPath(new URL('docs/assets/gallery/index.html', root)),
   fileURLToPath(new URL('index.html', gallery)),
@@ -34,6 +38,21 @@ copyFileSync(
 copyFileSync(
   fileURLToPath(new URL('docs/assay-ui-wireframes.html', root)),
   fileURLToPath(new URL('wireframes.html', site)),
+);
+
+// The live interactive app (SPEC-16) — a self-contained bundle. Placed at
+// site/assets/app/ so the blog article's relative embed (../../assets/app/…)
+// resolves identically in the repo and on the published site.
+copyFileSync(
+  fileURLToPath(new URL('docs/assets/app/index.html', root)),
+  fileURLToPath(new URL('index.html', appDir)),
+);
+
+// The blog (comms plan §6) — index + posts, copied verbatim.
+cpSync(
+  fileURLToPath(new URL('docs/blog/', root)),
+  fileURLToPath(new URL('blog/', site)),
+  { recursive: true },
 );
 
 const esc = (s: string): string =>
