@@ -12,6 +12,25 @@
 /** panelId → the content hashes that panel renders (its dependency set). */
 export type DependencyMap = Map<string, ReadonlySet<string>>;
 
+/** glowId → the VALUE signature that unit currently renders. */
+export type SignatureMap = Map<string, string>;
+
+/**
+ * The set of glow-unit ids whose VALUE signature changed between renders — the
+ * row/cell-level, value-keyed glow (SPEC-16 follow-up). A unit glows iff what
+ * the reader sees changed: a new id (the unit appeared) or a different signature
+ * (its displayed value moved). A unit that merely got re-derived from a
+ * re-stamped upstream but renders the same value does NOT glow — no over-report.
+ * A byte-identical edit changes no signature, so nothing glows.
+ */
+export function changedGlowUnits(prev: SignatureMap, next: SignatureMap): Set<string> {
+  const changed = new Set<string>();
+  for (const [id, sig] of next) {
+    if (prev.get(id) !== sig) changed.add(id); // new id, or moved value
+  }
+  return changed;
+}
+
 function symmetricallyDiffers(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
   if (a.size !== b.size) return true;
   for (const h of a) if (!b.has(h)) return true;

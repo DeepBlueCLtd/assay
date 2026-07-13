@@ -242,7 +242,7 @@ export class AppState {
         id: 'channels',
         tab: 'planner',
         title: 'Planner · compiled world',
-        html: refusalBanner(compiled),
+        html: `<div data-glow-id="panel:channels" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
         deps: new Set([`refusal:${compiled.reason}`]),
       });
     } else {
@@ -317,7 +317,7 @@ export class AppState {
         id: 'cards',
         tab: 'commander',
         title: 'Commander · least-worst (R3m)',
-        html: refusalBanner(r3m),
+        html: `<div data-glow-id="panel:cards" data-glow-sig="refusal:${r3m.reason}">${refusalBanner(r3m)}</div>`,
         deps: new Set([`refusal:${r3m.reason}`]),
       });
     } else {
@@ -421,7 +421,7 @@ export class AppState {
       .reverse()
       .map(
         (d) =>
-          `<tr style="border-top:1px solid #E4E9ED"><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">#${d.seq}</td><td style="padding:5px 8px;font-size:12px">${d.op}</td><td style="padding:5px 8px;font-size:11px;color:#3E5D8A">${d.role} · ${d.actor}</td><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${d.refs.map((r) => r.logical_id).join(', ')}</td></tr>`,
+          `<tr data-glow-id="delta:${d.seq}" data-glow-sig="${d.op}:${d.refs.map((r) => r.logical_id).join(',')}" style="border-top:1px solid #E4E9ED"><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">#${d.seq}</td><td style="padding:5px 8px;font-size:12px">${d.op}</td><td style="padding:5px 8px;font-size:11px;color:#3E5D8A">${d.role} · ${d.actor}</td><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${d.refs.map((r) => r.logical_id).join(', ')}</td></tr>`,
       )
       .join('');
     return `<p style="font-size:12px;color:#5B6B77">Every knowledge write publishes exactly one stamped delta (seam §10). Newest first.</p>

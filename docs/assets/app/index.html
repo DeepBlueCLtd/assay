@@ -2126,7 +2126,10 @@
     const provenance = ko.provenance ? provenanceChip(ko.provenance) : "";
     const waiver = ko.waiver ? waiverChip() : "";
     const flag = row.blocked ? blockingFlag() : "";
-    return `<tr data-logical-id="${esc4(ko.logical_id)}" style="border-top:1px solid #E4E9ED">
+    const answerSig = ko.answer ? `${ko.answer.lo}-${ko.answer.hi} ${ko.answer.unit}` : "open";
+    const provSig = ko.provenance ? `${ko.provenance.source_class}\xB7${ko.provenance.confidence}` : "";
+    const sig = `${answerSig}|${status}|${row.blocked ? "blk" : ""}|${ko.waiver ? "wv" : ""}|${provSig}`;
+    return `<tr data-logical-id="${esc4(ko.logical_id)}" data-glow-id="k:${esc4(ko.logical_id)}" data-glow-sig="${esc4(sig)}" style="border-top:1px solid #E4E9ED">
     <td style="padding:8px 10px;vertical-align:top;font-family:ui-monospace,monospace;font-size:11px;color:#1B2732">${esc4(
       ko.logical_id
     )}</td>
@@ -2161,8 +2164,9 @@
         const window = region.from_step !== void 0 || region.until_step !== void 0 ? `<span style="color:#5B6B77;font-family:ui-monospace,monospace;font-size:10.5px">steps ${region.from_step ?? 0}\u2013${region.until_step ?? "\u221E"}</span>` : "";
         const backing = src ? `<span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc5(src)}</span>` : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced \u2014 trace dead end (G3)</span>`;
         const prov = ko?.provenance ? provenanceChip(ko.provenance) : "";
+        const sig = `${region.value.lo}-${region.value.hi} ${region.value.unit}|${src ?? "unsourced"}|${region.from_step ?? ""}-${region.until_step ?? ""}`;
         rows.push(
-          `<tr>${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc5(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`
+          `<tr data-glow-id="ch:${esc5(ch.kind)}:${esc5(region.region)}" data-glow-sig="${esc5(sig)}">${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc5(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`
         );
       }
     }
@@ -2185,7 +2189,7 @@
   var marginText = (m) => m === void 0 ? "no margin (objective unreachable)" : m.lo === m.hi ? `margin ${m.lo} ${m.unit}` : `margin ${m.lo}\u2013${m.hi} ${m.unit}`;
   function chip3(v) {
     const s = STOP[v.verdict];
-    return `<td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    return `<td data-glow-id="v:${esc6(v.plan)}:${esc6(v.commitment)}" data-glow-sig="${esc6(v.verdict)}" style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="${esc6(marginText(v.margin))}" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
   </td>`;
   }
@@ -2214,7 +2218,8 @@
     const items = rows.map((r) => {
       const id = esc7(r.plan.logical_id);
       const name = r.name ? `<span style="color:#5B6B77;font-size:11.5px">${esc7(r.name)}</span>` : "";
-      return `<li style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      const sig = `${r.name ?? ""}|${r.distinct_because}`;
+      return `<li data-glow-id="plan:${id}" data-glow-sig="${esc7(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${id}</span>
       ${name}
@@ -2246,7 +2251,9 @@ ${items}
     const items = cards.map((card, i) => {
       const chips = card.sacrificed.map(chip4).join("\n      ");
       const statements = card.sacrificed.map((c) => `<li style="margin:0">gives up: <b>${esc8(c.statement)}</b> <span style="color:#8A97A0">(${esc8(c.logical_id)})</span></li>`).join("\n        ");
-      return `<li style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      const glowId = `card:${[...card.candidate.sacrificed].sort().join(",")}`;
+      const sig = `${i}|${card.candidate.narrative}|${card.sacrificed.map((c) => `${c.logical_id}:${c.tier}`).join(",")}`;
+      return `<li data-glow-id="${esc8(glowId)}" data-glow-sig="${esc8(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
       <span style="font-family:ui-monospace,monospace;font-size:11px;color:#8A97A0">least-worst #${i + 1}</span>
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${esc8(card.candidate.plan)}</span>
@@ -2475,7 +2482,7 @@ ${items}
           id: "channels",
           tab: "planner",
           title: "Planner \xB7 compiled world",
-          html: refusalBanner(compiled),
+          html: `<div data-glow-id="panel:channels" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
           deps: /* @__PURE__ */ new Set([`refusal:${compiled.reason}`])
         });
       } else {
@@ -2546,7 +2553,7 @@ ${items}
           id: "cards",
           tab: "commander",
           title: "Commander \xB7 least-worst (R3m)",
-          html: refusalBanner(r3m),
+          html: `<div data-glow-id="panel:cards" data-glow-sig="refusal:${r3m.reason}">${refusalBanner(r3m)}</div>`,
           deps: /* @__PURE__ */ new Set([`refusal:${r3m.reason}`])
         });
       } else {
@@ -2635,7 +2642,7 @@ ${items}
     }
     #deltaFeed(deltas) {
       const rows = deltas.slice().reverse().map(
-        (d) => `<tr style="border-top:1px solid #E4E9ED"><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">#${d.seq}</td><td style="padding:5px 8px;font-size:12px">${d.op}</td><td style="padding:5px 8px;font-size:11px;color:#3E5D8A">${d.role} \xB7 ${d.actor}</td><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${d.refs.map((r) => r.logical_id).join(", ")}</td></tr>`
+        (d) => `<tr data-glow-id="delta:${d.seq}" data-glow-sig="${d.op}:${d.refs.map((r) => r.logical_id).join(",")}" style="border-top:1px solid #E4E9ED"><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">#${d.seq}</td><td style="padding:5px 8px;font-size:12px">${d.op}</td><td style="padding:5px 8px;font-size:11px;color:#3E5D8A">${d.role} \xB7 ${d.actor}</td><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${d.refs.map((r) => r.logical_id).join(", ")}</td></tr>`
       ).join("");
       return `<p style="font-size:12px;color:#5B6B77">Every knowledge write publishes exactly one stamped delta (seam \xA710). Newest first.</p>
     <table style="border-collapse:collapse;width:100%"><thead><tr style="text-align:left;color:#5B6B77;font-size:10.5px;text-transform:uppercase"><th style="padding:0 8px 5px">Seq</th><th style="padding:0 8px 5px">Op</th><th style="padding:0 8px 5px">By</th><th style="padding:0 8px 5px">Refs</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -2643,19 +2650,10 @@ ${items}
   };
 
   // src/app/glow.ts
-  function symmetricallyDiffers(a, b) {
-    if (a.size !== b.size) return true;
-    for (const h of a) if (!b.has(h)) return true;
-    return false;
-  }
-  function changedPanels(prev, next) {
+  function changedGlowUnits(prev, next) {
     const changed = /* @__PURE__ */ new Set();
-    const empty = /* @__PURE__ */ new Set();
-    const ids = /* @__PURE__ */ new Set([...prev.keys(), ...next.keys()]);
-    for (const id of ids) {
-      const before = prev.get(id) ?? empty;
-      const after = next.get(id) ?? empty;
-      if (symmetricallyDiffers(before, after)) changed.add(id);
+    for (const [id, sig] of next) {
+      if (prev.get(id) !== sig) changed.add(id);
     }
     return changed;
   }
@@ -2720,8 +2718,9 @@ ${items}
     const controls = root.querySelector("#assay-controls");
     const noticeEl = root.querySelector("#assay-notice");
     let activeTab = "j2";
-    let prevDeps = /* @__PURE__ */ new Map();
-    const panelTab = /* @__PURE__ */ new Map();
+    let prevSig = /* @__PURE__ */ new Map();
+    let firstRender = true;
+    const pending = /* @__PURE__ */ new Set();
     for (const t of TABS) {
       const btn = doc.createElement("button");
       btn.className = "assay-tab";
@@ -2731,6 +2730,8 @@ ${items}
       btn.addEventListener("click", () => {
         activeTab = t.id;
         syncTabs();
+        btn.classList.remove("assay-glow");
+        flushPending();
       });
       tabbar.appendChild(btn);
     }
@@ -2779,9 +2780,7 @@ ${items}
       const snap = await app.snapshot();
       noticeEl.innerHTML = snap.notice ? snap.notice.html : "";
       panelsRoot.innerHTML = "";
-      panelTab.clear();
       for (const panel of snap.panels) {
-        panelTab.set(panel.id, panel.tab);
         const el2 = doc.createElement("div");
         el2.className = "assay-panel";
         el2.dataset.panel = panel.id;
@@ -2789,23 +2788,45 @@ ${items}
         el2.innerHTML = `<h3>${panel.title}</h3>${panel.html}`;
         panelsRoot.appendChild(el2);
       }
-      const nextDeps = new Map(snap.panels.map((p) => [p.id, p.deps]));
-      const firstRender = prevDeps.size === 0;
+      const nextSig = /* @__PURE__ */ new Map();
+      const unitTab = /* @__PURE__ */ new Map();
+      const units = Array.from(panelsRoot.querySelectorAll("[data-glow-id]"));
+      for (const el2 of units) {
+        const id = el2.dataset.glowId;
+        nextSig.set(id, el2.dataset.glowSig ?? "");
+        const tab = el2.closest(".assay-panel")?.dataset.tab;
+        if (tab) unitTab.set(id, tab);
+      }
+      for (const id of [...pending]) if (!nextSig.has(id)) pending.delete(id);
       if (!firstRender) {
-        const changed = changedPanels(prevDeps, nextDeps);
-        for (const id of changed) {
-          const el2 = panelsRoot.querySelector(`[data-panel="${id}"]`);
-          if (el2) glow(el2);
+        const changed = changedGlowUnits(prevSig, nextSig);
+        for (const el2 of units) {
+          const id = el2.dataset.glowId;
+          if (!changed.has(id)) continue;
+          if (unitTab.get(id) === activeTab) glow(el2);
+          else pending.add(id);
         }
-        const tabs = changedTabs(changed, (p) => panelTab.get(p), sourceTab);
+        const tabs = changedTabs(changed, (id) => unitTab.get(id), sourceTab);
         for (const tid of tabs) {
           const btn = tabbar.querySelector(`[data-tab="${tid}"]`);
           if (btn) glow(btn);
         }
       }
-      prevDeps = nextDeps;
+      prevSig = nextSig;
+      firstRender = false;
       wireTraceChips();
       syncTabs();
+    }
+    function flushPending() {
+      if (pending.size === 0) return;
+      for (const el2 of Array.from(panelsRoot.querySelectorAll("[data-glow-id]"))) {
+        const id = el2.dataset.glowId;
+        if (!pending.has(id)) continue;
+        if (el2.closest(".assay-panel")?.dataset.tab === activeTab) {
+          glow(el2);
+          pending.delete(id);
+        }
+      }
     }
     function glow(el2) {
       el2.classList.remove("assay-glow");

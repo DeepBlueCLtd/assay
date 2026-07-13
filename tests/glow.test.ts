@@ -1,5 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { changedPanels, changedTabs, type DependencyMap } from '../src/app/glow.js';
+import {
+  changedGlowUnits,
+  changedPanels,
+  changedTabs,
+  type DependencyMap,
+  type SignatureMap,
+} from '../src/app/glow.js';
+
+const sig = (o: Record<string, string>): SignatureMap => new Map(Object.entries(o));
+
+describe('changedGlowUnits — value-keyed, row/cell-level glow (SPEC-16 follow-up)', () => {
+  it('a unit glows only when its VALUE signature changed', () => {
+    const prev = sig({ 'k:K1': '20-40 t', 'k:K2': '5-9 t', 'v:P1:C3': 'robust' });
+    const next = sig({ 'k:K1': '20-40 t', 'k:K2': '5-9 t', 'v:P1:C3': 'violated' });
+    const changed = changedGlowUnits(prev, next);
+    expect(changed.has('v:P1:C3')).toBe(true); // the verdict flipped
+    expect(changed.has('k:K1')).toBe(false); // identical value — no over-report
+    expect(changed.has('k:K2')).toBe(false);
+  });
+
+  it('a newly-appeared unit glows (it came into existence)', () => {
+    const prev = sig({ 'panel:channels': 'refusal:contested_knowledge' });
+    const next = sig({ 'ch:mobility:strait': '0-1 mob', 'ch:tide:harbour': '1-2 m' });
+    const changed = changedGlowUnits(prev, next);
+    expect(changed.has('ch:mobility:strait')).toBe(true);
+    expect(changed.has('ch:tide:harbour')).toBe(true);
+  });
+
+  it('an idempotent edit (identical signatures) glows nothing', () => {
+    const same = sig({ 'k:K1': '20-40 t', 'v:P1:C1': 'tight' });
+    expect(changedGlowUnits(same, sig({ 'k:K1': '20-40 t', 'v:P1:C1': 'tight' })).size).toBe(0);
+  });
+
+  it('editing one item does not glow the others (selectivity)', () => {
+    const prev = sig({ 'k:K1': 'a', 'k:K2': 'b', 'k:K3': 'c' });
+    const next = sig({ 'k:K1': 'a', 'k:K2': 'b', 'k:K3': 'C-moved' });
+    expect(changedGlowUnits(prev, next)).toEqual(new Set(['k:K3']));
+  });
+});
 
 const dep = (entries: Record<string, string[]>): DependencyMap =>
   new Map(Object.entries(entries).map(([k, v]) => [k, new Set(v)]));

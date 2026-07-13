@@ -4,15 +4,20 @@
  * Renders the four role tabs by calling the PURE components (via AppState's
  * snapshot) — the shell/pure-component split that keeps SPEC-14 extractability
  * intact (research note 05 §2). It wires the interventions (resolve/reopen the
- * K12 contest, edit an assessed band), applies the glow to exactly the panels
- * and tabs whose content-hash changed (G6, glow.ts), and mounts the one-hop
- * "informs / influenced by" trace menu on every item chip.
+ * K12 contest, edit an assessed band), applies the glow to exactly the rows and
+ * cells whose displayed VALUE changed (row/cell-level, value-keyed — G6 made
+ * legible), and mounts the one-hop "informs / influenced by" trace menu.
+ *
+ * The glow is value-keyed: each pure component stamps every glow unit with a
+ * stable `data-glow-id` and a `data-glow-sig` (the value it shows). The shell
+ * diffs signatures by id, so a unit glows only when what the reader sees moved —
+ * never merely because an unrelated upstream re-stamp re-derived it.
  *
  * Vanilla TS + DOM — no framework (note 05 §1). The 10s glow window is
  * display-only (DEC-17): it never touches content addressing.
  */
 import type { AppState, TabId } from './state.js';
-import { changedPanels, changedTabs, type DependencyMap } from './glow.js';
+import { changedGlowUnits, changedTabs, type SignatureMap } from './glow.js';
 
 const TABS: { id: TabId; label: string; role: string }[] = [
   { id: 'j2', label: 'J-2 workbench', role: 'ROLE: J-2' },
@@ -71,8 +76,11 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   const noticeEl = root.querySelector('#assay-notice') as HTMLElement;
 
   let activeTab: TabId = 'j2';
-  let prevDeps: DependencyMap = new Map();
-  const panelTab = new Map<string, TabId>();
+  let prevSig: SignatureMap = new Map();
+  let firstRender = true;
+  // glow units that changed on a recompute while their tab was hidden — glowed
+  // when that tab is next opened, so a cross-tab change is still seen.
+  const pending = new Set<string>();
 
   // ---- tab bar ----
   for (const t of TABS) {
@@ -84,6 +92,8 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     btn.addEventListener('click', () => {
       activeTab = t.id;
       syncTabs();
+      btn.classList.remove('assay-glow'); // opening the tab acknowledges its signal
+      flushPending(); // reveal any deferred cross-tab glows now this tab is visible
     });
     tabbar.appendChild(btn);
   }
@@ -143,9 +153,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
 
     // render panels
     panelsRoot.innerHTML = '';
-    panelTab.clear();
     for (const panel of snap.panels) {
-      panelTab.set(panel.id, panel.tab);
       const el = doc.createElement('div');
       el.className = 'assay-panel';
       el.dataset.panel = panel.id;
@@ -154,25 +162,56 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       panelsRoot.appendChild(el);
     }
 
-    // glow: exactly the panels whose content-hash set changed (G6)
-    const nextDeps: DependencyMap = new Map(snap.panels.map((p) => [p.id, p.deps]));
-    const firstRender = prevDeps.size === 0;
+    // ---- value-keyed, row/cell-level glow ----
+    // Each glow unit carries data-glow-id (stable identity) + data-glow-sig
+    // (the value it shows). A unit glows only when its signature moved (or it
+    // is new) — never on an unrelated re-stamp. Units whose tab is hidden are
+    // deferred to `pending` and glowed when that tab opens.
+    const nextSig: SignatureMap = new Map();
+    const unitTab = new Map<string, string>();
+    const units = Array.from(panelsRoot.querySelectorAll('[data-glow-id]')) as HTMLElement[];
+    for (const el of units) {
+      const id = el.dataset.glowId as string;
+      nextSig.set(id, el.dataset.glowSig ?? '');
+      const tab = (el.closest('.assay-panel') as HTMLElement | null)?.dataset.tab;
+      if (tab) unitTab.set(id, tab);
+    }
+    // drop pending ids that no longer exist
+    for (const id of [...pending]) if (!nextSig.has(id)) pending.delete(id);
+
     if (!firstRender) {
-      const changed = changedPanels(prevDeps, nextDeps);
-      for (const id of changed) {
-        const el = panelsRoot.querySelector(`[data-panel="${id}"]`) as HTMLElement | null;
-        if (el) glow(el);
+      const changed = changedGlowUnits(prevSig, nextSig);
+      for (const el of units) {
+        const id = el.dataset.glowId as string;
+        if (!changed.has(id)) continue;
+        if (unitTab.get(id) === activeTab) glow(el);
+        else pending.add(id); // deferred until its tab is opened
       }
-      const tabs = changedTabs(changed, (p) => panelTab.get(p), sourceTab);
+      // tab-button glow: any tab (≠ the edit's source) carrying a changed unit
+      const tabs = changedTabs(changed, (id) => unitTab.get(id), sourceTab);
       for (const tid of tabs) {
         const btn = tabbar.querySelector(`[data-tab="${tid}"]`) as HTMLElement | null;
         if (btn) glow(btn);
       }
     }
-    prevDeps = nextDeps;
+    prevSig = nextSig;
+    firstRender = false;
 
     wireTraceChips();
     syncTabs();
+  }
+
+  /** Glow any deferred units that live on the now-active tab (cross-tab reveal). */
+  function flushPending(): void {
+    if (pending.size === 0) return;
+    for (const el of Array.from(panelsRoot.querySelectorAll('[data-glow-id]')) as HTMLElement[]) {
+      const id = el.dataset.glowId as string;
+      if (!pending.has(id)) continue;
+      if ((el.closest('.assay-panel') as HTMLElement | null)?.dataset.tab === activeTab) {
+        glow(el);
+        pending.delete(id);
+      }
+    }
   }
 
   function glow(el: HTMLElement): void {

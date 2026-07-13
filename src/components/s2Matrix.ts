@@ -34,7 +34,10 @@ function chip(v: CommitmentVerdict): string {
   const s = STOP[v.verdict];
   // The margin band rides on the hover title — shown only on demand, never a
   // decimal in the cell face (G2). The cell face is the four-stop word alone.
-  return `<td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+  // Glow signature is the four-stop CATEGORY only (the visible face): a cell
+  // glows when its verdict *flips*, not when an unrelated re-stamp moves the
+  // hidden margin — matches "no decimals on the face" (G2).
+  return `<td data-glow-id="v:${esc(v.plan)}:${esc(v.commitment)}" data-glow-sig="${esc(v.verdict)}" style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="${esc(marginText(v.margin))}" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
   </td>`;
 }

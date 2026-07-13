@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { AppState, type Fixtures, type Snapshot } from '../src/app/state.js';
-import { changedPanels, type DependencyMap } from '../src/app/glow.js';
+import { changedGlowUnits, changedPanels, type DependencyMap } from '../src/app/glow.js';
 import type {
   Commitment,
   KnowledgeObject,
@@ -22,6 +22,18 @@ function fixtures(): Fixtures {
 
 const depMap = (snap: Snapshot): DependencyMap =>
   new Map(snap.panels.map((p) => [p.id, p.deps]));
+
+/** Extract the value-keyed glow map (data-glow-id → data-glow-sig) the shell
+ *  diffs, straight from the rendered panel HTML. */
+const sigMap = (snap: Snapshot): Map<string, string> => {
+  const m = new Map<string, string>();
+  const re = /data-glow-id="([^"]*)" data-glow-sig="([^"]*)"/g;
+  for (const p of snap.panels) {
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(p.html)) !== null) m.set(match[1]!, match[2]!);
+  }
+  return m;
+};
 
 /**
  * The in-browser pipeline, exercised in Node (crypto.subtle is the one hash
@@ -76,6 +88,44 @@ describe('AppState — the live K12 cascade drives the real pipeline (SPEC-16 ex
     const a = await run();
     const b = await run();
     expect(a.stamps).toEqual(b.stamps);
+  });
+
+  it('value-keyed glow: resolving K12 glows only the K12a row on J-2, not K1–K9', async () => {
+    const app = new AppState(fixtures());
+    await app.seed();
+    const before = sigMap(await app.snapshot());
+    app.resolveK12();
+    const after = sigMap(await app.snapshot());
+    const changed = changedGlowUnits(before, after);
+
+    // The K12a row changed (contested → resolved, blocks-compile flag gone)…
+    expect(changed.has('k:K12a')).toBe(true);
+    // …but the untouched knowledge rows did NOT glow (no over-report).
+    for (const id of ['k:K1', 'k:K2', 'k:K3', 'k:K4', 'k:K6', 'k:K7', 'k:K8', 'k:K9']) {
+      expect(changed.has(id)).toBe(false);
+    }
+    // The planner/commander panels legitimately came into existence and glow.
+    expect([...changed].some((id) => id.startsWith('ch:'))).toBe(true); // channels appeared
+    expect([...changed].some((id) => id.startsWith('v:'))).toBe(true); // matrix cells appeared
+  });
+
+  it('value-keyed glow is selective: editing one band does not glow every downstream unit', async () => {
+    const app = new AppState(fixtures());
+    await app.seed();
+    app.resolveK12();
+    const before = sigMap(await app.snapshot());
+
+    // Move K3 (civil population, assessed) to a clearly different band.
+    await app.editBand('K3', { lo: 10000, hi: 20000, unit: 'persons' });
+    const after = sigMap(await app.snapshot());
+    const changed = changedGlowUnits(before, after);
+
+    // The edited row glowed; an unrelated knowledge row did not.
+    expect(changed.has('k:K3')).toBe(true);
+    expect(changed.has('k:K1')).toBe(false);
+    // Not everything downstream glowed — the world re-stamped, but the glow is
+    // value-keyed, so at least one unit stayed dark (no blanket over-report).
+    expect(changed.size).toBeLessThan(after.size);
   });
 
   it('a dishonest band edit is refused and persists nothing (G2/honesty gate)', async () => {
