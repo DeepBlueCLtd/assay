@@ -71,7 +71,13 @@ function rowHtml(row: S1Row): string {
   const provenance = ko.provenance ? provenanceChip(ko.provenance) : '';
   const waiver = ko.waiver ? waiverChip() : '';
   const flag = row.blocked ? blockingFlag() : '';
-  return `<tr data-logical-id="${esc(ko.logical_id)}" style="border-top:1px solid #E4E9ED">
+  // Value signature for the glow: the row glows iff its displayed value changed
+  // (answer band, status, blocking/waiver flags, provenance) — not on every
+  // upstream re-stamp. Keyed on the values a reader actually sees.
+  const answerSig = ko.answer ? `${ko.answer.lo}-${ko.answer.hi} ${ko.answer.unit}` : 'open';
+  const provSig = ko.provenance ? `${ko.provenance.source_class}·${ko.provenance.confidence}` : '';
+  const sig = `${answerSig}|${status}|${row.blocked ? 'blk' : ''}|${ko.waiver ? 'wv' : ''}|${provSig}`;
+  return `<tr data-logical-id="${esc(ko.logical_id)}" data-glow-id="k:${esc(ko.logical_id)}" data-glow-sig="${esc(sig)}" style="border-top:1px solid #E4E9ED">
     <td style="padding:8px 10px;vertical-align:top;font-family:ui-monospace,monospace;font-size:11px;color:#1B2732">${esc(
       ko.logical_id,
     )}</td>

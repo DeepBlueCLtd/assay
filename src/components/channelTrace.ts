@@ -39,8 +39,11 @@ export function channelTrace(
         ? `<span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc(src)}</span>`
         : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced — trace dead end (G3)</span>`;
       const prov = ko?.provenance ? provenanceChip(ko.provenance) : '';
+      // Glow signature: the region row glows iff its displayed value or backing
+      // source changed — not on every world re-stamp.
+      const sig = `${region.value.lo}-${region.value.hi} ${region.value.unit}|${src ?? 'unsourced'}|${region.from_step ?? ''}-${region.until_step ?? ''}`;
       rows.push(
-        `<tr>${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`,
+        `<tr data-glow-id="ch:${esc(ch.kind)}:${esc(region.region)}" data-glow-sig="${esc(sig)}">${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`,
       );
     }
   }
