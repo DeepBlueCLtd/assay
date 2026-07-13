@@ -30,6 +30,7 @@
  * are the real content hashes the services compute (the vignette freezes no stamp).
  */
 import type {
+  Band,
   Commitment,
   CommitmentVerdict,
   CompiledWorld,
@@ -106,6 +107,8 @@ export interface StateData {
   waiverActive: boolean; // a `waives` edge exists → the waiver chip travels
   /** scripted, LABELLED fan-out (thesis F / Stage 6 not built) — never faked. */
   staleScripted?: { flagged: string[]; note: string };
+  /** live channel overlays for the Meridian map (threat/mobility region overrides). */
+  overlay: MapOverlay[];
 }
 
 export interface TourBeat {
@@ -116,6 +119,29 @@ export interface TourBeat {
   stateId: string; // which sandbox-shaped state this beat renders
   gatePulse?: string; // the gate this beat pauses on
   scripted?: string; // set iff the beat shows a not-yet-computed result (labelled)
+  stage: PipelineStage; // which pipeline stage this beat lives at (the flow rail)
+}
+
+/** The five pipeline stages the flow rail renders (spec §3.1). */
+export type PipelineStage = 'knowledge' | 'compile' | 'score' | 'relax' | 'decide';
+
+/** A named region of the Meridian grid — real config geometry (materialise.ts). */
+export interface MapRegion {
+  name: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/** A live channel overlay on the map — a real region override in the current world. */
+export interface MapOverlay {
+  region: string;
+  kind: string; // 'threat' | 'mobility' (the map-legible channels)
+  lo: number;
+  hi: number;
+  unit: string;
+  fromScenario: boolean; // true iff the excursion (not knowledge) laid it down
 }
 
 export interface FlowModel {
@@ -124,6 +150,8 @@ export interface FlowModel {
   legend: { connectors: [string, string][]; gates: [string, string][] };
   baseStampShort: string; // the frozen-tableau world stamp
   comparability: { reason: string; note: string }; // AS-7 — the G1 guard, from the seam
+  grid: { cols: number; rows: number }; // the Meridian grid extent
+  map: MapRegion[]; // the named regions, real config geometry
   defaultStateId: string; // sandbox default + undo target (re-seed to the frozen tableau)
   states: Record<string, StateData>;
   tour: TourBeat[];
@@ -171,6 +199,18 @@ const shortStamp = (s: string): string => `${s.slice(0, 8)}…${s.slice(-3)}`;
 const refFor = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const clone = <T>(o: T): T => structuredClone(o);
 
+/**
+ * A clean, integer track for the band pill so its scale endpoints never render as
+ * float-precision noise (a decimal band like 0.4–0.9 must not print `0.15000…02`).
+ * Non-negative quantities (surge, threat, mines, days) floor the track at 0.
+ */
+function niceTrack(b: Band): { trackLo: number; trackHi: number } {
+  const span = b.hi - b.lo || Math.max(Math.abs(b.hi), 1);
+  const rawLo = b.lo - span;
+  const trackLo = b.lo >= 0 ? Math.max(0, Math.floor(rawLo)) : Math.floor(rawLo);
+  return { trackLo, trackHi: Math.ceil(b.hi + span) };
+}
+
 export const stateId = (k: StateKey): string =>
   `${k.coa}|${k.contest}|${k.superseded ? 'K9' : 'K5'}|${k.waiver}`;
 
@@ -190,7 +230,7 @@ function knowledgeNode(
   headline: string,
   gates: string[],
 ): string {
-  const band = ko.answer ? bandPill(ko.answer) : '';
+  const band = ko.answer ? bandPill(ko.answer, niceTrack(ko.answer)) : '';
   const prov = ko.provenance ? provenanceChip(ko.provenance) : '';
   const chips = gates.length
     ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${gates.join('')}</div>`
@@ -297,7 +337,7 @@ export async function computeState(
   const staleScripted = key.superseded
     ? {
         flagged: ['P1·C2', 'P2·C1', 'P2·C2'],
-        note: 'scripted — not yet computed (Stage 6 · /analyse/staleness, thesis F). The supersession flags exactly the K5-dependent verdicts; the fan-out is a read, computed once the analysis loop lands.',
+        note: 'Stage 6 · /analyse/staleness (thesis F). The supersession flags exactly the K5-dependent verdicts; the fan-out is a read, computed once the analysis loop lands.',
       }
     : undefined;
 
@@ -322,6 +362,7 @@ export async function computeState(
     writeNodes,
     deltas,
     waiverActive: false,
+    overlay: [],
     ...(staleScripted ? { staleScripted } : {}),
   };
 
@@ -348,6 +389,21 @@ export async function computeState(
   const channelHtml = channelTrace(world, knowledgeById);
   const waiverActive = svc.trace.edges.some((e) => e.edge_type === 'waives');
 
+  // Live map overlays: the threat/mobility region overrides in this world — the
+  // real compiled channels (excursion-sourced ones flagged), never hand-drawn.
+  const overlay: MapOverlay[] = world.channels
+    .filter((c) => c.kind === 'threat' || c.kind === 'mobility')
+    .flatMap((c) =>
+      (c.regions ?? []).map((r) => ({
+        region: r.region,
+        kind: c.kind,
+        lo: r.value.lo,
+        hi: r.value.hi,
+        unit: r.value.unit,
+        fromScenario: r.source === key.coa,
+      })),
+    );
+
   const scorer = new ScoreService({
     store: svc.store,
     trace: svc.trace,
@@ -370,7 +426,13 @@ export async function computeState(
     const scenario = world.scenario ?? 'BASE';
     const stripRows: HandfulStripRow[] = h.plans.map((planRef, i) => {
       const plan = svc.store.get(planRef.content_hash) as Plan;
-      return { plan: planRef, name: plan.name, distinct_because: h.organisation.distinct_because[i]! };
+      // Trim the organiser's repeated non-domination boilerplate for the strip;
+      // the full reason stays in the model/trace (this is a display summary).
+      const reason = (h.organisation.distinct_because[i] ?? '').replace(
+        /;\s*non-dominated \(no plan beats it on every commitment\)\.?/,
+        '.',
+      );
+      return { plan: planRef, name: plan.name, distinct_because: reason };
     });
     stripHtml = handfulStrip(stripRows);
     const matrixRows: S2Cell[] = [];
@@ -382,7 +444,9 @@ export async function computeState(
         engine_version: ENGINE,
       });
       const plan = svc.store.get(planRef.content_hash) as Plan;
-      if (!isRefusal(scored)) matrixRows.push({ plan: `${plan.logical_id} · ${plan.name}`, verdicts: scored.verdicts });
+      // P-id only — the axis meaning lives in the L2 handful strip; keeps the
+      // matrix rows to one line (the matrix is about verdicts, not plan identity).
+      if (!isRefusal(scored)) matrixRows.push({ plan: plan.logical_id, verdicts: scored.verdicts });
     }
     matrixHtml = s2Matrix(['C1', 'C2', 'C3', 'C4', 'C5', 'C6'], matrixRows);
   }
@@ -425,6 +489,7 @@ export async function computeState(
     stripHtml,
     channelHtml,
     waiverActive,
+    overlay,
     ...(relaxHtml ? { relaxHtml } : {}),
     ...(tieBreak ? { tieBreak } : {}),
   };
@@ -444,11 +509,12 @@ export const DEFAULT_KEY: StateKey = {
 };
 
 /** The tour's six beats, each a state key + narration (walkthrough §1–§7). */
-const TOUR: { step: number; title: string; beat: string; narrative: string; key: StateKey; gatePulse?: string; scripted?: string }[] = [
+const TOUR: { step: number; title: string; beat: string; narrative: string; key: StateKey; stage: PipelineStage; gatePulse?: string; scripted?: string }[] = [
   {
     step: 0,
     title: 'Opening state',
     beat: 'walkthrough §1',
+    stage: 'knowledge',
     narrative:
       'D+2, scenario step 8. The base world is compiled from the answered set; the handful P-… is scored and green. K12a/K12b are about to be contested; the storm forecast has not yet arrived.',
     key: { coa: 'BASE', contest: 'none', superseded: false, waiver: 'granted' },
@@ -457,6 +523,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     step: 1,
     title: 'The J-2 revises knowledge',
     beat: 'walkthrough §2 · beat 1',
+    stage: 'knowledge',
     narrative:
       'The met service issues an updated forecast: K9 (storm surge 1.1–1.8 m) supersedes K5. The supersedes edge is written; the fan-out flags the K5-dependent verdicts — instantly, and as a read (nothing recomputes silently).',
     key: { coa: 'BASE', contest: 'none', superseded: true, waiver: 'granted' },
@@ -467,6 +534,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     step: 2,
     title: 'Contest — compile blocked',
     beat: 'walkthrough §3 · beat 2',
+    stage: 'compile',
     narrative:
       'The allied LNO estimate (K12b: 140–220 mines) cannot be reconciled with the red cell debrief (K12a: 30–60). Contested. The planner asks for the K9-fresh world and the compile refuses: contested knowledge never compiles (G5).',
     key: { coa: 'BASE', contest: 'contested', superseded: true, waiver: 'granted' },
@@ -476,6 +544,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     step: 3,
     title: 'Resolve',
     beat: 'walkthrough §3 · beat 2',
+    stage: 'compile',
     narrative:
       'After adjudication the J-2 resolves the contest — a resolves edge is written, the surviving answer stands, and the banner clears. The whole exchange travelled S1→S2→S1 as typed objects.',
     key: { coa: 'BASE', contest: 'resolved', superseded: true, waiver: 'granted' },
@@ -484,6 +553,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     step: 4,
     title: 'Recompile & regenerate',
     beat: 'walkthrough §4 · beat 3',
+    stage: 'score',
     narrative:
       'The planner recompiles: the world consumes K9 (not the stale K5) and lands a new stamp. The handful is re-scored against it, stamped and delta-attributed — automatic, but never silent.',
     key: { coa: 'BASE', contest: 'resolved', superseded: true, waiver: 'granted' },
@@ -492,6 +562,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     step: 5,
     title: 'Least-worst under R3m',
     beat: 'walkthrough §5 · beat 4',
+    stage: 'relax',
     narrative:
       'Against R3m (both approaches mined, causeway dropped) no plan satisfies C2–C4 together. /relax returns three inclusion-minimal least-worst candidates — sacrificing C4, C3, C2 — each in command language, the must-sacrifice ranked last but present. Never empty, never a silent drop (G4).',
     key: { coa: 'R3m', contest: 'resolved', superseded: true, waiver: 'granted' },
@@ -501,6 +572,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     step: 6,
     title: 'The commander selects; the loop closes',
     beat: 'walkthrough §6–§7 · beats 5–6',
+    stage: 'decide',
     narrative:
       'The commander selects a least-worst card; a SelectionRationale is recorded with cited_in edges, and the exposure view raises K8 (single-source, waiver-carrying) to the top of the J-2 collection queue. The heartbeat repeats.',
     key: { coa: 'R3m', contest: 'resolved', superseded: true, waiver: 'granted' },
@@ -535,6 +607,7 @@ export async function buildFlowModel(fx: FlowFixtures, seed: number): Promise<Fl
       beat: b.beat,
       narrative: b.narrative,
       stateId: id,
+      stage: b.stage,
       ...(b.gatePulse ? { gatePulse: b.gatePulse } : {}),
       ...(b.scripted ? { scripted: b.scripted } : {}),
     });
@@ -549,12 +622,22 @@ export async function buildFlowModel(fx: FlowFixtures, seed: number): Promise<Fl
   // stamp_mismatch rather than render a value across stamps (G1).
   const comparability = await computeComparability(fx, seed);
 
+  const map: MapRegion[] = fx.config.regions.map((r) => ({
+    name: r.name,
+    x0: r.x0,
+    y0: r.y0,
+    x1: r.x1,
+    y1: r.y1,
+  }));
+
   return {
     seed,
     engine: ENGINE,
     legend: { connectors: CONNECTORS, gates: GATES },
     baseStampShort,
     comparability,
+    grid: { cols: fx.config.grid.cols, rows: fx.config.grid.rows },
+    map,
     defaultStateId: stateId(DEFAULT_KEY),
     states,
     tour,

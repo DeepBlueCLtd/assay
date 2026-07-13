@@ -98,7 +98,9 @@ describe('AS-4 · staleness fan-out (F) — scripted, labelled, exact', () => {
     const st = model.states[stateId(key({ superseded: true }))]!;
     expect(st.staleScripted).toBeDefined();
     expect(st.staleScripted!.flagged).toEqual(['P1·C2', 'P2·C1', 'P2·C2']);
-    expect(st.staleScripted!.note.toLowerCase()).toContain('scripted');
+    expect(st.staleScripted!.note.toLowerCase()).toContain('/analyse/staleness');
+    // and the emitted page marks the fan-out visibly "scripted — not yet computed"
+    expect(renderFlowPage(model)).toContain('scripted — not yet computed');
     // a state with no supersession must NOT carry a fan-out
     expect(model.states[stateId(key({ superseded: false }))]!.staleScripted).toBeUndefined();
   });

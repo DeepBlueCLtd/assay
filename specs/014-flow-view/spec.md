@@ -63,9 +63,13 @@ The viewer drives a **bounded action palette** and watches real consequences: to
 | AS-10 | Undo | re-seeding reproduces the frozen tableau exactly |
 | AS-11 | Self-containment | zero external network references in the emitted page |
 
+## The visual layer (arranges, never computes)
+
+Beyond swapping the real service/component outputs, the browser draws three things — none of which computes: a **pipeline rail** (the five stages + six gates, the active one lit, a token travelling it per beat — the flow made visible); a **Meridian map** (SVG over the real `VignetteConfig` region geometry, with the current world's threat/mobility channel overrides overlaid live — so the R1/R2/R3/R3m excursion is *visibly* different terrain; concept §6.15 candidate c, built under delegated authority, ratify-after); and **motion** (beat transitions, gate-fire flashes, ▶ auto-play). All are projections of stored objects / seam responses (DEC-5); the map tints only regions the compiled world actually overrides, never a hand-drawn claim.
+
 ## Non-goals
 
-Not a live operational tool; not a fifth role surface (it is S4's explainer form); does not author new vignette content; does not pull in the map/geospatial panel (concept §6.15 candidate c — a live decision, left open); does not implement the truly-silent teaching toggle (candidate d — deferred for an SME).
+Not a live operational tool; not a fifth role surface (it is S4's explainer form); does not author new vignette content; does not implement the truly-silent teaching toggle (concept §6.15 candidate d — deferred for an SME reaction).
 
 ## Register posture
 
