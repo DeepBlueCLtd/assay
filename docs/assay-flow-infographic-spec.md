@@ -198,6 +198,7 @@ Testable given/when/then intent; these become the spec-kit spec's acceptance sce
 
 ## 11. Definition of done (proposal-stage)
 
-- This spec + its wireframe companion reviewed; the four register candidates ratified (or amended) in a register batch before implementation.
-- A research note lands (DEC-11) before the build slice opens.
+- This spec + its wireframe companion reviewed. The four register candidates (concept §6.15) proceed **under delegated authority** (decided 2026-07-13, the §6.12/6.13 pattern): the build slice may implement against them and **ratify on landing** rather than blocking on a prior register batch — DEC-2's established escape hatch, which permits *building* against a flagged candidate but not *asserting* it as settled.
+- **Research-first (DEC-11) is not waived by that delegation.** A `docs/research/` note lands **before** the build slice opens — the interaction/animation approach, the fan-out-vs-recompute distinction, and the auto-recompute honesty question — exactly as notes `01`/`02` preceded the schema changes they carried. This is a hard gate; a missing note is the gate, not a formality.
 - On build: home-page-currency step (concept §6.12 candidate) — assess whether shipping the flow view moves any thesis from *planned* to *demonstrated* and re-render the public site accordingly, under banded honesty.
+- On landing: record the ratifying entries for the §6.15 candidates in the next register batch (ratify-after).
