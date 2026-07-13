@@ -1,0 +1,150 @@
+{
+  "updated": "2026-07-13",
+  "current_stage": 5,
+  "current_stage_label": "Stage 4 built · Stage 5 next",
+  "gate_passed": false,
+  "stages": [
+    {
+      "id": 0,
+      "name": "Foundations",
+      "blurb": "store, trace graph, type-gen, fixtures",
+      "status": "done",
+      "research_note": "docs/research/00-foundations.md",
+      "research_published": true
+    },
+    {
+      "id": 1,
+      "name": "Knowledge capture & discipline",
+      "blurb": "band pill, provenance chip, encoding firewall, K10 refusal",
+      "status": "done",
+      "research_note": "docs/research/01-knowledge.md",
+      "research_published": true
+    },
+    {
+      "id": 2,
+      "name": "Compile",
+      "blurb": "knowledge → stamped world channels (sparse)",
+      "status": "done",
+      "research_note": "docs/research/02-compile.md",
+      "research_published": true
+    },
+    {
+      "id": 3,
+      "name": "Score, then plan",
+      "blurb": "four-stop banded verdicts, oracle cases, the generated handful",
+      "status": "done",
+      "research_note": "docs/research/03-score-plan.md",
+      "research_published": true
+    },
+    {
+      "id": 4,
+      "name": "Least-worst",
+      "blurb": "relaxation under infeasibility (thesis B)",
+      "status": "done",
+      "research_note": "docs/research/04-relaxation.md",
+      "research_published": true
+    },
+    {
+      "id": 5,
+      "name": "Scenario robustness",
+      "blurb": "scoring across the adversary COA set (thesis C)",
+      "status": "not-started",
+      "research_note": "docs/research/05-robustness.md",
+      "research_published": false
+    },
+    {
+      "id": 6,
+      "name": "Analysis loops",
+      "blurb": "sensitivity, discrimination, staleness (theses D, E, F)",
+      "status": "not-started",
+      "research_note": "docs/research/06-analysis.md",
+      "research_published": false
+    },
+    {
+      "id": 7,
+      "name": "Surfaces & narratives",
+      "blurb": "role bundles + five narrative scripts (post-gate)",
+      "status": "not-started",
+      "research_note": "docs/research/07-narratives.md",
+      "research_published": false
+    }
+  ],
+  "theses": [
+    {
+      "id": "A",
+      "name": "Pipeline",
+      "state": "explored"
+    },
+    {
+      "id": "B",
+      "name": "Least-worst",
+      "state": "explored"
+    },
+    {
+      "id": "C",
+      "name": "Robustness",
+      "state": "planned"
+    },
+    {
+      "id": "D",
+      "name": "Collection",
+      "state": "planned"
+    },
+    {
+      "id": "E",
+      "name": "Sensitivity / deception",
+      "state": "planned"
+    },
+    {
+      "id": "F",
+      "name": "Staleness",
+      "state": "planned"
+    },
+    {
+      "id": "G",
+      "name": "Interdependency",
+      "state": "horizon"
+    },
+    {
+      "id": "H",
+      "name": "Reactive red",
+      "state": "horizon"
+    }
+  ],
+  "updates": [
+    {
+      "date": "2026-07-13",
+      "note": "Interactive system-flow infographic built (SPEC-14 flow-view sub-slice) — the S4 Bridge grown into a stakeholder explainer with a guided tour and a bounded sandbox driving the real seam (compile/score/relax), one self-contained embed in two homes. Auto-recompute is stamped and attributed, never silent; unbuilt computations (staleness fan-out, selection) are scripted and visibly labelled. Reachable from the Home page."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Communications scaffold landed — status.yml single source of truth, the blog + standalone-embed pipeline, and the first pattern-setter article (the band pill, live).",
+      "article": "blog/posts/2026-07-13-band-pill.html"
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Stage 4 built — least-worst relaxation over R3m (thesis B live). SPEC-09 implemented."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Stage 3 built — the four-stop scorer and the generated handful (SPEC-07, SPEC-08)."
+    },
+    {
+      "date": "2026-07-12",
+      "note": "Stage 2 built — compile to a stamped world of sparse channels (SPEC-06)."
+    },
+    {
+      "date": "2026-07-12",
+      "note": "Register batch 3 ratified (ASSAY-DEC-22…27); walkthrough and findings ledger canonical."
+    }
+  ],
+  "blog": [
+    {
+      "date": "2026-07-13",
+      "title": "The band pill: why a range is more honest than a number",
+      "href": "blog/posts/2026-07-13-band-pill.html",
+      "slice": "SPEC-05 / SPEC-14",
+      "embed": "live component — the demonstrator's actual code"
+    }
+  ]
+}
