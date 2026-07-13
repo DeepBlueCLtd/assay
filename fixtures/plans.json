@@ -1,0 +1,91 @@
+[
+  {
+    "logical_id": "P1",
+    "version": 1,
+    "name": "Strait-early / battery-suppression",
+    "seed": 1,
+    "generator": "canned-handful (delivery plan §3 fallback; SPEC-08 replaces)",
+    "elements": [
+      {
+        "force_element": "FE-BROOM",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 4 },
+          { "x": 26, "y": 25, "enter_step": 4, "exit_step": 22 }
+        ]
+      },
+      {
+        "force_element": "FE-PACKHORSE",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 4 },
+          { "x": 26, "y": 25, "enter_step": 4, "exit_step": 24 },
+          { "x": 32, "y": 38, "enter_step": 24, "exit_step": 32 }
+        ]
+      },
+      {
+        "force_element": "FE-ANVIL",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 8 },
+          { "x": 32, "y": 22, "enter_step": 8, "exit_step": 9 }
+        ]
+      },
+      {
+        "force_element": "FE-FALCON",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 6 },
+          { "x": 48, "y": 15, "enter_step": 6, "exit_step": 10 }
+        ]
+      },
+      {
+        "force_element": "FE-KINGFISHER",
+        "route": [
+          { "x": 48, "y": 15, "enter_step": 0, "exit_step": 4 },
+          { "x": 30, "y": 50, "enter_step": 4, "exit_step": 40 }
+        ]
+      }
+    ]
+  },
+  {
+    "logical_id": "P2",
+    "version": 1,
+    "name": "Sweep-first / fires-forward",
+    "seed": 1,
+    "generator": "canned-handful (delivery plan §3 fallback; SPEC-08 replaces)",
+    "elements": [
+      {
+        "force_element": "FE-BROOM",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 2 },
+          { "x": 26, "y": 25, "enter_step": 2, "exit_step": 24 }
+        ]
+      },
+      {
+        "force_element": "FE-PACKHORSE",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 10 },
+          { "x": 26, "y": 25, "enter_step": 10, "exit_step": 30 },
+          { "x": 32, "y": 38, "enter_step": 30, "exit_step": 36 }
+        ]
+      },
+      {
+        "force_element": "FE-ANVIL",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 12 }
+        ]
+      },
+      {
+        "force_element": "FE-FALCON",
+        "route": [
+          { "x": 30, "y": 50, "enter_step": 0, "exit_step": 4 },
+          { "x": 32, "y": 38, "enter_step": 4, "exit_step": 8 }
+        ]
+      },
+      {
+        "force_element": "FE-KINGFISHER",
+        "route": [
+          { "x": 48, "y": 15, "enter_step": 0, "exit_step": 4 },
+          { "x": 30, "y": 50, "enter_step": 4, "exit_step": 42 }
+        ]
+      }
+    ]
+  }
+]
