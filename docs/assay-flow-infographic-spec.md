@@ -104,7 +104,10 @@ All state derives from the frozen Meridian tableau (D+2, step 8) via the seam; a
 
 ## 5. Wireframes
 
-See `assay-flow-infographic-wireframes.html` — the L1 heartbeat canvas with the connector/gate legend, a gate-firing state (the K12 contest → compile refusal), and an L2 drill-in trace chain, rendered on the frozen tableau in the house component style and bound by vignette §8. The wireframe is itself self-contained, walking the §4.6 embed constraint.
+Two companion wireframes render this spec in **different visual idioms**, so the design direction can be chosen from concrete artefacts rather than in the abstract. Both are self-contained (walking the §4.6 embed constraint), rendered on the frozen D+2/step-8 tableau, bound by vignette §8, and hold the §2 honesty constraints (bands banded, gates surfaced, staleness labelled scripted, frozen identifiers only). They are **peers, not a sequence** — neither supersedes the other until the idiom is chosen.
+
+- `assay-flow-infographic-wireframes.html` — the **role-swimlane** form: the L1 heartbeat canvas across four role lanes with the connector/gate legend, a gate-firing state (the K12 contest → compile refusal), and an L2 drill-in trace chain, in the house component style. Organised by *who acts*.
+- `assay-flow-schematic-wireframes.html` — the **engineering-drawing / systems-schematic** form: the same heartbeat drawn as one apparatus (knowledge piped in → `compile` → `score` → `relax` → `select`), with the six gates as inline decision valves, bands on gauges, refusals as honest-outcome terminals, and a drawing title block. Organised by *the flow itself* — the "motor-engine / power-station" reading of the same node-link topology the research note (07 §3) justifies.
 
 ## 6. Fit in the wider application context
 

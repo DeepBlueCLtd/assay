@@ -91,6 +91,12 @@ copyFileSync(
   fileURLToPath(new URL('docs/assay-flow-infographic-wireframes.html', root)),
   fileURLToPath(new URL('flow-wireframes.html', site)),
 );
+// The same spec rendered in the engineering-drawing / systems-schematic idiom
+// (an alternative to the role-swimlane form above; both feed the design choice).
+copyFileSync(
+  fileURLToPath(new URL('docs/assay-flow-schematic-wireframes.html', root)),
+  fileURLToPath(new URL('flow-schematic.html', site)),
+);
 
 // The blog and its standalone embeds, copied verbatim (self-contained static;
 // comms plan §8). Markdown sources (README, backlog) are dev-facing and skipped.
