@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { validateInstance } from '../src/validate.js';
-import type { Commitment, KnowledgeObject, ScenarioCOA, VignetteConfig } from '../src/generated/types.js';
+import type { Commitment, KnowledgeObject, Plan, ScenarioCOA, VignetteConfig } from '../src/generated/types.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -10,6 +10,7 @@ const knowledge = load<KnowledgeObject>('knowledge');
 const commitments = load<Commitment>('commitments');
 const coas = load<ScenarioCOA>('coas');
 const forceElements = load<Record<string, unknown>>('force-elements');
+const plans = load<Plan>('plans');
 const vignetteConfig = JSON.parse(
   readFileSync(new URL('../fixtures/vignette-config.json', import.meta.url), 'utf8'),
 ) as VignetteConfig;
@@ -26,6 +27,46 @@ describe('Meridian fixtures validate against generated types (SPEC-04; Stage-0 e
   });
   it.each(forceElements.map((f) => [f.logical_id, f] as const))('%s validates', (_id, f) => {
     expect(validateInstance('ForceElement', f)).toEqual([]);
+  });
+  it.each(plans.map((p) => [p.logical_id, p] as const))('%s validates (SPEC-07 canned handful)', (_id, p) => {
+    expect(validateInstance('Plan', p)).toEqual([]);
+  });
+});
+
+describe('SPEC-07 canned handful (delivery plan §3 fallback)', () => {
+  const feIds = new Set(forceElements.map((f) => f.logical_id as string));
+  const regions = JSON.parse(
+    readFileSync(new URL('../fixtures/vignette-config.json', import.meta.url), 'utf8'),
+  ).regions as { name: string; x0: number; y0: number; x1: number; y1: number }[];
+  const horizon = vignetteConfig.grid.horizon_steps;
+
+  it('is P1/P2 (thesis-C pair), every leg in-grid, every element a known FE-*', () => {
+    expect(plans.map((p) => p.logical_id)).toEqual(['P1', 'P2']);
+    for (const p of plans) {
+      for (const ep of p.elements) {
+        expect(feIds.has(ep.force_element), `${p.logical_id} ${ep.force_element}`).toBe(true);
+        for (const leg of ep.route ?? []) {
+          expect(leg.x).toBeGreaterThanOrEqual(0);
+          expect(leg.x).toBeLessThan(vignetteConfig.grid.cols);
+          expect(leg.y).toBeLessThan(vignetteConfig.grid.rows);
+          expect(leg.enter_step).toBeLessThanOrEqual(leg.exit_step);
+          expect(leg.exit_step).toBeLessThanOrEqual(horizon);
+        }
+      }
+    }
+  });
+
+  it('routes reach the regions their metrics read (BROOM/PACKHORSE through the strait)', () => {
+    const inRegion = (name: string, x: number, y: number): boolean => {
+      const g = regions.find((r) => r.name === name)!;
+      return x >= g.x0 && x <= g.x1 && y >= g.y0 && y <= g.y1;
+    };
+    for (const p of plans) {
+      const broom = p.elements.find((e) => e.force_element === 'FE-BROOM')!;
+      expect(broom.route!.some((l) => inRegion('halcyon_strait', l.x, l.y)), `${p.logical_id} BROOM sweeps the strait`).toBe(true);
+      const packhorse = p.elements.find((e) => e.force_element === 'FE-PACKHORSE')!;
+      expect(packhorse.route!.some((l) => inRegion('port_district', l.x, l.y)), `${p.logical_id} PACKHORSE reaches port`).toBe(true);
+    }
   });
 });
 

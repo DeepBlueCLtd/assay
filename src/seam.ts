@@ -8,6 +8,7 @@
  * rather than in the generated schema.
  */
 import type { Ref } from './store.js';
+import type { Band, CommitmentVerdict, PlanScore } from './generated/types.js';
 
 export type RefusalReason =
   | 'contested_knowledge'
@@ -52,3 +53,29 @@ export interface Delta {
 export function isRefusal(r: unknown): r is Refusal {
   return typeof r === 'object' && r !== null && (r as Refusal).refused === true;
 }
+
+/**
+ * SPEC-07 — scorer movement types (seam §5). The perturbation hook substitutes
+ * an answer for this call only (nothing stored); `scenario` is recorded on the
+ * verdicts for provenance — the world is already excursioned (DEC-10).
+ */
+export interface KnowledgeOverride {
+  ref: Ref;
+  answer: Band;
+}
+
+export interface ScoreRequest {
+  plan: Ref;
+  world: Ref;
+  scenario: string;
+  knowledge_overrides?: KnowledgeOverride[];
+  engine_version: string;
+}
+
+export interface ScoreSuccess {
+  verdicts: CommitmentVerdict[];
+  scores: PlanScore[];
+  stamp: string;
+}
+
+export type ScoreResult = ScoreSuccess | Refusal;
