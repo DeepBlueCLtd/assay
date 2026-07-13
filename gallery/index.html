@@ -526,17 +526,48 @@
   </span>
 </span></td><td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top;"><span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">K12a</span> </td><td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top;"><span class="assay-provenance"><span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:#F7EDD8;color:#9A6A14;border:1px solid #E7D3A6;margin-right:5px;white-space:nowrap">assessed · moderate</span><span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:#F7EDD8;color:#9A6A14;border:1px solid #E7D3A6;margin-right:5px;white-space:nowrap">assessment, not fact</span><span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:#F1F3F5;color:#5B6B77;border:1px solid #D8DFE4;margin-right:5px;white-space:nowrap">owner: J-2 red cell</span></span></td></tr></tbody>
 </table></div>
-<h2 style="font-size:16px;margin-top:32px">Score — the honest matrix (SPEC-07)</h2>
-<p style="font-size:12.5px;color:#5B6B77">The Stage-3 demo moment, run by the actual scorer over the canned Meridian handful against the base world. Verdicts are a <b>four-stop scale</b> — robust / marginal / tight / violated, one colour language, <b>no decimals</b> anywhere; the banded <code>margin</code> rides on hover, never as a headline number (G2). Each commitment's verdict propagates its metric by interval arithmetic — worst-and-best-case on pure bands, no midpoint (DEC-15) — and is validated by the vignette §9 oracle cases (O-1–O-3 exact, O-4 containment). <i>Pick a verdict, walk it to the assessment and owner it rests on:</i> every cell was written with a <code>scored_from</code> edge back to the world, whose channels trace to named knowledge above. <span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">score stamp c5e11b4a027f1053… · every verdict carries a scored_from edge to the world (G3) · margins on hover, no decimals (G2)</span></p>
+<h2 style="font-size:16px;margin-top:32px">Score & organise — the honest matrix (SPEC-07 · SPEC-08)</h2>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-3 demo moment, run end-to-end by the actual machinery: <code>/plan/handful</code> (SPEC-08) fans out over Meridian's four axes — approach, suppression, causeway, extraction — scores every candidate with the SPEC-07 scorer, and <b>organises by banded non-domination</b> into the genuinely distinct plans below. <b>No author picked the set</b>: a plan is kept only when no other conservatively beats it on every commitment (overlapping bands are honestly incomparable and both survive), and dropped only when strictly beaten everywhere — never on a scalar total (DEC-19). Each plan's reason is <i>derived</i> from the organiser, not captioned:</p>
+<div style="margin:10px 0"><ul class="assay-handful-strip" style="display:grid;gap:8px;margin:0;padding:0">
+<li style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">P-SwSoCcXe</span>
+      <span style="color:#5B6B77;font-size:11.5px">sweep-first · stand-off · contest · pull-early</span>
+    </div>
+    <div style="margin-top:4px;font-size:12px;color:#33424E">sweep-first · stand-off · contest · pull-early — leads the handful on C1, C3; non-dominated (no plan beats it on every commitment).</div>
+  </li>
+<li style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">P-SeFfCcXe</span>
+      <span style="color:#5B6B77;font-size:11.5px">strait-early · fires-forward · contest · pull-early</span>
+    </div>
+    <div style="margin-top:4px;font-size:12px;color:#33424E">strait-early · fires-forward · contest · pull-early — leads the handful on C2, C4; non-dominated (no plan beats it on every commitment).</div>
+  </li>
+<li style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">P-SeSoCcXe</span>
+      <span style="color:#5B6B77;font-size:11.5px">strait-early · stand-off · contest · pull-early</span>
+    </div>
+    <div style="margin-top:4px;font-size:12px;color:#33424E">strait-early · stand-off · contest · pull-early — leads the handful on C2, C3; non-dominated (no plan beats it on every commitment).</div>
+  </li>
+<li style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">P-SwFfCcXe</span>
+      <span style="color:#5B6B77;font-size:11.5px">sweep-first · fires-forward · contest · pull-early</span>
+    </div>
+    <div style="margin-top:4px;font-size:12px;color:#33424E">sweep-first · fires-forward · contest · pull-early — leads the handful on C1, C4; non-dominated (no plan beats it on every commitment).</div>
+  </li>
+</ul></div>
+<p style="font-size:12.5px;color:#5B6B77">The same handful, as the S2 planner matrix. Verdicts are a <b>four-stop scale</b> — robust / marginal / tight / violated, one colour language, <b>no decimals</b> anywhere; the banded <code>margin</code> rides on hover, never a headline number (G2). Each verdict propagates its metric by interval arithmetic — worst-and-best-case on pure bands, no midpoint (DEC-15) — validated by the vignette §9 oracle cases (O-1–O-3 exact, O-4 containment). <i>Pick a verdict, walk it to the assessment and owner it rests on:</i> every cell was written with a <code>scored_from</code> edge back to the world, whose channels trace to named knowledge above. <span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">handful stamp 99ca45289c4582da… · 4 genuinely distinct plans, organised not authored · same stamp + seed ⇒ identical handful (G1) · every verdict carries a scored_from edge to the world (G3)</span></p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto"><table class="assay-s2-matrix" style="border-collapse:collapse;width:100%">
   <thead><tr style="text-align:center;color:#5B6B77;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em">
     <th style="padding:6px 10px;text-align:left">plan \ commitment</th>
     <th style="padding:6px 8px">C1</th><th style="padding:6px 8px">C2</th><th style="padding:6px 8px">C3</th><th style="padding:6px 8px">C4</th><th style="padding:6px 8px">C5</th><th style="padding:6px 8px">C6</th>
   </tr></thead>
-  <tbody><tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">P1 · Strait-early / battery-suppression</td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="margin 8 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  <tbody><tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">P-SwSoCcXe · sweep-first · stand-off · contest · pull-early</td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 16 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="margin 6 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+    <span class="assay-verdict-chip" title="margin 2 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="margin 0 district cells fired upon" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#7A6A12;color:#FFFFFF">marginal</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
@@ -544,11 +575,11 @@
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="margin 0 boolean" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#7A6A12;color:#FFFFFF">marginal</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="margin 8 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
-  </td></tr><tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">P2 · Sweep-first / fires-forward</td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 10 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td></tr><tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">P-SeFfCcXe · strait-early · fires-forward · contest · pull-early</td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="margin 4 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="margin 4 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+    <span class="assay-verdict-chip" title="margin 8 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="margin -1 district cells fired upon" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#8A2020;color:#FFFFFF">violated</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
@@ -556,7 +587,31 @@
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
     <span class="assay-verdict-chip" title="margin 0 boolean" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#7A6A12;color:#FFFFFF">marginal</span>
   </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="margin 6 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+    <span class="assay-verdict-chip" title="margin 10 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td></tr><tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">P-SeSoCcXe · strait-early · stand-off · contest · pull-early</td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 4 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 8 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 0 district cells fired upon" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#7A6A12;color:#FFFFFF">marginal</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin -24–0 band-hours" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#9A5212;color:#FFFFFF">tight</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 0 boolean" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#7A6A12;color:#FFFFFF">marginal</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 10 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td></tr><tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">P-SwFfCcXe · sweep-first · fires-forward · contest · pull-early</td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 16 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 2 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin -1 district cells fired upon" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#8A2020;color:#FFFFFF">violated</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 12 band-hours" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 0 boolean" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#7A6A12;color:#FFFFFF">marginal</span>
+  </td><td style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="margin 10 step" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:#1E6B3A;color:#FFFFFF">robust</span>
   </td></tr></tbody>
 </table></div>
 <p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code></p>
