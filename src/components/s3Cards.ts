@@ -53,7 +53,11 @@ export function s3Cards(cards: S3Card[], tie_break?: string): string {
       const statements = card.sacrificed
         .map((c) => `<li style="margin:0">gives up: <b>${esc(c.statement)}</b> <span style="color:#8A97A0">(${esc(c.logical_id)})</span></li>`)
         .join('\n        ');
-      return `<li style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      // Identity = the sacrifice set (stable across re-ranks); signature = what
+      // the card shows (rank, narrative, sacrificed tiers).
+      const glowId = `card:${[...card.candidate.sacrificed].sort().join(',')}`;
+      const sig = `${i}|${card.candidate.narrative}|${card.sacrificed.map((c) => `${c.logical_id}:${c.tier}`).join(',')}`;
+      return `<li data-glow-id="${esc(glowId)}" data-glow-sig="${esc(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
       <span style="font-family:ui-monospace,monospace;font-size:11px;color:#8A97A0">least-worst #${i + 1}</span>
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${esc(card.candidate.plan)}</span>

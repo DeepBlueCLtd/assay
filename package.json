@@ -12,7 +12,8 @@
     "gallery": "tsx scripts/build-gallery.ts",
     "embeds": "tsx scripts/build-embeds.ts",
     "flow": "tsx scripts/build-flow.ts",
-    "build:site": "npm run gallery && npm run embeds && npm run flow && tsx scripts/build-site.ts",
+    "build:app": "tsx scripts/build-app.ts",
+    "build:site": "npm run gallery && npm run embeds && npm run flow && npm run build:app && tsx scripts/build-site.ts",
     "bench": "tsx scripts/bench-canonical.ts"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.1",
     "fast-check": "^4.9.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",

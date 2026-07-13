@@ -121,6 +121,6 @@ The honesty machinery is specified exhaustively as system behaviour (refusals, w
 ## 6. Open questions (register candidates)
 
 1. Map/geospatial panel: the vignette wants one (grid, causeway, strait), but none of the four narratives *requires* it in v1 — admit as an S2 side panel or defer?
-2. Surface shell: literal tabs in one SPA (fastest; weakest "different roles" illusion) vs role-switch with distinct chrome per surface (stronger demo theatre).
+2. ~~Surface shell: literal tabs in one SPA vs role-switch with distinct chrome per surface.~~ — **decided: literal tabs in one SPA over a shared client store** (research note `05-surfaces.md`; concept §6 candidate 16, flagged for the next register batch). The "different roles" illusion tabs weaken is recovered honestly by the heartbeat loop being *visible* — an edit on one tab glows the tabs and components it touches (G6 made visible; concept §6 candidate 18). Built in SPEC-16 (`src/app/*`); the live surface is published at `assets/app/`.
 3. Does S3 permit *any* write other than selection (e.g. commitment re-prioritisation), or is that a planner act by definition?
 4. Wall-projection mode for S4 (large type, auto-follow feed) as a first-class config.
