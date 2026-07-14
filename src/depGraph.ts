@@ -72,15 +72,19 @@ function classifyObject(obj: Record<string, unknown> | undefined): DepGraphNode[
 
 function labelObject(hash: string, obj: Record<string, unknown> | undefined): string {
   if (!obj) return `${hash.slice(0, 8)}… (dead end — G3)`;
+  if (typeof obj.verdict === 'string' && typeof obj.plan === 'string' && typeof obj.commitment === 'string') {
+    const scenario = typeof obj.scenario === 'string' && obj.scenario !== 'BASE' ? ` (${obj.scenario})` : '';
+    return `${obj.verdict} ${obj.plan}·${obj.commitment}${scenario}`;
+  }
+  if (typeof obj.criterion === 'string' && typeof obj.plan === 'string' && typeof obj.commitment === 'string') {
+    return `score ${obj.plan}·${obj.commitment}`;
+  }
   if (typeof obj.logical_id === 'string' && obj.logical_id) {
     return typeof obj.name === 'string' ? `${obj.logical_id} · ${obj.name}` : obj.logical_id;
   }
   if (typeof obj.stamp === 'string') {
     const scenario = typeof obj.scenario === 'string' ? obj.scenario : '';
     return scenario ? `${scenario} world` : `world ${(obj.stamp as string).slice(0, 8)}…`;
-  }
-  if (typeof obj.verdict === 'string' && typeof obj.plan === 'string' && typeof obj.commitment === 'string') {
-    return `${obj.plan}·${obj.commitment}`;
   }
   return `${hash.slice(0, 8)}…`;
 }
