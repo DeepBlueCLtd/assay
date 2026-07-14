@@ -114,6 +114,10 @@
   "updates": [
     {
       "date": "2026-07-14",
+      "note": "Register batch 5 ratified (ASSAY-DEC-35): civil harm stays a geometric red line, never a quantified metric (issue #41). C3 counts whether FE-FALCON fires into the populated port district — it does not weight by population. Whether firing into 55,000 is \"worse\" than 5,000 is a commander value judgement the system is forbidden from encoding (DEC-19). The proposed weighted_civil_harm metric is declined; the honest gap SPEC-18 found (density band compiled but not read) is a design feature."
+    },
+    {
+      "date": "2026-07-14",
       "note": "Stage 5 & 6 blog articles shipped: \"don't plan on most-likely\" (SPEC-10, thesis C) and \"what to verify next\" (SPEC-11/12/13, theses D/E/F). Both carry illustrative widgets over Meridian fixtures — the scenario strip with interactive scenario toggles, and the sensitivity/discrimination/staleness ranking tables."
     },
     {
