@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<!--
+  ASSAY blog article — trace walk (comms plan §6).
+
+  SPEC-02: the trace graph. Click a node, see the forward/backward closure
+  light up. Self-contained and static.
+
+  Frozen at publication — 2026-07-11.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace walk: every output traces back to named knowledge — ASSAY</title>
+<meta name="description" content="Click a node in the trace graph and see its forward and backward closure light up — the skeleton that makes every ASSAY output attributable.">
+<style>
+  :root { color-scheme: light dark;
+    --ink:#1B2732; --ink-soft:#33414D; --muted:#5B6B77; --page:#EDF0F2; --panel:#FCFDFD;
+    --panel-2:#F1F3F5; --line:#D8DFE4; --line-soft:#E4E9ED;
+    --band-ink:#9A6A14; --band-fill:#F7EDD8; --band-line:#E7D3A6;
+    --robust-ink:#14655F; --robust-fill:#E2EFEA; --robust-line:#BFDCD3;
+    --blue-ink:#3E5D8A; --blue-fill:#E6ECF6; --blue-line:#C8D5EA;
+    --shadow:0 1px 2px rgba(27,39,50,.05),0 8px 24px rgba(27,39,50,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark){ :root{
+    --ink:#E7ECF0; --ink-soft:#C4CED6; --muted:#93A2AE; --page:#10171D; --panel:#17212A;
+    --panel-2:#131C24; --line:#2A3945; --line-soft:#222E38;
+    --band-ink:#E0B457; --band-fill:#2E2513; --band-line:#4A3C1C;
+    --robust-ink:#63C3B6; --robust-fill:#122824; --robust-line:#1F3F39;
+    --blue-ink:#8FB0DE; --blue-fill:#182333; --blue-line:#2A3A52;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans);
+    font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a { color:var(--blue-ink); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+  header.top { background:var(--panel); border-bottom:1px solid var(--line); }
+  header.top .wrap { padding:30px 24px 28px; }
+  .crumbs { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .crumbs a { text-decoration:none; } .crumbs a:hover { color:var(--blue-ink); }
+  .meta { font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:16px 0 0; }
+  .chip { padding:2px 9px; border-radius:999px; border:1px solid; }
+  .chip.illu { border-color:var(--band-line); background:var(--band-fill); color:var(--band-ink); }
+  .chip.spec { border-color:var(--line); background:var(--panel-2); color:var(--muted); }
+  h1 { font-size:clamp(26px,4.4vw,34px); letter-spacing:-.02em; line-height:1.15; margin:14px 0 6px; }
+  article { padding:32px 0 10px; }
+  article p { margin:0 0 18px; color:var(--ink-soft); }
+  article h2 { font-size:21px; letter-spacing:-.01em; margin:34px 0 10px; }
+  article b { color:var(--ink); }
+  .demo { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:20px 22px; box-shadow:var(--shadow); margin:6px 0 8px; }
+  .demo-cap { font-size:13px; color:var(--muted); margin:8px 2px 26px; }
+  .demo-cap b { color:var(--robust-ink); }
+  .trace-row { display:flex; align-items:center; gap:8px; margin:8px 0; flex-wrap:wrap; }
+  .t-node { font-family:var(--mono); font-size:12px; padding:5px 12px; border-radius:6px;
+    border:1px solid; white-space:nowrap; }
+  .t-knowledge { background:var(--robust-fill); border-color:var(--robust-line); color:var(--robust-ink); }
+  .t-channel { background:var(--blue-fill); border-color:var(--blue-line); color:var(--blue-ink); }
+  .t-verdict { background:var(--band-fill); border-color:var(--band-line); color:var(--band-ink); }
+  .t-edge { font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .note { border:1px solid var(--band-line); background:var(--band-fill); color:var(--band-ink);
+    border-radius:12px; padding:15px 18px; font-size:14.5px; line-height:1.6; margin:6px 0 26px; }
+  .note b { color:var(--band-ink); }
+  .sources { border-top:1px solid var(--line-soft); margin-top:28px; padding-top:18px;
+    font-size:14px; color:var(--muted); }
+  .sources a { text-decoration:none; }
+  .sources li { margin-bottom:5px; }
+  footer { border-top:1px solid var(--line); background:var(--panel); margin-top:26px; }
+  footer .wrap { padding:24px; color:var(--muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="crumbs"><a href="../">&larr; Blog</a> &nbsp;&middot;&nbsp; <a href="../../">ASSAY home</a></div>
+    <div class="meta">
+      <span>2026-07-11</span>
+      <span class="chip illu">illustrative widget &mdash; real rule, fixture data</span>
+      <span class="chip spec">SPEC-02</span>
+    </div>
+    <h1>Trace walk: every output traces back to named knowledge</h1>
+  </div>
+</header>
+
+<div class="wrap">
+<article>
+  <p>
+    A commander looking at a verdict &mdash; "this route is tight on clearance" &mdash; needs to
+    ask <em>why</em>. Not "what formula produced the number" but "which analyst's assessment, from
+    which source, via which channel, drove this conclusion?" If the answer is "we don't know" or
+    "it's complicated," the verdict is unjustifiable.
+  </p>
+  <p>
+    ASSAY's trace store (SPEC-02) is the skeleton that makes every output attributable. It is a
+    directed graph of <b>trace edges</b>, written at compute time by the service performing each
+    computation &mdash; never reconstructed after the fact (constitution III). A backward walk
+    from any verdict reaches named knowledge; a forward walk from any knowledge item reaches
+    every verdict it influenced.
+  </p>
+
+  <h2>Try it: click a node, see what it reaches</h2>
+  <p>
+    Click any node below. <b>Forward walk</b> (click a knowledge item) lights up everything it
+    feeds &mdash; the channels it compiles into, the verdicts those channels produce. <b>Backward
+    walk</b> (click a verdict) lights up everything that fed it. The edges are typed: you see
+    <em>how</em> each link connects, not just that it does.
+  </p>
+  <div class="demo" id="trace-demo">
+    <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Click a node to walk its closure:</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="trace-row" style="justify-content:center">
+        <span class="t-node t-knowledge" data-trace="k1" style="cursor:pointer">K1 (depth)</span>
+        <span class="t-node t-knowledge" data-trace="k2" style="cursor:pointer">K2 (capacity)</span>
+        <span class="t-node t-knowledge" data-trace="k5" style="cursor:pointer">K5 (weather)</span>
+      </div>
+      <div style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        <span data-edge="k1-d">&darr; compiled_into</span> &nbsp;&nbsp;
+        <span data-edge="k2-c">&darr; compiled_into</span> &nbsp;&nbsp;
+        <span data-edge="k5-c k5-d">&darr; compiled_into</span>
+      </div>
+      <div class="trace-row" style="justify-content:center">
+        <span class="t-node t-channel" data-trace="depth" style="cursor:pointer">FE-DEPTH</span>
+        <span class="t-node t-channel" data-trace="capacity" style="cursor:pointer">FE-CAPACITY</span>
+      </div>
+      <div style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        <span data-edge="d-v11 d-v21">&darr; scored_from</span> &nbsp;&nbsp;
+        <span data-edge="c-v14 c-v24">&darr; scored_from</span>
+      </div>
+      <div class="trace-row" style="justify-content:center">
+        <span class="t-node t-verdict" data-trace="v11" style="cursor:pointer">P1-C1</span>
+        <span class="t-node t-verdict" data-trace="v14" style="cursor:pointer">P1-C4</span>
+        <span class="t-node t-verdict" data-trace="v21" style="cursor:pointer">P2-C1</span>
+        <span class="t-node t-verdict" data-trace="v24" style="cursor:pointer">P2-C4</span>
+      </div>
+    </div>
+    <div id="trace-info" style="margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--muted);min-height:20px"></div>
+  </div>
+  <p class="demo-cap">
+    <b>Illustrative widget, fixture data.</b> The graph is a simplified view of Meridian's trace
+    topology. Click K2 to see the forward closure (FE-CAPACITY &rarr; P1-C4, P2-C4). Click
+    P1-C1 to see the backward closure (FE-DEPTH &larr; K1). Frozen as shipped on 2026-07-11.
+  </p>
+  <script>
+  (function(){
+    var GRAPH = {
+      k1:       {fwd:['depth'],    bwd:[]},
+      k2:       {fwd:['capacity'], bwd:[]},
+      k5:       {fwd:['depth','capacity'], bwd:[]},
+      depth:    {fwd:['v11','v21'], bwd:['k1','k5']},
+      capacity: {fwd:['v14','v24'], bwd:['k2','k5']},
+      v11:      {fwd:[], bwd:['depth']},
+      v14:      {fwd:[], bwd:['capacity']},
+      v21:      {fwd:[], bwd:['depth']},
+      v24:      {fwd:[], bwd:['capacity']}
+    };
+    var EDGE_MAP = {
+      'k1-d':'k1→depth', 'k2-c':'k2→capacity', 'k5-c':'k5→capacity', 'k5-d':'k5→depth',
+      'd-v11':'depth→v11', 'd-v21':'depth→v21', 'c-v14':'capacity→v14', 'c-v24':'capacity→v24'
+    };
+    var demo = document.getElementById('trace-demo');
+    var info = document.getElementById('trace-info');
+    var nodes = demo.querySelectorAll('[data-trace]');
+    var edges = demo.querySelectorAll('[data-edge]');
+    function closure(id, dir){
+      var visited = new Set(); var queue = [id];
+      while(queue.length){
+        var n = queue.shift();
+        if(visited.has(n)) continue;
+        visited.add(n);
+        var next = GRAPH[n] ? GRAPH[n][dir] : [];
+        next.forEach(function(x){ queue.push(x); });
+      }
+      return visited;
+    }
+    function highlight(clicked){
+      var isKnowledge = clicked === 'k1' || clicked === 'k2' || clicked === 'k5';
+      var dir = isKnowledge ? 'fwd' : 'bwd';
+      var lit = closure(clicked, dir);
+      lit.add(clicked);
+      nodes.forEach(function(el){
+        var id = el.getAttribute('data-trace');
+        el.style.opacity = lit.has(id) ? '1' : '0.25';
+        el.style.transform = lit.has(id) ? 'scale(1.08)' : 'scale(1)';
+        el.style.transition = 'opacity .2s, transform .2s';
+      });
+      edges.forEach(function(el){
+        var ids = el.getAttribute('data-edge').split(' ');
+        var anyLit = ids.some(function(eid){
+          var parts = Object.keys(EDGE_MAP).filter(function(k){ return k === eid; });
+          if(!parts.length) return false;
+          var mapped = EDGE_MAP[eid].split('→');
+          return lit.has(mapped[0]) && lit.has(mapped[1]);
+        });
+        el.style.opacity = anyLit ? '1' : '0.2';
+        el.style.fontWeight = anyLit ? '700' : '400';
+        el.style.transition = 'opacity .2s';
+      });
+      var label = isKnowledge ? 'Forward' : 'Backward';
+      var reachable = Array.from(lit).filter(function(x){ return x !== clicked; });
+      info.textContent = label + ' walk from ' + clicked + ': reaches ' + reachable.join(', ');
+    }
+    nodes.forEach(function(el){
+      el.addEventListener('click', function(){ highlight(el.getAttribute('data-trace')); });
+    });
+    demo.addEventListener('click', function(e){
+      if(!e.target.hasAttribute('data-trace')){
+        nodes.forEach(function(el){ el.style.opacity='1'; el.style.transform='scale(1)'; });
+        edges.forEach(function(el){ el.style.opacity='1'; el.style.fontWeight='400'; });
+        info.textContent = '';
+      }
+    });
+  })();
+  </script>
+  <p class="demo-cap">
+    <b>Illustrative widget, fixture data.</b> The trace chains are simplified views of the
+    shipped <span style="font-family:var(--mono);font-size:.9em">TraceStore.walk()</span>
+    running over Meridian knowledge K1/K2. Edge types and node roles match the real graph.
+    A chain that dead-ends where a known object was expected reports
+    <span style="font-family:var(--mono);font-size:.9em">complete: false</span> &mdash; the system
+    never hides a missing link (G3). Frozen as shipped on 2026-07-11.
+  </p>
+
+  <h2>Why it is load-bearing</h2>
+  <p>
+    Every invariant above Stage 0 depends on the trace store. <b>G3</b> (attribution): a verdict
+    without a complete backward chain to named knowledge is a defect, and the store surfaces it.
+    <b>G6</b> (propagation honesty): the forward walk is how the app knows what to glow and what
+    to leave dark. <b>Staleness</b> (thesis F, Stage 6): the transitive walk is how the analysis
+    loop identifies which verdicts depend on stale knowledge. The trace store is not a debugging
+    tool &mdash; it is the mechanism that makes ASSAY's honesty properties mechanically
+    enforceable.
+  </p>
+
+  <div class="note">
+    <b>Assessment, not fact &mdash; and demonstrator, not product.</b> Every number here renders the
+    <b>Meridian Archipelago</b>, an engineered fiction (ASSAY-DEC-8). Nothing on this page reflects
+    any real operational picture. A thesis in ASSAY is only ever <em>explored</em>, never claimed
+    proven.
+  </div>
+
+  <div class="sources">
+    <p style="margin-bottom:10px"><b>Sources &amp; trace</b></p>
+    <ul>
+      <li>Trace store &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/trace.ts">src/trace.ts</a></li>
+      <li>Trace view (orientation map) &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/traceView.ts">src/traceView.ts</a></li>
+      <li>Constitution III &mdash; edges written at compute time, never reconstructed</li>
+      <li>G3 (attribution) &mdash; a dead-end chain reports <span style="font-family:var(--mono)">complete: false</span></li>
+      <li>Research note &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/research/00-foundations.md">00-foundations.md</a></li>
+    </ul>
+  </div>
+</article>
+</div>
+
+<footer>
+  <div class="wrap">
+    ASSAY &mdash; a docs-first demonstrator. <a href="https://github.com/DeepBlueCLtd/assay">github.com/DeepBlueCLtd/assay</a>
+  </div>
+</footer>
+</body>
+</html>
