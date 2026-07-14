@@ -64,6 +64,16 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'A commitment this least-worst option gives up — computed (the scorer returned "violated"), not authored. Never empty and never a silent drop (G4).',
   },
+  scenario_collapse: {
+    term: 'collapse marker (▼)',
+    gloss:
+      "The verdict under this scenario is worse than under BASE — the plan's performance drops. No robustness score — the four-stop verdict IS the data.",
+  },
+  worst_case: {
+    term: 'worst-case verdict',
+    gloss:
+      "The plan's worst verdict for this commitment across all toggled scenarios (minimax). A real verdict on a real scenario, not a weighted blend.",
+  },
 };
 
 const esc = (s: string): string =>
@@ -97,6 +107,7 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   s2Matrix: ['verdict'],
   handfulStrip: ['distinct'],
   s3Cards: ['sacrifice', 'tier'],
+  scenarioStrip: ['verdict', 'scenario_collapse', 'worst_case'],
   refusalBanner: ['refusal'],
 };
 

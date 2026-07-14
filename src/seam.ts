@@ -8,7 +8,7 @@
  * rather than in the generated schema.
  */
 import type { Ref } from './store.js';
-import type { Band, CommitmentVerdict, PlanScore, RelaxationReport } from './generated/types.js';
+import type { Band, CommitmentVerdict, PlanScore, RelaxationReport, VerdictBand } from './generated/types.js';
 
 export type RefusalReason =
   | 'contested_knowledge'
@@ -129,3 +129,31 @@ export interface RelaxSuccess {
 }
 
 export type RelaxResult = RelaxSuccess | Refusal;
+
+/**
+ * SPEC-10 — robustness movement types (seam §8, thesis C). Multi-scenario scoring
+ * of a plan set across the adversary COA set (R1/R2/R3). The orchestration is a
+ * loop over the SPEC-07 scorer (DEC-10) — no new engine. The minimax (worst-case)
+ * posture is decided by research note `docs/research/06-robustness.md` §1.
+ */
+export interface RobustnessRequest {
+  plans: Ref[];
+  worlds: Record<string, Ref>; // keyed by scenario id (e.g. {R1: ref, R2: ref, R3: ref})
+  engine_version: string;
+}
+
+export interface ScenarioVerdictTensor {
+  scenarios: string[];       // ordered scenario ids
+  plans: string[];           // ordered plan logical ids
+  commitments: string[];     // ordered commitment logical ids
+  verdicts: Map<string, CommitmentVerdict>; // key: `${plan}-${commitment}-${scenario}`
+  worst_case: Map<string, VerdictBand>;     // key: `${plan}-${commitment}` → worst verdict across scenarios
+  stamps_compatible: boolean; // whether all worlds share the same consumed-knowledge stamp lineage
+}
+
+export interface RobustnessSuccess {
+  tensor: ScenarioVerdictTensor;
+  stamp: string;
+}
+
+export type RobustnessResult = RobustnessSuccess | Refusal;

@@ -32,6 +32,8 @@ import { CompileService } from '../compile.js';
 import { ScoreService } from '../score.js';
 import { HandfulService } from '../handful.js';
 import { RelaxService } from '../relax.js';
+import { RobustnessService } from '../robustness.js';
+import type { ScenarioVerdictTensor } from '../seam.js';
 import { checkEncoding } from '../encoding.js';
 import { confidenceLint } from '../lint.js';
 import { informs, influences, type Neighbour } from '../traceView.js';
@@ -42,6 +44,7 @@ import { refusalBanner } from '../components/refusalBanner.js';
 import { s2Matrix, type S2Cell } from '../components/s2Matrix.js';
 import { handfulStrip, type HandfulStripRow } from '../components/handfulStrip.js';
 import { s3Cards, type S3Card } from '../components/s3Cards.js';
+import { scenarioStrip } from '../components/scenarioStrip.js';
 import { componentLegend } from '../components/legends.js';
 
 export type TabId = 'j2' | 'planner' | 'commander' | 'observer';
@@ -59,7 +62,7 @@ export interface Snapshot {
   panels: Panel[];
   resolved: boolean;
   scenario: string;
-  stamps: { world?: string; r3m?: string; handful?: string; relax?: string };
+  stamps: { world?: string; r3m?: string; handful?: string; relax?: string; robustness?: string };
   deltaCount: number;
   /** Last edit outcome, surfaced to the operator (refusal or lint caution). */
   notice?: { kind: 'refusal' | 'warning'; html: string };
@@ -91,6 +94,7 @@ export class AppState {
   #scorer!: ScoreService;
   #handfulSvc!: HandfulService;
   #relaxSvc!: RelaxService;
+  #robustnessSvc!: RobustnessService;
   #resolved = false;
   #notice?: Snapshot['notice'];
 
@@ -131,6 +135,11 @@ export class AppState {
     this.#relaxSvc = new RelaxService({
       store: svc.store,
       trace: svc.trace,
+      scorer: this.#scorer,
+      commitments: this.#fx.commitments,
+    });
+    this.#robustnessSvc = new RobustnessService({
+      store: svc.store,
       scorer: this.#scorer,
       commitments: this.#fx.commitments,
     });
@@ -302,6 +311,40 @@ export class AppState {
           html: componentLegend('s2Matrix') + s2Matrix(COMMITMENT_IDS, matrixRows),
           deps: matrixDeps,
         });
+
+        // SPEC-10 — scenario strip: score the handful across R1/R2/R3
+        const scenarioWorlds: Record<string, Ref> = { BASE: compiled.world };
+        for (const sid of ['R1', 'R2', 'R3']) {
+          const sw = await this.#compiler.compile({
+            knowledge: liveIds.map(refFor),
+            config: this.#fx.config,
+            scenario: sid,
+            engine_version: '0.1.0',
+          });
+          if (!isRefusal(sw)) scenarioWorlds[sid] = sw.world;
+        }
+        if (Object.keys(scenarioWorlds).length > 1) {
+          const rr = await this.#robustnessSvc.robustness({
+            plans: h.plans,
+            worlds: scenarioWorlds,
+            engine_version: '0.1.0',
+          });
+          if (!isRefusal(rr)) {
+            stamps.robustness = rr.stamp;
+            const planNames: Record<string, string> = {};
+            for (const planRef of h.plans) {
+              const plan = this.#svc.store.get(planRef.content_hash) as Plan;
+              planNames[planRef.logical_id] = `${plan.logical_id} · ${plan.name}`;
+            }
+            panels.push({
+              id: 'scenarios',
+              tab: 'commander',
+              title: 'Commander · scenario robustness (thesis C)',
+              html: componentLegend('scenarioStrip') + scenarioStrip(rr.tensor, { planNames }),
+              deps: new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)]),
+            });
+          }
+        }
       }
     }
 
