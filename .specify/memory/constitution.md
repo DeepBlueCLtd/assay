@@ -1,26 +1,28 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (batch 3 projection: G6 ratified, six new decisions)
-- Source of authority: docs/assay-register.md (ASSAY-DEC-1 … ASSAY-DEC-27); this
+- Version change: 1.1.0 → 1.2.0 (batch 4 projection: seven new decisions, front-end
+  lane + communications taxonomy ratified)
+- Source of authority: docs/assay-register.md (ASSAY-DEC-1 … ASSAY-DEC-34); this
   constitution is a projection of the register into spec-kit form, not a rival body of law.
 - Modified principles: n/a (no principle text redefined)
 - Added / materially expanded sections:
-  · Additional Constraints — "Contract invariants" now G1–G6; G6 (propagation honesty)
-    added as a standing acceptance criterion (ASSAY-DEC-25).
-  · Governance — compliance verification now covers G1–G6.
-- Batch 3 decisions projected (docs/assay-register.md): ASSAY-DEC-22 (walkthrough
-  canonical), DEC-23 (per-stage demo moments as a standing exit requirement), DEC-24
-  (seam v0.2 additions ratified), DEC-25 (G6), DEC-26 (findings ledger canonical),
-  DEC-27 (SME checkpoints as thesis-transition gates).
+  · Additional Constraints — "Writes are events" expanded: the glow (DEC-34) is the
+    rendering of G6, and auto-recompute in the flow view (DEC-31a) is attribution-visible.
+    Shell/pure-component split (DEC-33) added as a standing extractability constraint.
+    Three slice categories named (DEC-30).
+- Batch 4 decisions projected (docs/assay-register.md): ASSAY-DEC-28 (home-page
+  currency at spec granularity), DEC-29 (sparse channel representation), DEC-30
+  (communications as register-blessed authoring, not spec-kit), DEC-31 (flow-view
+  behaviours a/b/c ratified, d deferred), DEC-32 (SPA shell with four role tabs),
+  DEC-33 (in-browser pipeline + shell/pure-component split), DEC-34 (glow as G6
+  made visible).
 - Removed sections: n/a
-- Templates requiring updates:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates should cite G1–G6
-     and Principles I–IV (pending first /speckit.plan run)
-  ✅ .specify/templates/spec-template.md — specs must reference register DEC ids where
-     a requirement restates a decision (pending first /speckit.specify run)
+- Templates requiring updates: none (existing templates already accommodate).
 - Follow-up TODOs: none. No deferred placeholders.
 
 Prior versions:
+- 1.1.0 (2026-07-12): batch 3 projection — G6 ratified (DEC-25), six new decisions
+  (DEC-22…27); Contract invariants expanded to G1–G6; Governance compliance covers G1–G6.
 - (none) → 1.0.0 (2026-07-11): initial ratification; Core Principles I–VI; Additional
   Constraints; Development Workflow & Quality Gates; Governance; projection of
   ASSAY-DEC-1 … ASSAY-DEC-11.
@@ -108,7 +110,19 @@ principles enter the register as ASSAY-DEC entries first. (ASSAY-DEC-2)
   re-asserted by the spine-complete gate).
 - **Writes are events**: every cross-surface write is a stamped delta; no surface
   writes to another surface's state directly. Nothing recomputes silently on
-  knowledge change — staleness flags, humans decide. (ASSAY-DEC-5)
+  knowledge change — staleness flags, humans decide. Where auto-recompute is used
+  (the flow view, DEC-31a), it is attribution-visible: stamp flip, delta row, and
+  gate pulse. The propagation glow (DEC-34) renders G6 as an operator-visible
+  affordance — value-keyed, row/cell-level, never under- or over-reports.
+  (ASSAY-DEC-5, DEC-31, DEC-34)
+- **Shell / pure-component split** (ASSAY-DEC-33): the eight `src/components/*`
+  renderers stay pure (types-in, HTML-string-out, no app state dependency); all
+  state, events, recompute, and propagation live in `src/app/`. This preserves
+  SPEC-14 extractability — components are reusable in any consumer.
+- **Three slice categories** (ASSAY-DEC-12, DEC-30): document slices (D#), build
+  specifications (SPEC-##), and communications artefacts. Communications are
+  projections of shipped work under register/comms honesty discipline, never
+  spec-kit features.
 
 ## Development Workflow & Quality Gates
 
@@ -142,4 +156,4 @@ against the build plan or rejected. Runtime development guidance lives in the
 canonical documents under `docs/`, which remain the authoritative elaboration of
 every rule stated here.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-11 | **Last Amended**: 2026-07-12
+**Version**: 1.2.0 | **Ratified**: 2026-07-11 | **Last Amended**: 2026-07-14
