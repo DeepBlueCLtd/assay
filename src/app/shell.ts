@@ -50,7 +50,8 @@ const STYLES = `
 .assay-controls input,.assay-controls select{font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:4px}
 .assay-btn{appearance:none;border:1px solid #2C4A6E;background:#3E5D8A;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
 .assay-btn.secondary{background:#fff;color:#3E5D8A}
-.assay-chip-clickable{cursor:pointer;text-decoration:underline dotted}
+.assay-chip-clickable{cursor:pointer;text-decoration:underline dotted;border-radius:4px;padding:1px 3px;transition:background .15s,outline .15s}
+.assay-chip-clickable:hover{background:rgba(62,93,138,.1);outline:1.5px solid rgba(62,93,138,.35);outline-offset:1px}
 @keyframes assayGlow{0%{background:rgba(244,196,48,.55);box-shadow:0 0 0 3px rgba(244,196,48,.55)}100%{background:transparent;box-shadow:0 0 0 3px transparent}}
 .assay-glow{animation:assayGlow ${GLOW_MS}ms ease-out}
 .assay-tab.assay-glow{animation:assayGlow ${GLOW_MS}ms ease-out}
@@ -367,9 +368,12 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   function wireTraceChips(): void {
     for (const cell of Array.from(panelsRoot.querySelectorAll('[data-logical-id]'))) {
       const el = cell as HTMLElement;
-      const idCell = el.querySelector('td') ?? el;
-      (idCell as HTMLElement).classList.add('assay-chip-clickable');
-      idCell.addEventListener('click', (ev) => {
+      // For <tr> rows, make the first <td> the click target; for everything
+      // else (<th>, <li>, <span>, <div>) the element itself is the target.
+      const target = (el.tagName === 'TR' ? el.querySelector('td') : null) ?? el;
+      (target as HTMLElement).classList.add('assay-chip-clickable');
+      (target as HTMLElement).style.cursor = 'pointer';
+      target.addEventListener('click', (ev) => {
         ev.stopPropagation();
         openMenu(el.dataset.logicalId as string, ev as MouseEvent);
       });
