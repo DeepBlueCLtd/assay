@@ -11,34 +11,39 @@ fork and a register batch — and they're called out in **§5 Decisions owed**. 
 
 ---
 
-## 0. Warm up (once, ~2 min)
+## 0. How to run this review (all in a browser — no terminal needed)
 
-```bash
-git checkout main && git pull origin main
-npm install
-npm run typecheck     # expect: clean
-npm test              # expect: 199 passed
-npm run build:site    # expect: assembles site/, honesty gates pass
-```
+You're reviewing from a browser against the **hosted GitHub Pages site**, not a local checkout. Two
+tabs are all you need:
 
-If all four are green you've confirmed the whole spine + surfaces compile and the honesty gates
-hold on the current tip. Everything below is then about *reading intent*, not chasing red.
+1. **The live site** — the demonstrator's surfaces you click through:
+   `https://deepbluecltd.github.io/assay/`
+   Pages must be set to *Deploy from a branch → `gh-pages` / (root)* for this to serve — if the URL
+   404s, that's the one-time setup PR #17 flagged (see §5.4), not a broken build.
+2. **The repo on GitHub** — for reading research notes, docs, and code where a card says "read":
+   `https://github.com/DeepBlueCLtd/assay` (open any file in the web UI; PRs are at `/pull/N`).
 
-**Live site** (GitHub Pages, published from `main` → `gh-pages`):
-`https://deepbluecltd.github.io/assay/`
-Pages must be set to *Deploy from a branch → `gh-pages` / (root)* for this to serve — if the URL
-404s, that's the one-time setup PR #17 flagged, not a broken build. Local fallback: open the files
-under `site/` after `npm run build:site`.
+CI already did the mechanical checks for you — **all three checks are green on `main`** (Tests, Static
+analysis with the generated-types drift guard, and the Pages build), so you don't need to run
+`typecheck`/`test` yourself. Everything below is about *reading intent and clicking the surfaces*, not
+chasing red. (If you do end up at a terminal, the equivalents are `npm run typecheck`, `npm test` →
+199 passed, `npm run build:site`.)
 
-| Surface | Live path | Local |
-|---|---|---|
-| Home / overview | `/` | `site/index.html` |
-| Component gallery | `/gallery/` | `site/gallery/index.html` |
-| Role wireframes | `/wireframes.html` | `site/wireframes.html` |
-| **Live SPA (SPEC-16)** | `/assets/app/` | `site/assets/app/index.html` |
-| Flow infographic (swimlane) | `/flow.html` | `site/flow.html` |
-| Flow schematic (engine idiom) | `/flow-schematic.html` | `site/flow-schematic.html` |
-| Blog | `/blog/` | `site/blog/` |
+**Live-site surface map** — bookmark these; the cards below link into them:
+
+| Surface | Live URL |
+|---|---|
+| Home / overview | `https://deepbluecltd.github.io/assay/` |
+| Component gallery | `https://deepbluecltd.github.io/assay/gallery/` |
+| Role wireframes | `https://deepbluecltd.github.io/assay/wireframes.html` |
+| **Live SPA (SPEC-16)** | `https://deepbluecltd.github.io/assay/assets/app/` |
+| Flow infographic (swimlane) | `https://deepbluecltd.github.io/assay/flow.html` |
+| Flow schematic (engine idiom) | `https://deepbluecltd.github.io/assay/flow-schematic.html` |
+| Blog | `https://deepbluecltd.github.io/assay/blog/` |
+
+> **Reading code/docs in the browser:** each merged PR is at `.../assay/pull/N` (the *Files changed*
+> tab shows the diff); research notes are at `.../assay/blob/main/docs/research/NN-name.md`. Where a
+> card says "read `src/…`" or "read the research note", open it in the GitHub web UI — no clone needed.
 
 ---
 
@@ -67,6 +72,13 @@ These two are plumbing. Read the PR, confirm the workflow files exist, move on.
 This is the real substance: Knowledge → Compile → Score → Handful → Relax. Review in build order.
 Each landed with a research note (the DEC-11 gate) and the vignette oracle as an independent check.
 For each, the *one thing to actually verify* is the honesty invariant, not the code volume.
+
+**Two browser tabs cover this whole track:** the **component gallery**
+(`https://deepbluecltd.github.io/assay/gallery/`) renders each stage's live "demo moment" from the
+*actual* services (S1 refusal table, "contested never compiles", the honest four-stop matrix, the
+generated handful, the three least-worst cards) — so the honesty invariants are visible there, not
+just in tests. Where a card says "read the research note" or "read `src/…`", open it in the GitHub web
+UI (`.../assay/blob/main/…`). No local run required.
 
 - [ ] **#15 — SPEC-05 knowledge service & encoding discipline** (Stage 1) — *closes #10*
   - Core: `src/{seam,deltas,encoding,lint,knowledge}.ts` + `components/{refusalBanner,s1Table}.ts`.
