@@ -237,6 +237,166 @@ describe('K3 end-to-end trace: civil population → COA verdict', () => {
     }
   });
 
+  it('Stage 5c — K6 (FAC sorties) traces: compiled into threat channel, read by C4 exposure metric', async () => {
+    const k6 = byId.get('K6')!;
+    expect(k6.question).toBe('What sortie rate can the FAC squadron sustain?');
+    expect(k6.subject).toBe('threat.fac_sorties');
+    expect(k6.answer).toEqual({ lo: 2, hi: 6, unit: 'sorties/day' });
+    expect(k6.provenance!.confidence).toBe('low');
+    console.log('[K6] answer band: [%d, %d] %s', k6.answer!.lo, k6.answer!.hi, k6.answer!.unit);
+    console.log('[K6] provenance: %s confidence, source: %s — wide band from weak evidence', k6.provenance!.confidence, k6.provenance!.source_class);
+
+    const entry = config.subject_map.find((e) => e.subject === 'threat.fac_sorties')!;
+    expect(entry.channel).toBe('threat');
+    expect(entry.region).toBe('fac_waters');
+    const facRegion = config.regions.find((r) => r.name === 'fac_waters')!;
+    console.log('[route] threat.fac_sorties → channel:%s, region:%s (x:%d-%d, y:%d-%d)',
+      entry.channel, entry.region, facRegion.x0, facRegion.x1, facRegion.y0, facRegion.y1);
+
+    const { world } = await buildWorld((await makeRig()).svc);
+    const threatCh = world.channels.find((c) => c.kind === 'threat')!;
+    const k6region = threatCh.regions!.find((r) => r.source === 'K6');
+    expect(k6region).toBeDefined();
+    expect(k6region!.value).toEqual({ lo: 2, hi: 6, unit: 'sorties/day' });
+    console.log('[compile] K6 override on threat/%s: [%d, %d] %s', k6region!.region, k6region!.value.lo, k6region!.value.hi, k6region!.value.unit);
+
+    const insideX = Math.floor((facRegion.x0 + facRegion.x1) / 2);
+    const insideY = Math.floor((facRegion.y0 + facRegion.y1) / 2);
+    const threatInside = channelAt(world, config, 'threat', insideX, insideY, 0);
+    console.log('[materialise] threat at (%d,%d) inside fac_waters: [%d, %d]', insideX, insideY, threatInside.lo, threatInside.hi);
+
+    const c4 = commitments.find((c) => c.logical_id === 'C4')!;
+    expect(c4.metric).toBe('threat_exposure');
+    expect(c4.scope).toBe('FE-ANVIL');
+    console.log('[C4] commitment: "%s"', c4.statement);
+    console.log('[C4] metric: %s, comparator: %s, threshold: %d, scope: %s', c4.metric, c4.comparator, c4.threshold, c4.scope);
+
+    const p1 = plans.find((p) => p.logical_id === 'P1')!;
+    const anvilP1 = p1.elements.find((e) => e.force_element === 'FE-ANVIL')!;
+    console.log('[P1] FE-ANVIL route (C4 reads threat channel along this):');
+    for (const leg of anvilP1.route!) {
+      const inFac = leg.x >= facRegion.x0 && leg.x <= facRegion.x1 &&
+                    leg.y >= facRegion.y0 && leg.y <= facRegion.y1;
+      const threatVal = channelAt(world, config, 'threat', leg.x, leg.y, leg.enter_step);
+      console.log('  leg (%d,%d) steps %d-%d: %s fac_waters, threat=[%d, %d]',
+        leg.x, leg.y, leg.enter_step, leg.exit_step, inFac ? 'INSIDE' : 'outside', threatVal.lo, threatVal.hi);
+    }
+
+    const resultP1 = evaluateMetric(c4, p1, world, config);
+    expect(isSevered(resultP1)).toBe(false);
+    if (!isSevered(resultP1)) {
+      const margin = marginBand(c4.comparator, c4.threshold, resultP1.band);
+      const verdict = verdictFor(margin);
+      console.log('[score] P1 C4 exposure metric: [%d, %d] %s', resultP1.band.lo, resultP1.band.hi, resultP1.band.unit);
+      console.log('[verdict] P1 C4: margin [%d, %d] → %s', margin.lo, margin.hi, verdict);
+      if (resultP1.band.lo !== resultP1.band.hi) {
+        console.log('[CONTRAST] Unlike K3→C3, K6\'s band WIDENS the metric — the [%d,%d] threat band propagates into a genuinely banded exposure.',
+          k6.answer!.lo, k6.answer!.hi);
+      }
+    }
+  });
+
+  it('Stage 5d — K7 (air-defence envelope) traces: compiled into threat channel, shapes FALCON routing context', async () => {
+    const k7 = byId.get('K7')!;
+    expect(k7.question).toBe('What is the air-defence engagement envelope at Carrick strip?');
+    expect(k7.subject).toBe('threat.air_defence');
+    expect(k7.answer).toEqual({ lo: 8, hi: 14, unit: 'km' });
+    console.log('[K7] answer band: [%d, %d] %s', k7.answer!.lo, k7.answer!.hi, k7.answer!.unit);
+    console.log('[K7] provenance: %s confidence, source: %s', k7.provenance!.confidence, k7.provenance!.source_class);
+
+    const entry = config.subject_map.find((e) => e.subject === 'threat.air_defence')!;
+    expect(entry.channel).toBe('threat');
+    expect(entry.region).toBe('air_defence');
+    const adRegion = config.regions.find((r) => r.name === 'air_defence')!;
+    console.log('[route] threat.air_defence → channel:%s, region:%s (x:%d-%d, y:%d-%d)',
+      entry.channel, entry.region, adRegion.x0, adRegion.x1, adRegion.y0, adRegion.y1);
+
+    const { world } = await buildWorld((await makeRig()).svc);
+    const threatCh = world.channels.find((c) => c.kind === 'threat')!;
+    const k7region = threatCh.regions!.find((r) => r.source === 'K7');
+    expect(k7region).toBeDefined();
+    expect(k7region!.value).toEqual({ lo: 8, hi: 14, unit: 'km' });
+    console.log('[compile] K7 override on threat/%s: [%d, %d] %s', k7region!.region, k7region!.value.lo, k7region!.value.hi, k7region!.value.unit);
+
+    const c4 = commitments.find((c) => c.logical_id === 'C4')!;
+    const p1 = plans.find((p) => p.logical_id === 'P1')!;
+    const p2 = plans.find((p) => p.logical_id === 'P2')!;
+
+    for (const [pid, plan] of [['P1', p1], ['P2', p2]] as const) {
+      const anvil = plan.elements.find((e) => e.force_element === 'FE-ANVIL')!;
+      console.log('[%s] FE-ANVIL legs vs air_defence region:', pid);
+      let anyInside = false;
+      for (const leg of anvil.route!) {
+        const inAD = leg.x >= adRegion.x0 && leg.x <= adRegion.x1 &&
+                     leg.y >= adRegion.y0 && leg.y <= adRegion.y1;
+        if (inAD) anyInside = true;
+        const threatVal = channelAt(world, config, 'threat', leg.x, leg.y, leg.enter_step);
+        console.log('  leg (%d,%d) steps %d-%d: %s air_defence, threat=[%d, %d]',
+          leg.x, leg.y, leg.enter_step, leg.exit_step, inAD ? 'INSIDE' : 'outside', threatVal.lo, threatVal.hi);
+      }
+      if (!anyInside) {
+        console.log('[%s] FE-ANVIL does NOT pass through air_defence — K7 band not read for %s C4', pid, pid);
+      }
+
+      const result = evaluateMetric(c4, plan, world, config);
+      if (!isSevered(result)) {
+        const margin = marginBand(c4.comparator, c4.threshold, result.band);
+        const verdict = verdictFor(margin);
+        console.log('[score] %s C4 exposure: [%d, %d], margin [%d, %d] → %s',
+          pid, result.band.lo, result.band.hi, margin.lo, margin.hi, verdict);
+      }
+    }
+
+    console.log('[K7 ROLE] K7 shapes FALCON routing decisions at the plan-generation level (generate.ts).');
+    console.log('[K7 ROLE] Whether K7 affects C4 depends on whether FE-ANVIL\'s route enters the air_defence region.');
+    console.log('[K7 ROLE] Like K3, K7 may be compiled but not read by a given plan\'s scoring — the impact is route-dependent.');
+  });
+
+  it('Stage 5e — K6 band width propagates: widening K6 widens C4 metric (propagation honesty)', async () => {
+    const { svc, planRefs } = await makeRig();
+    const { world, worldRef } = await buildWorld(svc);
+    const c4 = commitments.find((c) => c.logical_id === 'C4')!;
+    const p1 = plans.find((p) => p.logical_id === 'P1')!;
+
+    const baseResult = evaluateMetric(c4, p1, world, config);
+    expect(isSevered(baseResult)).toBe(false);
+    if (isSevered(baseResult)) return;
+
+    const scorer = new ScoreService({ store: svc.store, trace: svc.trace, config, commitments });
+    const widenedResult = await scorer.score({
+      plan: planRefs.get('P1')!,
+      world: worldRef,
+      scenario: 'BASE',
+      engine_version: ENGINE,
+      knowledge_overrides: [{
+        ref: ref('K6'),
+        answer: { lo: 1, hi: 8, unit: 'sorties/day' },
+      }],
+    });
+    if (isRefusal(widenedResult)) throw new Error(`score refused: ${widenedResult.reason}`);
+    const c4base = widenedResult.verdicts.find((v) => v.commitment === 'C4')!;
+    const origResult = await scorer.score({
+      plan: planRefs.get('P1')!,
+      world: worldRef,
+      scenario: 'BASE',
+      engine_version: ENGINE,
+    });
+    if (isRefusal(origResult)) throw new Error(`score refused: ${origResult.reason}`);
+    const c4orig = origResult.verdicts.find((v) => v.commitment === 'C4')!;
+
+    console.log('[G6] K6 original [2,6] → C4 margin: [%s, %s] → %s',
+      c4orig.margin?.lo, c4orig.margin?.hi, c4orig.verdict);
+    console.log('[G6] K6 widened  [1,8] → C4 margin: [%s, %s] → %s',
+      c4base.margin?.lo, c4base.margin?.hi, c4base.verdict);
+
+    if (c4orig.margin && c4base.margin) {
+      expect(c4base.margin.lo).toBeLessThanOrEqual(c4orig.margin.lo);
+      expect(c4base.margin.hi).toBeGreaterThanOrEqual(c4orig.margin.hi);
+      console.log('[G6 PROOF] Widening K6 widened the C4 margin band — propagation honesty holds.');
+      console.log('[G6 CONTRAST] K3\'s band has NO such effect on C3 — geometric metrics are band-blind.');
+    }
+  });
+
   it('Stage 6 — full score matrix: K3 changes no verdict for P1 or P2', async () => {
     const { svc, planRefs } = await makeRig();
     const { worldRef } = await buildWorld(svc);

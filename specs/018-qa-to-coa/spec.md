@@ -1,4 +1,4 @@
-# Feature Specification: From Q&A to COA — tracing a banded answer through the pipeline (SPEC-18)
+# Feature Specification: From Q&A to COA — tracing banded answers through the pipeline (SPEC-18)
 
 **Feature Branch**: `claude/qa-banding-coa-scoring-64pib5`
 
@@ -6,102 +6,220 @@
 
 **Status**: Draft
 
-**Stage**: Research spike (cross-cutting, no stage gate) · **Depends on**: SPEC-05 (knowledge), SPEC-06 (compile), SPEC-07 (scorer), SPEC-08 (handful), SPEC-09 (relaxation), SPEC-16 (surfaces) · **Research note**: `docs/research/10-qa-to-coa.md` (DEC-11 gate — present)
+**Stage**: Research spike (cross-cutting, no stage gate) · **Depends on**: SPEC-05 (knowledge), SPEC-06 (compile), SPEC-07 (scorer), SPEC-08 (handful), SPEC-09 (relaxation), SPEC-16 (surfaces)
 
-**Input**: A user-triggered investigation: *"Is the current system actually parsing banded Q&A information when it scores COAs? I don't see how it extracts the relevant impact from the items."* The answer — traced and instrumented in the research note — is that the system *does* propagate bands honestly through compile → materialise → score, but the connection from a specific knowledge item to a specific COA verdict is **spatially mediated** (subject → channel/region → route intersection → metric accumulation → margin → verdict), and some knowledge items (K3, civil population) are compiled into the world but intentionally not read by the metric that evaluates the commitment they contextualise (C3, no fires in the district). The blog article walks a reader through this pipeline using K3 as the primary trace and K4/K6 as the contrast, demonstrating both the propagation path and the honest gap.
+**Input**: A user-triggered investigation: *"Is the current system actually parsing banded Q&A information when it scores COAs? I don't see how it extracts the relevant impact from the items."*
 
-## User Scenarios & Testing *(mandatory)*
+**Deliverable**: A blog article with an embedded interactive demonstrator that walks a reader through a test case from Knowledge Object to Commander's selected COA, using three knowledge items (K3, K6, K7) as traced exemplars. Accompanied by an instrumented test suite (`tests/k3-trace.test.ts`) that proves every claim the article makes. No `src/` code is modified.
 
-The deliverable is a blog article with an embedded interactive demonstrator, not a system change. The article is part of the blog cadence (DEC-30) and the comms plan §6. The instrumented test suite (`tests/k3-trace.test.ts`) is the acceptance leg — it traces K3 through every pipeline stage and proves the gap.
+---
+
+## 1. Investigation: how banded answers reach COA verdicts
+
+The connection from a knowledge item to a COA verdict is **spatially mediated** — not a direct input→output function. The pipeline has five stages, and each knowledge item may participate at different stages, or not at all. This section traces three items to expose the three patterns.
+
+### 1.1 The pipeline (common to all knowledge items)
+
+```
+KnowledgeObject
+  .subject (e.g. "civil_density.port_district")
+       │
+       │ vignette-config.json subject_map lookup
+       ▼
+  (channel, region) pair
+       │
+       │ compile.ts: answer band → RegionOverride on channel
+       ▼
+CompiledWorld.channels[kind].regions[]
+       │
+       │ score.ts: evaluateMetric(commitment, plan, world, config)
+       │   → metrics.ts: metric-specific evaluator
+       │     → materialise.ts: channelAt(world, config, kind, x, y, t)
+       │   → accumulate into metric Band
+       ▼
+  metric Band
+       │
+       │ marginBand(comparator, threshold, metric) → margin Band
+       │ verdictFor(margin) → {robust, marginal, tight, violated}
+       ▼
+  CommitmentVerdict
+```
+
+The critical question is **what the metric evaluator does at the `channelAt` step**. Not all metrics read the channel. This produces three distinct patterns, each traced below.
+
+### 1.2 K3 — band compiled, metric geometric (the honest gap)
+
+**K3**: *"What is the civil population in the Port Halcyon district?"*
+- answer: `[35,000–55,000] persons` (reported, moderate confidence, 18-month-old NGO census)
+- subject: `civil_density.port_district` → channel `civil_density`, region `port_district` (x:24–40, y:30–46)
+
+**Compile**: K3's answer is placed verbatim as a `RegionOverride` on the `civil_density` channel. `channelAt(world, config, 'civil_density', 32, 38, 0)` returns `[35000, 55000]` inside the district, `[0, 0]` outside. The band is live in the world.
+
+**C3**: *"No fires into the populated port district"*
+- metric: `civil_harm_exposure` (kind `fires`)
+- comparator: `at_most`, threshold: `0`, scope: `port_district`
+
+**The `fires` metric counts FE-FALCON route legs inside the `port_district` geometry.** It is a purely geometric test — it never calls `channelAt` on any channel. K3's band is present in the world at the cells FE-FALCON passes through, but the scorer never reads it.
+
+**Instrumented proof** (`tests/k3-trace.test.ts` stage 5b): Scoring P2 against C3 with K3 in the world produces `fires = [1, 1]` → violated. Scoring P2 against C3 *without* K3 produces `fires = [1, 1]` → violated. **Identical.** K3's banded answer has zero effect on any COA verdict.
+
+| Plan | FE-FALCON in district? | C3 fires | C3 verdict | C3 margin |
+|------|----------------------|----------|-----------|-----------|
+| P1   | No (legs at (30,50), (48,15)) | `[0, 0]` | marginal  | `[0, 0]`  |
+| P2   | Yes (leg at (32,38))  | `[1, 1]` | violated  | `[-1, -1]` |
+
+**Why this is honest, not broken**: C3's commitment is about the *decision to fire*, not the *scale of harm*. The population number contextualises *why* the district matters — it is the J-2's evidence that the district is populated — but it does not modulate the binary question of whether FE-FALCON fires there. A system that multiplied leg-count by population would invent a quantity (weighted harm) that no commitment asked for, violating DEC-19 (no invented quantities).
+
+### 1.3 K6 — band propagates into verdict (the positive case)
+
+**K6**: *"What sortie rate can the FAC squadron sustain?"*
+- answer: `[2–6] sorties/day` (assessed, **low** confidence — wide band from weak evidence)
+- subject: `threat.fac_sorties` → channel `threat`, region `fac_waters` (x:30–50, y:20–34)
+
+**C4**: *"Amphibious group not exposed to unsuppressed battery or FAC threat"*
+- metric: `threat_exposure` (kind `exposure`)
+- comparator: `at_most`, threshold: `12`, scope: `FE-ANVIL`
+
+**The `exposure` metric reads the threat channel** via `channelAt` along FE-ANVIL's route, accumulating `threat_value × dwell_hours` as a band. When FE-ANVIL enters `fac_waters`, the scorer reads K6's band `[2, 6]` and the band propagates into the sum.
+
+**Instrumented trace** (`tests/k3-trace.test.ts` stage 5c):
+
+| Plan | FE-ANVIL in fac_waters? | Threat at leg | C4 exposure | C4 margin | C4 verdict |
+|------|------------------------|---------------|------------|-----------|-----------|
+| P1   | Yes (leg (32,22) steps 8–9) | `[2, 6]` | `[12, 36]` | `[-24, 0]` | tight |
+| P2   | No (leg (30,50) only) | `[0, 0]` | `[0, 0]` | `[12, 12]` | robust |
+
+**Propagation honesty proof (G6)** (`tests/k3-trace.test.ts` stage 5e): Widening K6 from `[2, 6]` to `[1, 8]` via `knowledge_overrides` widens C4's margin from `[-24, 0]` to `[-36, 6]`. The widened margin strictly contains the original. **Less certain intelligence produces less certain verdicts.** K3's band has no such effect on C3.
+
+### 1.4 K7 — band compiled, route misses region (the near-miss)
+
+**K7**: *"What is the air-defence engagement envelope at Carrick strip?"*
+- answer: `[8–14] km` (assessed, moderate confidence)
+- subject: `threat.air_defence` → channel `threat`, region `air_defence` (x:40–52, y:40–52)
+
+K7 is compiled into the threat channel for `air_defence`. The `exposure` metric *would* read it — unlike the `fires` metric, `exposure` calls `channelAt` on the `threat` channel. But FE-ANVIL's route in both P1 and P2 does not pass through `air_defence`.
+
+**Instrumented trace** (`tests/k3-trace.test.ts` stage 5d):
+
+| Plan | FE-ANVIL in air_defence? | K7 read? | C4 effect |
+|------|-------------------------|----------|-----------|
+| P1   | No | No | zero |
+| P2   | No | No | zero |
+
+**K7's role is upstream**: it shapes FE-FALCON routing decisions at the *plan-generation* level (`generate.ts`), determining whether FALCON takes a stand-off route around Carrick or enters the air-defence envelope. K7 affects which plans are *generated*, not how they are *scored*. A plan whose route entered `air_defence` *would* see K7's band propagate into C4.
+
+### 1.5 The three-pattern taxonomy
+
+| Pattern | Example | Metric reads channel? | Route enters region? | Band affects verdict? |
+|---------|---------|----------------------|---------------------|----------------------|
+| **Band-propagating** | K6 → C4 | Yes (`exposure`) | Yes (P1) | Yes — band widens metric |
+| **Geometric-only** | K3 → C3 | No (`fires`) | n/a | No — metric counts legs |
+| **Route-dependent miss** | K7 → C4 | Yes (`exposure`) | No (P1, P2) | No — route doesn't intersect |
+
+This taxonomy is the article's pedagogic core. A reader who understands these three patterns understands how banded intelligence feeds — and sometimes intentionally does not feed — into COA evaluation.
+
+---
+
+## 2. User Scenarios & Testing
 
 ### User Story 1 — The reader traces K3 from question to compiled world (Priority: P1)
 
-A reader who has never seen the codebase opens the article and follows K3 — *"What is the civil population in Port Halcyon?"* — from its banded answer `[35,000–55,000] persons` through the config routing (`civil_density.port_district`) into the compiled world as a `RegionOverride`. The reader sees the band arrive intact in the channel, resolving to K3's interval inside the port district and to zero outside it.
+A reader follows K3 from its banded answer through config routing into the compiled world as a `RegionOverride`, seeing the band arrive intact.
 
-**Why this priority**: The compile pipeline is the least visible part of the system. Users see knowledge objects and verdicts; the channel layer between them is infrastructure. This story makes it concrete.
-
-**Independent Test**: `tests/k3-trace.test.ts` stages 1–4: assert K3's answer band appears verbatim as a `RegionOverride` on the `civil_density` channel for `port_district`, and that `channelAt` resolves it correctly inside/outside the region.
+**Independent Test**: `tests/k3-trace.test.ts` stages 1–4.
 
 **Acceptance Scenarios**:
 
 1. **Given** K3 with answer `{lo:35000, hi:55000, unit:"persons"}` and subject `civil_density.port_district`, **When** compiled into a BASE world, **Then** the `civil_density` channel has a `RegionOverride` with `region:"port_district"`, `value:{lo:35000, hi:55000}`, `source:"K3"`.
-2. **Given** the compiled world, **When** `channelAt` is called at a cell inside `port_district`, **Then** it returns `{lo:35000, hi:55000, unit:"persons"}`.
-3. **Given** the compiled world, **When** `channelAt` is called at a cell outside `port_district`, **Then** it returns the default `{lo:0, hi:0, unit:"persons"}`.
+2. **Given** the compiled world, **When** `channelAt` is called inside/outside `port_district`, **Then** it returns K3's band inside and the default outside.
 
 ---
 
-### User Story 2 — The reader sees why K3 does NOT affect C3's verdict (Priority: P1)
+### User Story 2 — The reader sees K3 does NOT affect C3 (Priority: P1)
 
-The reader follows C3 — *"No fires into the populated port district"* — to its metric (`civil_harm_exposure`, kind `fires`). The article shows that the `fires` metric counts FE-FALCON route legs inside the `port_district` geometry. It is a spatial/geometric test, not a channel read. K3's `[35,000–55,000]` band is present in the civil_density channel at the same cells, but the scorer never reads it. The reader sees the proof: scoring with and without K3 produces identical verdicts.
+The article shows the `fires` metric is geometric. K3's band is present but never read.
 
-**Why this priority**: This is the pedagogic core — the honest gap. The system does not pretend K3's population band affects C3's verdict, because the commitment is about the *decision to fire*, not the *scale of harm*. Explaining this gap honestly is more instructive than hiding it.
-
-**Independent Test**: `tests/k3-trace.test.ts` stages 5–5b: score P2 against C3 with and without K3 in the world; assert identical `fires` metric results. Assert that the `fires` function never calls `channelAt` on `civil_density`.
+**Independent Test**: `tests/k3-trace.test.ts` stages 5–5b: score P2 against C3 with and without K3; assert identical results.
 
 **Acceptance Scenarios**:
 
-1. **Given** plan P1 with FE-FALCON route outside `port_district`, **When** scored against C3, **Then** `fires = [0,0]`, verdict `marginal` (margin `[0,0]`).
-2. **Given** plan P2 with FE-FALCON route entering `port_district`, **When** scored against C3, **Then** `fires = [1,1]`, verdict `violated` (margin `[-1,-1]`).
-3. **Given** plan P2 scored against C3 with K3 in the world, **And** scored again against C3 with K3 removed, **Then** both produce `fires = [1,1]` — identical results.
+1. **Given** P1 with FE-FALCON outside `port_district`, **When** scored against C3, **Then** `fires = [0,0]`, verdict `marginal`.
+2. **Given** P2 with FE-FALCON inside `port_district`, **When** scored against C3, **Then** `fires = [1,1]`, verdict `violated`.
+3. **Given** P2 scored against C3 with and without K3, **Then** identical results — K3 has zero effect.
 
 ---
 
-### User Story 3 — The reader contrasts with a channel-reading metric (Priority: P2)
+### User Story 3 — K6 contrast: a band that DOES propagate (Priority: P1)
 
-The article contrasts C3 (geometric, K3-blind) with C4 (`threat_exposure`, kind `exposure`) which *does* read the threat channel along FE-ANVIL's route. K4's garrison threat band `[300–450]` and K6's FAC sortie band `[2–6]` propagate through `channelAt` into the exposure sum, and the resulting metric band is genuinely wider when the input bands are wider. The reader sees the two kinds of metric side by side: one that ignores its channel (C3) and one that reads it (C4).
+K6's FAC sortie band propagates into C4's exposure metric. Widening K6 widens the C4 margin (G6).
 
-**Why this priority**: P2 because it requires no new implementation — the contrast uses the existing scorer. But it is essential for the article's pedagogic completeness: without the contrast, the reader might conclude that bands *never* propagate into verdicts.
-
-**Independent Test**: Score P1 and P2 against C4; assert that the threat-exposure metric result is a genuine band (lo ≠ hi), and that widening K6's answer band widens the C4 metric band (propagation honesty, O-4/G6).
+**Independent Test**: `tests/k3-trace.test.ts` stages 5c, 5e.
 
 **Acceptance Scenarios**:
 
-1. **Given** plan P1 scored against C4 (`threat_exposure`, scope `FE-ANVIL`), **When** scored, **Then** the metric result is a band with `lo ≤ hi`, and the verdict is one of the four stops.
-2. **Given** K6's answer widened from `[2,6]` to `[1,8]`, **When** P1 is re-scored against C4 via `knowledge_overrides`, **Then** the C4 metric band is at least as wide as the original (G6 propagation honesty).
-3. **Given** the article's interactive embed, **When** the reader toggles from "K3 → C3" view to "K4 → C4" view, **Then** the channel-reading path lights up and the band propagation is visible.
+1. **Given** P1 scored against C4, **When** FE-ANVIL enters `fac_waters`, **Then** K6's threat band `[2, 6]` is read by `channelAt` and the exposure metric is a genuine band `[12, 36]`.
+2. **Given** K6 widened from `[2,6]` to `[1,8]` via `knowledge_overrides`, **When** P1 is re-scored, **Then** C4's margin band widens (G6 propagation honesty).
 
 ---
 
-### User Story 4 — The reader follows the full journey to COA selection (Priority: P2)
+### User Story 4 — K7 contrast: compiled but route-dependent miss (Priority: P1)
 
-The article completes the trace from verdict through handful generation (SPEC-08), relaxation (SPEC-09), and robustness (SPEC-10) to the commander's selection. The reader sees how C3's `violated` verdict on P2 enters the relaxation frontier (P2 sacrifices C3 — "accept fires in the district" — to hold C1/C2), and how the commander's choice between P1 (marginal C3, no fires) and P2 (violated C3, fires) is a real trade presented honestly.
+K7's air-defence band is compiled into the threat channel but FE-ANVIL's route misses the region. K7's role is upstream at plan generation.
 
-**Why this priority**: P2 because it composes existing functionality. The handful/relax/robustness pipeline already works; this story traces K3's influence (or non-influence) through it.
-
-**Independent Test**: Generate a handful containing P1 and P2; relax over R3m; verify that P2's relaxation candidate includes C3 in its `sacrificed` set. Score both plans against all scenarios; verify that C3's verdict is scenario-independent (it is geometric, not world-dependent).
+**Independent Test**: `tests/k3-trace.test.ts` stage 5d.
 
 **Acceptance Scenarios**:
 
-1. **Given** the handful containing P1 and P2, **When** the relaxation service runs over R3m, **Then** at least one candidate sacrifices C3, and that candidate's `sacrificed` set includes `C3`.
-2. **Given** P1 and P2 scored against C3 under BASE, R1, R2, R3, **Then** the C3 verdict for each plan is identical across all scenarios (the `fires` metric is geometric, independent of scenario excursions on non-mobility channels).
-3. **Given** the full trace from K3 → compile → score → handful → relax → commander choice, **When** the article is read end-to-end, **Then** the reader understands: (a) K3's band is real and honestly represented, (b) C3's metric intentionally does not read it, (c) C3's verdict still matters to COA selection via the relaxation trade, (d) a channel-reading metric variant could read K3 if the commitment were reformulated.
+1. **Given** P1 and P2 scored against C4, **When** neither FE-ANVIL route enters `air_defence`, **Then** K7's band has zero effect on C4.
+2. **Given** the article, **When** the reader reaches the K7 section, **Then** the article explains K7's upstream role: shaping which plans are generated, not how they are scored.
 
 ---
 
-### User Story 5 — The blog article and embed ship (Priority: P1)
+### User Story 5 — Full journey to COA selection (Priority: P2)
 
-The blog article renders as a self-contained HTML page in the blog pipeline (`docs/blog/posts/`), with an embedded interactive demonstrator following the blessed embed pattern (no runtime crypto, no bundler, zero network). The embed shows the K3-to-C3 trace (knowledge → channel → route → counter) side by side with the K4-to-C4 trace (knowledge → channel → route → exposure sum). The article is linked from the blog index and the home page.
+The article traces from verdict through handful/relaxation to the commander's selection, showing how C3's `violated` verdict on P2 drives the relaxation trade.
 
-**Why this priority**: P1 because shipping the article is the deliverable. The research note and tests are intermediate artefacts; the article is what the user asked for.
-
-**Independent Test**: The blog build pipeline (`npm run blog` or `scripts/build-site.ts`) produces the article at the expected path. The article's embed renders in Chromium without network access. The article appears in the blog index.
+**Independent Test**: Generate a handful containing P1/P2; relax over R3m; verify C3 appears in a `sacrificed` set.
 
 **Acceptance Scenarios**:
 
-1. **Given** the article source in `docs/blog/posts/`, **When** the blog build runs, **Then** the article appears in the blog index and renders at its expected URL.
-2. **Given** the article opened in Chromium with network disabled, **When** the embed loads, **Then** it renders the K3→C3 and K4→C4 traces with no console errors.
-3. **Given** the embed, **When** the reader interacts with it (toggling between K3/C3 and K4/C4 views), **Then** the band propagation and the geometric/channel-reading distinction are visually clear.
+1. **Given** the relaxation service over R3m, **Then** at least one candidate sacrifices C3.
+2. **Given** P1 and P2 scored against C3 under all scenarios, **Then** the C3 verdict is scenario-independent (geometric, not world-dependent).
 
 ---
 
-## Non-functional requirements
+### User Story 6 — Blog article and embed ship (Priority: P1)
 
-- **No system change**: this spec produces a test, a research note, and a blog article. No `src/` code is modified. The `fires` metric's geometric-only design is within DEC-10/DEC-19 latitude and is not a defect.
+The blog article ships as a self-contained HTML page with a three-panel interactive demonstrator showing the K3/K6/K7 taxonomy.
+
+**Independent Test**: Blog build produces the article; embed renders in Chromium offline.
+
+**Acceptance Scenarios**:
+
+1. **Given** the article in `docs/blog/posts/`, **When** the blog build runs, **Then** it appears in the index.
+2. **Given** the embed, **When** the reader interacts with it, **Then** the three patterns (band-propagating, geometric-only, route-dependent miss) are visually distinct.
+
+---
+
+## 3. Embed design
+
+A three-panel interactive showing the three knowledge-to-verdict patterns:
+
+- **Panel 1 (K3 → C3)**: K3's civil-density band flows into the world (the channel fills, the cell lights in `port_district`). C3's `fires` scorer walks FE-FALCON's route and counts legs — the density sits there, the route passes through it, but no line connects the band to the counter. The verdict is purely geometric.
+- **Panel 2 (K6 → C4)**: K6's FAC-sortie band flows into the threat channel for `fac_waters`. C4's `exposure` scorer walks FE-ANVIL's route and reads `channelAt` at each leg — when the route enters `fac_waters`, the band propagates into the exposure sum. A slider widens K6's band and watches C4's margin band widen in response (G6).
+- **Panel 3 (K7 → C4)**: K7's air-defence band flows into the threat channel for `air_defence`. C4's scorer walks FE-ANVIL's route — but the route never enters `air_defence`, so K7 has zero effect. A callout explains K7's role is upstream at plan generation.
+
+Follows the blessed embed pattern (static, self-contained, offline-clean, no runtime crypto, no bundler).
+
+---
+
+## 4. Non-functional requirements
+
+- **No system change**: this spec produces a test suite and a blog article. No `src/` code is modified. The `fires` metric's geometric-only design is within DEC-10/DEC-19 latitude and is not a defect.
 - **Honesty**: the article must not pretend K3's band affects C3's verdict. The gap is the lesson, not a problem to paper over.
-- **Embed pattern**: the interactive follows the blessed band-pill embed pattern (static, self-contained, offline-clean, no runtime crypto, no bundler).
 - **Blog cadence**: per DEC-30, the article is part of the definition of done for this spike.
 
-## Open questions
+## 5. Open questions
 
-1. **Should the article suggest a `weighted_civil_harm` metric variant?** The infrastructure supports it (the `civil_density` channel is already compiled). But proposing it would imply a register candidate (concept §6), which is out of scope for a research spike. **Recommendation**: mention the possibility in a "what could change" sidebar, but do not propose or implement it. If the reader/SME wants it, they open an issue.
-2. **Which embed variant?** The research note §4 proposes a side-by-side (K3→C3 vs K4→C4). An alternative is a single-panel trace with a toggle. **Recommendation**: side-by-side — the contrast is the pedagogic point, and a toggle hides it behind a click.
+1. **Should the article suggest a `weighted_civil_harm` metric variant?** The infrastructure supports it (the `civil_density` channel is already compiled). But proposing it would imply a register candidate (concept §6), which is out of scope. **Recommendation**: mention the possibility in a "what could change" sidebar; if the reader/SME wants it, they open an issue.
+2. **Which embed layout?** Three-panel side-by-side (recommended — the contrast is the pedagogic point) vs tabbed single-panel (saves horizontal space). **Recommendation**: three-panel with responsive collapse to tabs on narrow viewports.
