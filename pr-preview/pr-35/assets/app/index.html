@@ -3547,6 +3547,10 @@ ${items}
       if (!hash) return void 0;
       return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
     }
+    /** Dependency graph by content hash (for re-focusing on a clicked node). */
+    depGraphByHash(hash, maxDepth = 4) {
+      return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
+    }
     /** Detail for a single node in the dependency graph (sidebar). */
     depNodeDetail(hash, maxDepth = 4) {
       return nodeDetail(hash, this.#svc.trace, this.#svc.store, maxDepth);
@@ -3688,18 +3692,18 @@ ${items}
   function directionSection(title, groups) {
     if (groups.length === 0) {
       return `<div style="margin:8px 0">
-      <div style="font-size:10.5px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
-      <div style="font-size:11px;color:#8091A0">\u2014 none \u2014</div>
+      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
+      <div style="font-size:11px;color:#5B6B77">\u2014 none \u2014</div>
     </div>`;
     }
     const rows = groups.map(
       (g) => `<div style="margin:4px 0;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">
-          <div style="font-size:9.5px;color:#8091A0;margin-bottom:2px">depth ${g.depth} \xB7 ${esc15(g.edgeType)}</div>
+          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc15(g.edgeType)}</div>
           <div style="display:flex;flex-wrap:wrap;gap:2px">${g.nodes.map((n) => nodeChip2(n)).join("")}</div>
         </div>`
     ).join("");
     return `<div style="margin:8px 0">
-    <div style="font-size:10.5px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
+    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
     ${rows}
   </div>`;
   }
@@ -3708,9 +3712,9 @@ ${items}
     return `<div class="assay-dep-sidebar">
   <div style="margin-bottom:8px">
     <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc15(detail.node.label)}</span>
-    <span style="font-size:10px;color:#8091A0;margin-left:6px">${esc15(detail.node.type)}</span>
+    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc15(detail.node.type)}</span>
   </div>
-  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc15(detail.metadata)}</div>
+  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc15(detail.metadata)}</div>
   ${directionSection("Upstream (depends on)", detail.upstream)}
   ${directionSection("Downstream (feeds into)", detail.downstream)}
 </div>`;
@@ -4257,16 +4261,7 @@ ${items}
       if (!graph) return;
       depOverlay = doc.createElement("div");
       depOverlay.className = "assay-dep-overlay";
-      depOverlay.innerHTML = `<div class="assay-dep-overlay-inner">
-      <div class="assay-dep-header">
-        <div style="font-weight:600;font-size:14px">${logicalId} \u2014 dependency graph</div>
-        <button class="assay-btn secondary assay-dep-close" style="padding:4px 10px;font-size:11px">Close \u2715</button>
-      </div>
-      <div class="assay-dep-body">
-        <div class="assay-dep-river-pane">${depGraphRiver(graph)}</div>
-        <div class="assay-dep-sidebar-pane" style="font-size:12px;color:var(--muted)">Click a node to see its detail.</div>
-      </div>
-    </div>`;
+      renderDepOverlayContent(depOverlay, graph, logicalId);
       depOverlay.querySelector(".assay-dep-close").addEventListener("click", closeDepOverlay);
       depOverlay.addEventListener("click", (e) => {
         if (e.target === depOverlay) closeDepOverlay();
@@ -4274,20 +4269,26 @@ ${items}
       wireDepNodes(depOverlay);
       doc.body.appendChild(depOverlay);
     }
-    function selectDepNode(overlay, hash) {
-      const river = overlay.querySelector(".assay-dep-river-pane");
-      if (river) {
-        for (const n of Array.from(river.querySelectorAll(".assay-dep-node"))) {
-          n.style.outline = n.dataset.depHash === hash ? "2px solid #1B2732" : "";
-          n.style.outlineOffset = n.dataset.depHash === hash ? "2px" : "";
-        }
-        const target = river.querySelector(`[data-dep-hash="${hash}"]`);
-        if (target) target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-      }
-      const detail = app.depNodeDetail(hash);
-      const sidebar = overlay.querySelector(".assay-dep-sidebar-pane");
-      sidebar.innerHTML = depGraphSidebar(detail);
-      wireDepNodes(overlay);
+    function renderDepOverlayContent(overlay, graph, label) {
+      const detail = app.depNodeDetail(graph.focus.hash);
+      overlay.innerHTML = `<div class="assay-dep-overlay-inner">
+      <div class="assay-dep-header">
+        <div style="font-weight:600;font-size:14px">${label} \u2014 dependency graph</div>
+        <button class="assay-btn secondary assay-dep-close" style="padding:4px 10px;font-size:11px">Close \u2715</button>
+      </div>
+      <div class="assay-dep-body">
+        <div class="assay-dep-river-pane">${depGraphRiver(graph)}</div>
+        <div class="assay-dep-sidebar-pane">${depGraphSidebar(detail)}</div>
+      </div>
+    </div>`;
+      overlay.querySelector(".assay-dep-close").addEventListener("click", closeDepOverlay);
+    }
+    function refocusDepGraph(hash) {
+      if (!depOverlay) return;
+      const graph = app.depGraphByHash(hash);
+      if (!graph) return;
+      renderDepOverlayContent(depOverlay, graph, graph.focus.label);
+      wireDepNodes(depOverlay);
     }
     function wireDepNodes(overlay) {
       for (const el2 of Array.from(overlay.querySelectorAll(".assay-dep-node"))) {
@@ -4295,7 +4296,7 @@ ${items}
           ev.stopPropagation();
           const hash = el2.dataset.depHash;
           if (!hash) return;
-          selectDepNode(overlay, hash);
+          refocusDepGraph(hash);
         });
       }
     }
