@@ -114,6 +114,14 @@ copyFileSync(
   fileURLToPath(new URL('index.html', appDir)),
 );
 
+// Design mockups (issue #24, dependency-graph view) — temporary, for review only.
+const mockDir = new URL('assets/dep-graph-mocks/', site);
+mkdirSync(fileURLToPath(mockDir), { recursive: true });
+copyFileSync(
+  fileURLToPath(new URL('docs/assets/dep-graph-mocks/index.html', root)),
+  fileURLToPath(new URL('index.html', mockDir)),
+);
+
 // The blog and its standalone embeds, copied verbatim (self-contained static;
 // comms plan §8). Markdown sources (README, backlog) are dev-facing and skipped.
 cpSync(
