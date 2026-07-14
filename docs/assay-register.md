@@ -72,7 +72,7 @@ Ratifies the seven candidates held in `assay-concept.md` §6.12–6.18 — each 
 
 ## Batch 5 — Civil-harm quantification (2026-07-14)
 
-Resolves the register candidate raised as issue #41 (`assay-concept.md` §6.19), surfaced by the SPEC-18 investigation (`specs/018-qa-to-coa/spec.md` §1.2, §5 Q1): whether C3 should be population-weighted. Decided by the repo owner acting as commander/SME (the value judgement DEC-19 reserves to that role, not to engineering). No schema, no `src/`, no constitution change — the decision *declines* a metric and affirms an existing principle (Principle II / DEC-19), so it projects no new constitutional rule and carries no version bump. Peer documents swept in the same change: concept §6.19 struck through; findings ledger gains ASSAY-FIND-6; SPEC-18 §5 Q1 resolved; status-line and updates feed updated.
+Resolves the register candidate raised as issue #41 (`assay-concept.md` §6.20), surfaced by the SPEC-18 investigation (`specs/018-qa-to-coa/spec.md` §1.2, §5 Q1): whether C3 should be population-weighted. Decided by the repo owner acting as commander/SME (the value judgement DEC-19 reserves to that role, not to engineering). No schema, no `src/`, no constitution change — the decision *declines* a metric and affirms an existing principle (Principle II / DEC-19), so it projects no new constitutional rule and carries no version bump. Peer documents swept in the same change: concept §6.20 struck through; findings ledger gains ASSAY-FIND-6; SPEC-18 §5 Q1 resolved; status-line and updates feed updated.
 
 | ID | Decision | Rationale |
 |---|---|---|
