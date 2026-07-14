@@ -2743,7 +2743,7 @@
         const src = region.source;
         const ko = src ? knowledgeById[src] : void 0;
         const window = region.from_step !== void 0 || region.until_step !== void 0 ? `<span style="color:#5B6B77;font-family:ui-monospace,monospace;font-size:10.5px">steps ${region.from_step ?? 0}\u2013${region.until_step ?? "\u221E"}</span>` : "";
-        const backing = src ? `<span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc5(src)}</span>` : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced \u2014 trace dead end (G3)</span>`;
+        const backing = src ? `<span data-logical-id="${esc5(src)}" style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;cursor:pointer;text-decoration:underline dotted">${esc5(src)}</span>` : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced \u2014 trace dead end (G3)</span>`;
         const prov = ko?.provenance ? provenanceChip(ko.provenance) : "";
         const sig = `${region.value.lo}-${region.value.hi} ${region.value.unit}|${src ?? "unsourced"}|${region.from_step ?? ""}-${region.until_step ?? ""}`;
         rows.push(
@@ -2777,7 +2777,7 @@
   function s2Matrix(commitmentIds, rows) {
     const head = `<tr style="text-align:center;color:#5B6B77;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em">
     <th style="padding:6px 10px;text-align:left">plan \\ commitment</th>
-    ${commitmentIds.map((c) => `<th style="padding:6px 8px">${esc6(c)}</th>`).join("")}
+    ${commitmentIds.map((c) => `<th data-logical-id="${esc6(c)}" style="padding:6px 8px;cursor:pointer;text-decoration:underline dotted">${esc6(c)}</th>`).join("")}
   </tr>`;
     const body = rows.map((row) => {
       const byCommitment = new Map(row.verdicts.map((v) => [v.commitment, v]));
@@ -2785,7 +2785,8 @@
         const v = byCommitment.get(cid);
         return v ? chip3(v) : `<td style="padding:5px 7px;text-align:center;color:#B0BAC2">\u2014</td>`;
       }).join("");
-      return `<tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc6(row.plan)}</td>${cells}</tr>`;
+      const planId = row.plan.split(" ")[0] ?? row.plan;
+      return `<tr data-logical-id="${esc6(planId)}"><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc6(row.plan)}</td>${cells}</tr>`;
     }).join("");
     return `<table class="assay-s2-matrix" style="border-collapse:collapse;width:100%">
   <thead>${head}</thead>
@@ -2800,7 +2801,7 @@
       const id = esc7(r.plan.logical_id);
       const name = r.name ? `<span style="color:#5B6B77;font-size:11.5px">${esc7(r.name)}</span>` : "";
       const sig = `${r.name ?? ""}|${r.distinct_because}`;
-      return `<li data-glow-id="plan:${id}" data-glow-sig="${esc7(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      return `<li data-logical-id="${id}" data-glow-id="plan:${id}" data-glow-sig="${esc7(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${id}</span>
       ${name}
@@ -2834,7 +2835,7 @@ ${items}
       const statements = card.sacrificed.map((c) => `<li style="margin:0">gives up: <b>${esc8(c.statement)}</b> <span style="color:#8A97A0">(${esc8(c.logical_id)})</span></li>`).join("\n        ");
       const glowId = `card:${[...card.candidate.sacrificed].sort().join(",")}`;
       const sig = `${i}|${card.candidate.narrative}|${card.sacrificed.map((c) => `${c.logical_id}:${c.tier}`).join(",")}`;
-      return `<li data-glow-id="${esc8(glowId)}" data-glow-sig="${esc8(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      return `<li data-logical-id="${esc8(card.candidate.plan)}" data-glow-id="${esc8(glowId)}" data-glow-sig="${esc8(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
       <span style="font-family:ui-monospace,monospace;font-size:11px;color:#8A97A0">least-worst #${i + 1}</span>
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${esc8(card.candidate.plan)}</span>
@@ -2952,7 +2953,7 @@ ${items}
       const logicalId = entry.knowledge.logical_id;
       const changedStyle = entry.changed_count > 0 ? "font-weight:700;color:#8A2020" : "color:#5B6B77";
       const singleSourceChip = entry.single_source ? '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:#8A2020;color:#FFFFFF">single-source</span>' : '<span style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77">\u2014</span>';
-      return `<tr data-glow-id="sens:${esc10(logicalId)}" data-glow-sig="${entry.changed_count}">
+      return `<tr data-logical-id="${esc10(logicalId)}" data-glow-id="sens:${esc10(logicalId)}" data-glow-sig="${entry.changed_count}">
         <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc10(logicalId)}</td>
         <td style="padding:5px 10px;text-align:center;font-family:ui-monospace,monospace;font-size:11px;${changedStyle};border-bottom:1px solid #EDF0F2">${entry.changed_count}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${singleSourceChip}</td>
@@ -2997,7 +2998,7 @@ ${items}
     const rows = ranking.map((entry) => {
       const logicalId = entry.question.logical_id;
       const pairChips = entry.pairs.map(pairChip).join("<br>");
-      return `<tr data-glow-id="disc:${esc11(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
+      return `<tr data-logical-id="${esc11(logicalId)}" data-glow-id="disc:${esc11(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
         <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc11(logicalId)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${separationChip(entry.best_separation)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${bandPill2(entry.cost)}</td>
@@ -3018,7 +3019,7 @@ ${items}
     scores: { bg: "#6B3A6B", fg: "#FFFFFF", label: "Scores" }
   };
   function refChip(ref, bg, fg) {
-    return `<span data-glow-id="stale:${esc12(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px">${esc12(ref.logical_id)}</span>`;
+    return `<span data-logical-id="${esc12(ref.logical_id)}" data-glow-id="stale:${esc12(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px;cursor:pointer">${esc12(ref.logical_id)}</span>`;
   }
   function groupSection(groupKey, refs) {
     if (refs.length === 0) return "";
@@ -4268,19 +4269,31 @@ ${items}
       depOverlay.addEventListener("click", (e) => {
         if (e.target === depOverlay) closeDepOverlay();
       });
-      wireDepNodes(depOverlay, logicalId);
+      wireDepNodes(depOverlay);
       doc.body.appendChild(depOverlay);
     }
-    function wireDepNodes(overlay, currentFocusId) {
+    function selectDepNode(overlay, hash) {
+      const river = overlay.querySelector(".assay-dep-river-pane");
+      if (river) {
+        for (const n of Array.from(river.querySelectorAll(".assay-dep-node"))) {
+          n.style.outline = n.dataset.depHash === hash ? "2px solid #1B2732" : "";
+          n.style.outlineOffset = n.dataset.depHash === hash ? "2px" : "";
+        }
+        const target = river.querySelector(`[data-dep-hash="${hash}"]`);
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      }
+      const detail = app.depNodeDetail(hash);
+      const sidebar = overlay.querySelector(".assay-dep-sidebar-pane");
+      sidebar.innerHTML = depGraphSidebar(detail);
+      wireDepNodes(overlay);
+    }
+    function wireDepNodes(overlay) {
       for (const el2 of Array.from(overlay.querySelectorAll(".assay-dep-node"))) {
         el2.addEventListener("click", (ev) => {
           ev.stopPropagation();
           const hash = el2.dataset.depHash;
           if (!hash) return;
-          const detail = app.depNodeDetail(hash);
-          const sidebar = overlay.querySelector(".assay-dep-sidebar-pane");
-          sidebar.innerHTML = depGraphSidebar(detail);
-          wireDepNodes(sidebar, currentFocusId);
+          selectDepNode(overlay, hash);
         });
       }
     }
