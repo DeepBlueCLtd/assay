@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<!--
+  ASSAY blog article — stamp determinism (comms plan §6).
+
+  Compile twice for a byte-identical stamp; change one item and watch it
+  shift. The G1 invariant made visible. Self-contained and static.
+
+  Frozen at publication — 2026-07-14.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stamp determinism: compile twice, get the same answer — ASSAY</title>
+<meta name="description" content="Recompile the same knowledge twice — the stamp is byte-identical. Change one item and watch it shift, because the stamp hashes inputs, not surfaces.">
+<style>
+  :root { color-scheme: light dark;
+    --ink:#1B2732; --ink-soft:#33414D; --muted:#5B6B77; --page:#EDF0F2; --panel:#FCFDFD;
+    --panel-2:#F1F3F5; --line:#D8DFE4; --line-soft:#E4E9ED;
+    --band-ink:#9A6A14; --band-fill:#F7EDD8; --band-line:#E7D3A6;
+    --robust-ink:#14655F; --robust-fill:#E2EFEA; --robust-line:#BFDCD3;
+    --blue-ink:#3E5D8A; --blue-fill:#E6ECF6; --blue-line:#C8D5EA;
+    --shadow:0 1px 2px rgba(27,39,50,.05),0 8px 24px rgba(27,39,50,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark){ :root{
+    --ink:#E7ECF0; --ink-soft:#C4CED6; --muted:#93A2AE; --page:#10171D; --panel:#17212A;
+    --panel-2:#131C24; --line:#2A3945; --line-soft:#222E38;
+    --band-ink:#E0B457; --band-fill:#2E2513; --band-line:#4A3C1C;
+    --robust-ink:#63C3B6; --robust-fill:#122824; --robust-line:#1F3F39;
+    --blue-ink:#8FB0DE; --blue-fill:#182333; --blue-line:#2A3A52;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans);
+    font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a { color:var(--blue-ink); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+  header.top { background:var(--panel); border-bottom:1px solid var(--line); }
+  header.top .wrap { padding:30px 24px 28px; }
+  .crumbs { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .crumbs a { text-decoration:none; } .crumbs a:hover { color:var(--blue-ink); }
+  .meta { font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:16px 0 0; }
+  .chip { padding:2px 9px; border-radius:999px; border:1px solid; }
+  .chip.illu { border-color:var(--band-line); background:var(--band-fill); color:var(--band-ink); }
+  .chip.spec { border-color:var(--line); background:var(--panel-2); color:var(--muted); }
+  h1 { font-size:clamp(26px,4.4vw,34px); letter-spacing:-.02em; line-height:1.15; margin:14px 0 6px; }
+  article { padding:32px 0 10px; }
+  article p { margin:0 0 18px; color:var(--ink-soft); }
+  article h2 { font-size:21px; letter-spacing:-.01em; margin:34px 0 10px; }
+  article b { color:var(--ink); }
+  .demo { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:20px 22px; box-shadow:var(--shadow); margin:6px 0 8px; overflow-x:auto; }
+  .demo-cap { font-size:13px; color:var(--muted); margin:8px 2px 26px; }
+  .demo-cap b { color:var(--robust-ink); }
+  .stamp { font-family:var(--mono); font-size:12px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:6px; padding:10px 14px; word-break:break-all; margin:8px 0; color:var(--ink-soft); }
+  .stamp-label { font-family:var(--mono); font-size:11px; color:var(--muted); margin-bottom:2px; }
+  .match { color:var(--robust-ink); font-weight:700; }
+  .diff { color:var(--band-ink); font-weight:700; }
+  .note { border:1px solid var(--band-line); background:var(--band-fill); color:var(--band-ink);
+    border-radius:12px; padding:15px 18px; font-size:14.5px; line-height:1.6; margin:6px 0 26px; }
+  .note b { color:var(--band-ink); }
+  .sources { border-top:1px solid var(--line-soft); margin-top:28px; padding-top:18px;
+    font-size:14px; color:var(--muted); }
+  .sources a { text-decoration:none; }
+  .sources li { margin-bottom:5px; }
+  footer { border-top:1px solid var(--line); background:var(--panel); margin-top:26px; }
+  footer .wrap { padding:24px; color:var(--muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="crumbs"><a href="../">&larr; Blog</a> &nbsp;&middot;&nbsp; <a href="../../">ASSAY home</a></div>
+    <div class="meta">
+      <span>2026-07-14</span>
+      <span class="chip illu">illustrative widget &mdash; real rule, fixture data</span>
+      <span class="chip spec">SPEC-06</span>
+    </div>
+    <h1>Stamp determinism: compile twice, get the same answer</h1>
+  </div>
+</header>
+
+<div class="wrap">
+<article>
+  <p>
+    How do you know that two intelligence pictures are the same? Not by comparing every cell in
+    every channel &mdash; the surface is too large and too noisy. ASSAY's answer is the
+    <b>content stamp</b>: a SHA-256 hash over the compile's inputs (consumed knowledge refs,
+    vignette config, engine version), not over the output surface. Two compiles that read the
+    same knowledge produce the same stamp, regardless of ordering, timing, or platform.
+  </p>
+
+  <h2>Same inputs, same stamp</h2>
+  <p>
+    Compile the Meridian BASE knowledge twice. The stamp is byte-identical &mdash; because the
+    inputs are the same, and the stamp hashes inputs, not the dense channel grid.
+  </p>
+  <div class="demo">
+    <div class="stamp-label">Compile 1</div>
+    <div class="stamp">sha256:a3f7c1…e49d <span class="match">&check; identical</span></div>
+    <div class="stamp-label" style="margin-top:12px">Compile 2 (same knowledge, different time)</div>
+    <div class="stamp">sha256:a3f7c1…e49d <span class="match">&check; identical</span></div>
+  </div>
+
+  <h2>Change one item, watch the stamp shift</h2>
+  <p>
+    Now supersede K2 (causeway capacity) with a revised band. The stamp changes &mdash; because
+    the consumed refs changed. The <b>channel trace</b> component shows exactly which channels
+    moved and why: every channel value traces back to named knowledge via
+    <span style="font-family:var(--mono);font-size:.9em">compiled_into</span> +
+    <span style="font-family:var(--mono);font-size:.9em">source</span> edges (G3).
+  </p>
+  <div class="demo">
+    <div class="stamp-label">Compile 3 (K2 revised &mdash; causeway capacity band widened)</div>
+    <div class="stamp">sha256:b81e4a…7f23 <span class="diff">&ne; shifted</span></div>
+    <p style="margin:12px 0 0;font-size:14px;color:var(--muted)">
+      Channels affected: <span style="font-family:var(--mono);font-size:.9em">FE-CAPACITY</span>
+      &mdash; the sparse channel's default band moved. All others unchanged.
+    </p>
+  </div>
+  <p class="demo-cap">
+    <b>Illustrative widget, fixture data.</b> The stamps are representative SHA-256 prefixes
+    from the shipped compile service running over Meridian fixtures. The sparse channel
+    representation means no dense cell grid is ever stored or hashed &mdash; determinism (G1)
+    is independent of representation. Frozen as shipped on 2026-07-14.
+  </p>
+
+  <h2>Why it matters</h2>
+  <p>
+    Stamp determinism (G1) is how ASSAY answers "has anything changed?" without comparing
+    surfaces. The scorer checks stamps before scoring: a
+    <span style="font-family:var(--mono);font-size:.9em">stamp_mismatch</span> refuses the
+    score (the comparability guard), because scoring a world compiled from different knowledge
+    than the one you think you're scoring is a silent lie. The stamp makes that impossible.
+  </p>
+  <p>
+    And because channels are <b>sparse</b> &mdash; a per-channel default band plus named
+    <span style="font-family:var(--mono);font-size:.9em">RegionOverride</span>s with sources
+    &mdash; the stamp doesn't depend on how many cells the grid could theoretically have. The
+    dense-world benchmarks (research note 00 &sect;3) confirmed this scales; the sparse
+    representation (research note 02) retired the dense model entirely.
+  </p>
+
+  <div class="note">
+    <b>Assessment, not fact &mdash; and demonstrator, not product.</b> Every number here renders the
+    <b>Meridian Archipelago</b>, an engineered fiction (ASSAY-DEC-8). Nothing on this page reflects
+    any real operational picture. A thesis in ASSAY is only ever <em>explored</em>, never claimed
+    proven.
+  </div>
+
+  <div class="sources">
+    <p style="margin-bottom:10px"><b>Sources &amp; trace</b></p>
+    <ul>
+      <li>Compile service &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/compile.ts">src/compile.ts</a></li>
+      <li>Channel trace &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/components/channelTrace.ts">src/components/channelTrace.ts</a></li>
+      <li>Content addressing &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/canonical.ts">src/canonical.ts</a> &middot; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/store.ts">src/store.ts</a></li>
+      <li>Research note &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/research/02-compile.md">02-compile.md</a> (sparse-channel decision)</li>
+      <li>Determinism invariant &mdash; G1 in the <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/assay-concept.md">concept</a></li>
+    </ul>
+  </div>
+</article>
+</div>
+
+<footer>
+  <div class="wrap">
+    ASSAY &mdash; a docs-first demonstrator. <a href="https://github.com/DeepBlueCLtd/assay">github.com/DeepBlueCLtd/assay</a>
+  </div>
+</footer>
+</body>
+</html>
