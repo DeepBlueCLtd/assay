@@ -99,6 +99,11 @@ theses:                      # state vocabulary is the register's own
 updates:
   - date: 2026-07-14
     note: >-
+      Register batch 4 ratified (ASSAY-DEC-28…34): sparse channels, SPA shell,
+      glow, in-browser pipeline, blog cadence, home-page currency, flow-view
+      behaviours — seven candidates built under delegated authority now settled.
+  - date: 2026-07-14
+    note: >-
       Stage 6 built — sensitivity, discrimination, staleness analysis (theses D, E, F live).
       SPEC-11/12/13 implemented over research note 08-analysis.md. K8 tops sensitivity
       (single-source, band-edge perturbation changes C4 verdicts); K11 ranks above K13
