@@ -35,7 +35,7 @@ export interface Narrative {
 
 export const SCRIPTING_PRINCIPLES = [
   'Never narrate a midpoint — say "9 to 13 steps", not "about 11."',
-  'Never narrate a weighted sum — describe the pattern of verdicts, not "P1 is better overall."',
+  'Never narrate a weighted sum — describe the pattern of verdicts, not "plan X is better overall."',
   'Use the verdict as a category — "this commitment is tight", never "scores 2 out of 4."',
   'State the tie-break — same-tier sacrifices are ordered by a stated reason, not by arithmetic.',
   'Quote the doctrine at the moment it bites — the finding the surface is showing.',
@@ -74,7 +74,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'observer',
         title: 'Staleness — a changed answer flags exactly what it invalidates',
         presenterNote:
-          'On the Observer / bridge tab, the "Observer · staleness flags" panel shows the effect of supersession: a new answer K9 superseding the old K5 "storm-season likelihood" flags exactly the K5-dependent verdicts — P1·C2, P2·C1, P2·C2 — and nothing else. These flags come from a transitive trace walk, not a recompute. The planner decides when to recompile; the system flags, it does not act.',
+          'On the Observer / bridge tab, the "Observer · staleness flags" panel shows the effect of supersession: a new answer K9 superseding the old K5 "storm-season likelihood" flags exactly the K5-dependent verdicts — specific plan-commitment cells across the matrix — and nothing else. These flags come from a transitive trace walk, not a recompute. The planner decides when to recompile; the system flags, it does not act.',
       },
       {
         tab: 'j2',
@@ -99,13 +99,13 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'planner',
         title: 'The honest matrix — plans vs commitments',
         presenterNote:
-          'This is the "Planner · the honest matrix" — plans as rows (P1 "strait-early", P2 "sweep-first"), commitments as columns (C1 "relief ships alongside by D+10", C2 "strait swept by D+7", and so on), each cell a four-stop verdict chip: robust, marginal, tight, violated. There is no total row and no weighted sum — the pattern of verdicts IS the comparison, and the commander weighs it, not the machine. Under the BASE scenario (the unmodified world), P1 holds C1 and C2 robust.',
+          'This is the "Planner · the honest matrix" — plans as rows (each named by its four axis choices, e.g. "strait-early · fires-forward · contest · pull-early"), commitments as columns (C1 "relief ships alongside by D+10", C2 "strait swept by D+7", and so on), each cell a four-stop verdict chip: robust, marginal, tight, violated. There is no total row and no weighted sum — the pattern of verdicts IS the comparison, and the commander weighs it, not the machine. Under the BASE scenario (the unmodified world), the strait-early plans hold C1 and C2 robust.',
       },
       {
         tab: 'commander',
         title: 'Scenario robustness — the favourite under stress (thesis C)',
         presenterNote:
-          'The "Commander · scenario robustness" panel lets you toggle between enemy courses of action. Select R2 "Strait Denial" — P1\'s C1 and C2 drop from robust to violated; the strait-early plan dies under mines. P2 holds. P1 is robust under BASE but violated under R2; the verdict is a category, not a rank. The collapse markers (▼) show exactly which cells degraded.',
+          'The "Commander · scenario robustness" panel lets you toggle between enemy courses of action. Select R2 "Strait Denial" — the strait-early plans\' C1 and C2 drop from robust to violated; strait-early dies under mines. The sweep-first plans hold. A plan robust under BASE is violated under R2; the verdict is a category, not a rank. The collapse markers (▼) show exactly which cells degraded.',
         doctrinalQuote:
           'JP 2-01.3: "Don\'t plan on most-likely." The most-likely scenario is an anchor (Tversky & Kahneman 1974); the strip makes the most-dangerous visible.',
       },
@@ -150,7 +150,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'planner',
         title: 'The honest matrix — the trade the cards summarise',
         presenterNote:
-          'On the "Planner · the honest matrix", the same verdicts that fill the cards are the cells of the matrix. The card is a summary; the matrix is the detail. Neither has a total row. P2 "sweep-first" holds C1 "relief ships by D+10" robust, C2 "strait swept by D+7" marginal, C3 tight, C4 violated — never "P2 scores 2.5 out of 4."',
+          'On the "Planner · the honest matrix", the same verdicts that fill the cards are the cells of the matrix. The card is a summary; the matrix is the detail. Neither has a total row. A sweep-first plan might hold C1 "relief ships by D+10" robust, C2 "strait swept by D+7" marginal, C3 tight, C4 violated — never "scores 2.5 out of 4."',
       },
       {
         tab: 'commander',
