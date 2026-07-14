@@ -99,6 +99,11 @@ theses:                      # state vocabulary is the register's own
 updates:
   - date: 2026-07-14
     note: >-
+      Blog backlog cleared — six owed articles from Stages 0–4 shipped: provenance chip &
+      K10 refusal (SPEC-05), verdict playground (SPEC-07), least-worst explorer (SPEC-09),
+      stamp determinism (SPEC-06), content addressing (SPEC-01), trace walk (SPEC-02).
+  - date: 2026-07-14
+    note: >-
       Stage 6 built — sensitivity, discrimination, staleness analysis (theses D, E, F live).
       SPEC-11/12/13 implemented over research note 08-analysis.md. K8 tops sensitivity
       (single-source, band-edge perturbation changes C4 verdicts); K11 ranks above K13
@@ -138,6 +143,36 @@ updates:
 # published site verbatim. The backlog of articles still owed lives in
 # docs/blog/backlog.md.
 blog:
+  - date: 2026-07-14
+    title: "Trace walk: every output traces back to named knowledge"
+    href: blog/posts/2026-07-14-trace-walk.html
+    slice: SPEC-02
+    embed: illustrative widget — real rule, fixture data
+  - date: 2026-07-14
+    title: "Content addressing: identity is a hash"
+    href: blog/posts/2026-07-14-content-addressing.html
+    slice: SPEC-01
+    embed: illustrative widget — real rule, fixture data
+  - date: 2026-07-14
+    title: "Stamp determinism: compile twice, get the same answer"
+    href: blog/posts/2026-07-14-stamp-determinism.html
+    slice: SPEC-06
+    embed: illustrative widget — real rule, fixture data
+  - date: 2026-07-14
+    title: "Least-worst: choosing what to sacrifice"
+    href: blog/posts/2026-07-14-least-worst.html
+    slice: SPEC-09
+    embed: illustrative widget — real rule, fixture data
+  - date: 2026-07-14
+    title: "The verdict playground: four stops, no decimals"
+    href: blog/posts/2026-07-14-verdict-playground.html
+    slice: SPEC-07
+    embed: illustrative widget — real rule, fixture data
+  - date: 2026-07-14
+    title: "The provenance chip & the K10 refusal"
+    href: blog/posts/2026-07-14-provenance-chip.html
+    slice: SPEC-05 / SPEC-14
+    embed: live component — the demonstrator's actual code
   - date: 2026-07-13
     title: "The band pill: why a range is more honest than a number"
     href: blog/posts/2026-07-13-band-pill.html
