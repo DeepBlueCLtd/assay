@@ -18,6 +18,8 @@
  */
 import type { AppState, TabId } from './state.js';
 import { changedGlowUnits, changedTabs, type SignatureMap } from './glow.js';
+import { depGraphRiver } from '../components/depGraphRiver.js';
+import { depGraphSidebar } from '../components/depGraphSidebar.js';
 
 const TABS: { id: TabId; label: string; role: string }[] = [
   { id: 'j2', label: 'J-2 workbench', role: 'ROLE: J-2' },
@@ -52,6 +54,13 @@ const STYLES = `
 .assay-menu .row{padding:2px 0;font-family:ui-monospace,monospace;font-size:11px}
 .assay-menu .edge{color:#8091A0}
 .assay-notice{margin:10px 0}
+.assay-dep-overlay{position:fixed;inset:0;z-index:100;background:rgba(27,39,50,.6);display:flex;align-items:stretch;justify-content:center}
+.assay-dep-overlay-inner{background:#fff;margin:24px;border-radius:12px;display:flex;flex-direction:column;width:100%;max-width:1400px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
+.assay-dep-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.assay-dep-body{display:flex;flex:1;overflow:hidden}
+.assay-dep-river-pane{flex:1;overflow:auto;padding:14px 18px}
+.assay-dep-sidebar-pane{width:320px;border-left:1px solid var(--line);overflow-y:auto;padding:14px;background:#FCFDFD}
+.assay-dep-node:hover{filter:brightness(1.15)}
 `;
 
 export function mountShell(root: HTMLElement, app: AppState): void {
@@ -267,11 +276,70 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       `<div style="font-weight:600;margin-bottom:4px">${logicalId} — relationships</div>` +
       section('Informs (upstream)', m.informs) +
       section('Influences (downstream)', m.influences) +
-      `<div style="margin-top:6px;font-size:10px;color:var(--muted)">one hop — click a chip again to walk further</div>`;
+      `<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><a href="#" class="assay-dep-open" style="font-size:11px;color:#3E5D8A;font-weight:600;text-decoration:none" data-dep-logical-id="${logicalId}">View full graph →</a></div>` +
+      `<div style="margin-top:4px;font-size:10px;color:var(--muted)">one hop — click a chip again to walk further</div>`;
+    const depLink = menuEl.querySelector('.assay-dep-open') as HTMLElement;
+    depLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMenu();
+      openDepOverlay(logicalId);
+    });
     menuEl.style.left = `${ev.pageX + 6}px`;
     menuEl.style.top = `${ev.pageY + 6}px`;
     menuEl.addEventListener('click', (e) => e.stopPropagation());
     doc.body.appendChild(menuEl);
+  }
+
+  // ---- full-screen dependency-graph overlay (issue #24) ----
+  let depOverlay: HTMLElement | null = null;
+
+  function closeDepOverlay(): void {
+    if (depOverlay) {
+      depOverlay.remove();
+      depOverlay = null;
+    }
+  }
+
+  function openDepOverlay(logicalId: string): void {
+    closeDepOverlay();
+    const graph = app.depGraph(logicalId);
+    if (!graph) return;
+
+    depOverlay = doc.createElement('div');
+    depOverlay.className = 'assay-dep-overlay';
+    depOverlay.innerHTML = `<div class="assay-dep-overlay-inner">
+      <div class="assay-dep-header">
+        <div style="font-weight:600;font-size:14px">${logicalId} — dependency graph</div>
+        <button class="assay-btn secondary assay-dep-close" style="padding:4px 10px;font-size:11px">Close ✕</button>
+      </div>
+      <div class="assay-dep-body">
+        <div class="assay-dep-river-pane">${depGraphRiver(graph)}</div>
+        <div class="assay-dep-sidebar-pane" style="font-size:12px;color:var(--muted)">Click a node to see its detail.</div>
+      </div>
+    </div>`;
+
+    depOverlay.querySelector('.assay-dep-close')!.addEventListener('click', closeDepOverlay);
+    depOverlay.addEventListener('click', (e) => {
+      if (e.target === depOverlay) closeDepOverlay();
+    });
+
+    wireDepNodes(depOverlay, logicalId);
+    doc.body.appendChild(depOverlay);
+  }
+
+  function wireDepNodes(overlay: HTMLElement, currentFocusId: string): void {
+    for (const el of Array.from(overlay.querySelectorAll('.assay-dep-node')) as HTMLElement[]) {
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const hash = el.dataset.depHash;
+        if (!hash) return;
+        const detail = app.depNodeDetail(hash);
+        const sidebar = overlay.querySelector('.assay-dep-sidebar-pane') as HTMLElement;
+        sidebar.innerHTML = depGraphSidebar(detail);
+        wireDepNodes(sidebar, currentFocusId);
+      });
+    }
   }
 
   void rerender();
