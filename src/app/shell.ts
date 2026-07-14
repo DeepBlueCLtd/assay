@@ -456,20 +456,33 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       if (e.target === depOverlay) closeDepOverlay();
     });
 
-    wireDepNodes(depOverlay, logicalId);
+    wireDepNodes(depOverlay);
     doc.body.appendChild(depOverlay);
   }
 
-  function wireDepNodes(overlay: HTMLElement, currentFocusId: string): void {
+  function selectDepNode(overlay: HTMLElement, hash: string): void {
+    const river = overlay.querySelector('.assay-dep-river-pane');
+    if (river) {
+      for (const n of Array.from(river.querySelectorAll('.assay-dep-node')) as HTMLElement[]) {
+        n.style.outline = n.dataset.depHash === hash ? '2px solid #1B2732' : '';
+        n.style.outlineOffset = n.dataset.depHash === hash ? '2px' : '';
+      }
+      const target = river.querySelector(`[data-dep-hash="${hash}"]`) as HTMLElement | null;
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+    const detail = app.depNodeDetail(hash);
+    const sidebar = overlay.querySelector('.assay-dep-sidebar-pane') as HTMLElement;
+    sidebar.innerHTML = depGraphSidebar(detail);
+    wireDepNodes(overlay);
+  }
+
+  function wireDepNodes(overlay: HTMLElement): void {
     for (const el of Array.from(overlay.querySelectorAll('.assay-dep-node')) as HTMLElement[]) {
       el.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const hash = el.dataset.depHash;
         if (!hash) return;
-        const detail = app.depNodeDetail(hash);
-        const sidebar = overlay.querySelector('.assay-dep-sidebar-pane') as HTMLElement;
-        sidebar.innerHTML = depGraphSidebar(detail);
-        wireDepNodes(sidebar, currentFocusId);
+        selectDepNode(overlay, hash);
       });
     }
   }

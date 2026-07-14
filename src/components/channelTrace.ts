@@ -36,7 +36,7 @@ export function channelTrace(
           ? `<span style="color:#5B6B77;font-family:ui-monospace,monospace;font-size:10.5px">steps ${region.from_step ?? 0}–${region.until_step ?? '∞'}</span>`
           : '';
       const backing = src
-        ? `<span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc(src)}</span>`
+        ? `<span data-logical-id="${esc(src)}" style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;cursor:pointer;text-decoration:underline dotted">${esc(src)}</span>`
         : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced — trace dead end (G3)</span>`;
       const prov = ko?.provenance ? provenanceChip(ko.provenance) : '';
       // Glow signature: the region row glows iff its displayed value or backing

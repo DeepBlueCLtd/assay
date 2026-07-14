@@ -28,7 +28,7 @@ const GROUP_STYLE: Record<GroupKey, { bg: string; fg: string; label: string }> =
 };
 
 function refChip(ref: Ref, bg: string, fg: string): string {
-  return `<span data-glow-id="stale:${esc(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px">${esc(ref.logical_id)}</span>`;
+  return `<span data-logical-id="${esc(ref.logical_id)}" data-glow-id="stale:${esc(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px;cursor:pointer">${esc(ref.logical_id)}</span>`;
 }
 
 function groupSection(groupKey: 'worlds' | 'verdicts' | 'scores', refs: Ref[]): string {

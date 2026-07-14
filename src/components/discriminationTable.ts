@@ -50,7 +50,7 @@ export function discriminationTable(ranking: DiscriminationEntry[]): string {
     .map((entry) => {
       const logicalId = entry.question.logical_id;
       const pairChips = entry.pairs.map(pairChip).join('<br>');
-      return `<tr data-glow-id="disc:${esc(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
+      return `<tr data-logical-id="${esc(logicalId)}" data-glow-id="disc:${esc(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
         <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc(logicalId)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${separationChip(entry.best_separation)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${bandPill(entry.cost)}</td>
