@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASSAY — dependency-graph view mock designs</title>
+</head>
+<body>
+<style>
+/* ── tokens ── */
+:root {
+  --ink: #1B2732;
+  --ink-soft: #2D3E4C;
+  --muted: #5B6B77;
+  --caption: #8091A0;
+  --line: #D8DFE4;
+  --surface: #FCFDFD;
+  --surface-inset: #F1F3F5;
+  --surface-legend: #F7F9FA;
+  --glow: #F4C430;
+  --accent: #3E5D8A;
+  --accent-light: #E8EFF5;
+  --bg: #FFFFFF;
+
+  /* item-type colours */
+  --t-knowledge: #2E5C8A;
+  --t-knowledge-bg: #E4ECF4;
+  --t-world: #4A6B8A;
+  --t-world-bg: #E6EDF3;
+  --t-commitment: #7A6A12;
+  --t-commitment-bg: #F5F0DC;
+  --t-verdict: #6B3A6B;
+  --t-verdict-bg: #F0E4F0;
+  --t-plan: #3E6B4E;
+  --t-plan-bg: #E2EFE6;
+  --t-report: #8A4A3E;
+  --t-report-bg: #F4E8E5;
+  --t-score: #6B5A3A;
+  --t-score-bg: #F2EDE2;
+
+  /* upstream / downstream wash */
+  --wash-up: #EDF2F7;
+  --wash-down: #F7F2ED;
+  --wash-focus: #FFF8E1;
+
+  /* dead-end */
+  --dead: #A33131;
+  --dead-bg: #FDECEC;
+
+  --mono: ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
+  --body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #E4E9ED;
+    --ink-soft: #C5CDD5;
+    --muted: #8DA0AE;
+    --caption: #6B7F8E;
+    --line: #2E3C48;
+    --surface: #141E26;
+    --surface-inset: #1A2730;
+    --surface-legend: #1C2A34;
+    --bg: #0E171E;
+    --accent: #6B9FD4;
+    --accent-light: #1A2F42;
+    --t-knowledge: #6B9FD4;
+    --t-knowledge-bg: #1A2F42;
+    --t-world: #7BA3C4;
+    --t-world-bg: #1A2C3C;
+    --t-commitment: #C4B44E;
+    --t-commitment-bg: #2C2814;
+    --t-verdict: #B47AB4;
+    --t-verdict-bg: #2C1A2C;
+    --t-plan: #6BAA7E;
+    --t-plan-bg: #1A2C20;
+    --t-report: #C47A6E;
+    --t-report-bg: #2C1A16;
+    --t-score: #B4A46E;
+    --t-score-bg: #2C2614;
+    --wash-up: #121C24;
+    --wash-down: #1C1A14;
+    --wash-focus: #2C2810;
+    --dead: #E06050;
+    --dead-bg: #2C1616;
+    --glow: #D4A820;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #E4E9ED;
+  --ink-soft: #C5CDD5;
+  --muted: #8DA0AE;
+  --caption: #6B7F8E;
+  --line: #2E3C48;
+  --surface: #141E26;
+  --surface-inset: #1A2730;
+  --surface-legend: #1C2A34;
+  --bg: #0E171E;
+  --accent: #6B9FD4;
+  --accent-light: #1A2F42;
+  --t-knowledge: #6B9FD4;
+  --t-knowledge-bg: #1A2F42;
+  --t-world: #7BA3C4;
+  --t-world-bg: #1A2C3C;
+  --t-commitment: #C4B44E;
+  --t-commitment-bg: #2C2814;
+  --t-verdict: #B47AB4;
+  --t-verdict-bg: #2C1A2C;
+  --t-plan: #6BAA7E;
+  --t-plan-bg: #1A2C20;
+  --t-report: #C47A6E;
+  --t-report-bg: #2C1A16;
+  --t-score: #B4A46E;
+  --t-score-bg: #2C2614;
+  --wash-up: #121C24;
+  --wash-down: #1C1A14;
+  --wash-focus: #2C2810;
+  --dead: #E06050;
+  --dead-bg: #2C1616;
+  --glow: #D4A820;
+}
+:root[data-theme="light"] {
+  --ink: #1B2732;
+  --ink-soft: #2D3E4C;
+  --muted: #5B6B77;
+  --caption: #8091A0;
+  --line: #D8DFE4;
+  --surface: #FCFDFD;
+  --surface-inset: #F1F3F5;
+  --surface-legend: #F7F9FA;
+  --bg: #FFFFFF;
+  --accent: #3E5D8A;
+  --accent-light: #E8EFF5;
+  --t-knowledge: #2E5C8A;
+  --t-knowledge-bg: #E4ECF4;
+  --t-world: #4A6B8A;
+  --t-world-bg: #E6EDF3;
+  --t-commitment: #7A6A12;
+  --t-commitment-bg: #F5F0DC;
+  --t-verdict: #6B3A6B;
+  --t-verdict-bg: #F0E4F0;
+  --t-plan: #3E6B4E;
+  --t-plan-bg: #E2EFE6;
+  --t-report: #8A4A3E;
+  --t-report-bg: #F4E8E5;
+  --t-score: #6B5A3A;
+  --t-score-bg: #F2EDE2;
+  --wash-up: #EDF2F7;
+  --wash-down: #F7F2ED;
+  --wash-focus: #FFF8E1;
+  --dead: #A33131;
+  --dead-bg: #FDECEC;
+  --glow: #F4C430;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── page frame ── */
+.page { max-width: 1200px; margin: 0 auto; padding: 32px 28px 80px; }
+
+.page-head {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+}
+.page-head h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.page-head p {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  max-width: 72ch;
+}
+
+/* ── option switcher ── */
+.option-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--ink);
+  margin: 0 0 0;
+}
+.option-tab {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  background: var(--surface-inset);
+  color: var(--muted);
+  padding: 9px 16px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--body);
+  transition: background .15s, color .15s;
+}
+.option-tab[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 -2px 0 var(--ink) inset;
+}
+.option-tab .tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--caption);
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.option-panel { display: none; }
+.option-panel.active { display: block; }
+
+/* ── shared: selector bar ── */
+.selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.selector label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.selector select {
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--mono);
+}
+.depth-control {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.depth-control input[type="range"] {
+  width: 80px;
+  accent-color: var(--accent);
+}
+.depth-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ── shared: nodes ── */
+.node {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+  cursor: default;
+  transition: box-shadow .2s;
+}
+.node:hover { box-shadow: 0 0 0 2px var(--glow); }
+.node .type-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.node.focus {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 3px rgba(244,196,48,.35);
+}
+.node.dead {
+  border-style: dashed;
+  border-color: var(--dead);
+  color: var(--dead);
+}
+
+/* type-specific node colors */
+.node.t-knowledge   { background: var(--t-knowledge-bg); color: var(--t-knowledge); }
+.node.t-world       { background: var(--t-world-bg);     color: var(--t-world);     }
+.node.t-commitment  { background: var(--t-commitment-bg);color: var(--t-commitment); }
+.node.t-verdict     { background: var(--t-verdict-bg);   color: var(--t-verdict);   }
+.node.t-plan        { background: var(--t-plan-bg);      color: var(--t-plan);      }
+.node.t-report      { background: var(--t-report-bg);    color: var(--t-report);    }
+.node.t-score       { background: var(--t-score-bg);     color: var(--t-score);     }
+
+/* ── shared: edge label ── */
+.edge-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--caption);
+  letter-spacing: .02em;
+}
+
+/* ── shared: direction headers ── */
+.dir-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--caption);
+  padding: 4px 0;
+}
+
+/* ── shared: annotations ── */
+.annotation {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 12px 0;
+  max-width: 64ch;
+}
+.annotation strong { color: var(--ink-soft); font-weight: 600; }
+
+/* ── shared: placement note ── */
+.placement-box {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  background: var(--surface-legend);
+  margin: 16px 0;
+}
+.placement-box h4 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.placement-box ul {
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 18px;
+  margin: 0;
+}
+.placement-box li { margin: 3px 0; }
+.placement-box li strong { color: var(--ink-soft); }
+
+/* ──────────────────────────────────────────────────────────
+   OPTION A — horizontal river
+   ────────────────────────────────────────────────────────── */
+.river-frame {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  background: var(--surface);
+  min-height: 360px;
+}
+.river-lane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 16px;
+  position: relative;
+  min-width: 130px;
+}
+.river-lane.upstream { background: var(--wash-up); }
+.river-lane.focus-lane { background: var(--wash-focus); min-width: 160px; align-items: center; }
+.river-lane.downstream { background: var(--wash-down); }
+.river-lane .dir-label {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+}
+/* connector lines */
+.river-connector {
+  width: 28px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+.river-connector .arrow {
+  color: var(--line);
+  font-size: 16px;
+  line-height: 1;
+}
+.river-connector .edge-label {
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  font-size: 8px;
+}
+/* depth-0 grouping for multi-child lanes */
+.river-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 0;
+}
+
+/* SVG connector lines for the river */
+.river-frame svg.connectors {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.river-frame svg.connectors line {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+/* ──────────────────────────────────────────────────────────
+   OPTION B — vertical DAG
+   ────────────────────────────────────────────────────────── */
+.dag-frame {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 0;
+  overflow-x: auto;
+}
+.dag-half {
+  padding: 0;
+}
+.dag-half + .dag-half {
+  border-top: 1.5px dashed var(--line);
+}
+.dag-tier {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 20px;
+  position: relative;
+  flex-wrap: wrap;
+}
+.dag-tier::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  bottom: -12px;
+  width: 0;
+}
+.dag-tier .dir-label {
+  position: absolute;
+  left: 14px;
+  top: 8px;
+}
+.dag-focus-row {
+  display: flex;
+  justify-content: center;
+  padding: 14px 20px;
+  background: var(--wash-focus);
+  border-top: 1.5px dashed var(--line);
+  border-bottom: 1.5px dashed var(--line);
+}
+.dag-upstream-section { background: var(--wash-up); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.dag-downstream-section { background: var(--wash-down); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.dag-edge-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 4px 0;
+}
+.dag-edge-row .edge-label { font-size: 8.5px; }
+.dag-vert-line {
+  width: 1.5px;
+  height: 14px;
+  background: var(--line);
+  margin: 0 auto;
+}
+.dag-depth-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--caption);
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+/* ──────────────────────────────────────────────────────────
+   OPTION C — layered list
+   ────────────────────────────────────────────────────────── */
+.list-frame {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+.list-section {
+  padding: 12px 16px;
+}
+.list-section.upstream { background: var(--wash-up); }
+.list-section.focus-sec { background: var(--wash-focus); padding: 14px 16px; }
+.list-section.downstream { background: var(--wash-down); }
+.list-section + .list-section { border-top: 1.5px dashed var(--line); }
+
+.list-depth-group {
+  margin: 4px 0 4px 0;
+}
+.list-depth-header {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--caption);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 3px 0;
+  margin-bottom: 4px;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 4px 14px;
+  border-left: 2px solid var(--line);
+  margin-left: 6px;
+}
+.list-row .edge-label { min-width: 80px; text-align: right; }
+
+.list-more {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  padding: 2px 0 2px 22px;
+  border-left: 2px dashed var(--line);
+  margin-left: 6px;
+  cursor: pointer;
+}
+
+/* ── legend ── */
+.legend-bar {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--surface-legend);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  margin: 16px 0;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── design-notes ── */
+.design-notes {
+  margin: 24px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-inset);
+}
+.design-notes h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.design-notes ul {
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 18px;
+  margin: 0;
+}
+.design-notes li { margin: 4px 0; }
+.design-notes li strong { color: var(--ink-soft); }
+.design-notes .verdict {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+</style>
+
+<div class="page">
+  <div class="page-head">
+    <h1>ASSAY — focused dependency-graph view</h1>
+    <p>Mock designs for issue #24. Three layout options for the transitive upstream/downstream view, shown with a <strong>K8</strong> (battery fire-control threshold) focus — the item whose perturbation changes C4 verdicts (thesis E).</p>
+  </div>
+
+  <!-- type legend -->
+  <div class="legend-bar">
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--t-knowledge)"></span> Knowledge</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--t-world)"></span> World</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--t-commitment)"></span> Commitment</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--t-verdict)"></span> Verdict</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--t-plan)"></span> Plan</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--t-report)"></span> Report</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--dead)"></span> <span style="border-bottom:1px dashed var(--dead)">dead end (G3)</span></div>
+    <div class="legend-item"><span style="width:10px;height:10px;border:2px solid var(--glow);border-radius:50%;flex-shrink:0"></span> focus item</div>
+  </div>
+
+  <!-- tab bar -->
+  <div class="option-bar" id="optionBar">
+    <button class="option-tab" aria-selected="true" data-panel="a">A: Horizontal river<span class="tag">recommended</span></button>
+    <button class="option-tab" aria-selected="false" data-panel="b">B: Vertical DAG</button>
+    <button class="option-tab" aria-selected="false" data-panel="c">C: Layered list</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       OPTION A — HORIZONTAL RIVER
+       ═══════════════════════════════════════════════════════ -->
+  <div class="option-panel active" id="panel-a">
+    <div class="selector">
+      <label>Focus item</label>
+      <select disabled>
+        <option>K8 — battery fire-control threshold</option>
+      </select>
+      <div class="depth-control">
+        <label>Max depth</label>
+        <input type="range" min="1" max="6" value="4" disabled>
+        <span class="depth-val">4</span>
+      </div>
+    </div>
+
+    <p class="annotation">Upstream flows left, downstream flows right. The focus item sits at centre; each column is one hop deeper. Edge labels ride the connectors. Fan-out beyond the depth cap shows an honest <strong>"+ N more"</strong> affordance, never silent truncation.</p>
+
+    <div class="river-frame">
+      <!-- upstream depth 2 -->
+      <div class="river-lane upstream">
+        <div class="dir-label">upstream · depth 2</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K8 source</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--caption);padding-left:12px">SIGINT collection<br>provenance: assessment</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">source</span>
+      </div>
+
+      <!-- upstream depth 1 -->
+      <div class="river-lane upstream">
+        <div class="dir-label">depth 1</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K8</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--caption);padding-left:12px">band: 9–13 km<br>single_source: true</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">compiled_into</span>
+      </div>
+
+      <!-- FOCUS -->
+      <div class="river-lane focus-lane">
+        <div class="dir-label" style="left:50%;translate:-50% 0;text-align:center">focus</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-world focus"><span class="type-dot" style="background:var(--t-world)"></span>BASE world</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--caption);text-align:center">compiled from K1–K9<br>scenario: BASE</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">scored_from</span>
+      </div>
+
+      <!-- downstream depth 1 -->
+      <div class="river-lane downstream">
+        <div class="dir-label">depth 1</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C4 verdict</span>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C1 verdict</span>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C2 verdict</span>
+          <span class="node t-verdict" style="opacity:.6"><span class="type-dot" style="background:var(--t-verdict)"></span>+ 3 more verdicts</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">cited_in</span>
+      </div>
+
+      <!-- downstream depth 2 -->
+      <div class="river-lane downstream">
+        <div class="dir-label">depth 2</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P1 (strait-early)</span>
+          <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P2 (sweep-first)</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">sacrificed_in</span>
+      </div>
+
+      <!-- downstream depth 3 -->
+      <div class="river-lane downstream">
+        <div class="dir-label">depth 3</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-report"><span class="type-dot" style="background:var(--t-report)"></span>R3m relaxation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- alternate focus: K8 directly -->
+    <p class="annotation" style="margin-top:16px">Same layout with <strong>K8</strong> as focus (the more typical entry point — click a knowledge chip, see everything it touches):</p>
+
+    <div class="river-frame" style="min-height:280px">
+      <!-- upstream: K8's provenance -->
+      <div class="river-lane upstream">
+        <div class="dir-label">upstream · depth 1</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node dead t-knowledge" style="background:var(--dead-bg)"><span class="type-dot" style="background:var(--dead)"></span>SIGINT report #417</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--dead);padding-left:12px">trace dead end — no<br>further upstream (G3)</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">source</span>
+      </div>
+
+      <!-- FOCUS: K8 -->
+      <div class="river-lane focus-lane">
+        <div class="dir-label" style="left:50%;translate:-50% 0;text-align:center">focus</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-knowledge focus"><span class="type-dot" style="background:var(--t-knowledge)"></span>K8</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--caption);text-align:center">battery fire-control<br>band: 9–13 km<br>single_source ·<br>answered</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">compiled_into</span>
+      </div>
+
+      <!-- downstream depth 1: worlds -->
+      <div class="river-lane downstream">
+        <div class="dir-label">depth 1</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-world"><span class="type-dot" style="background:var(--t-world)"></span>BASE world</span>
+          <span class="node t-world"><span class="type-dot" style="background:var(--t-world)"></span>R1 world</span>
+          <span class="node t-world"><span class="type-dot" style="background:var(--t-world)"></span>R2 world</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">scored_from</span>
+      </div>
+
+      <!-- downstream depth 2: verdicts -->
+      <div class="river-lane downstream">
+        <div class="dir-label">depth 2</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C4 BASE</span>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P2·C4 BASE</span>
+          <span class="node t-verdict" style="opacity:.6"><span class="type-dot" style="background:var(--t-verdict)"></span>+ 10 more</span>
+        </div>
+      </div>
+
+      <div class="river-connector">
+        <span class="arrow">→</span>
+        <span class="edge-label">cited_in ·<br>sacrificed_in</span>
+      </div>
+
+      <!-- downstream depth 3: plans/reports -->
+      <div class="river-lane downstream">
+        <div class="dir-label">depth 3</div>
+        <div class="river-group" style="padding-top:24px">
+          <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P1</span>
+          <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P2</span>
+          <span class="node t-report"><span class="type-dot" style="background:var(--t-report)"></span>R3m</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="design-notes">
+      <h3>Design notes — option A</h3>
+      <ul>
+        <li><strong>Reading direction:</strong> left-to-right matches the "informs → influences" mental model. The pipeline already flows this way in the system-flow infographic.</li>
+        <li><strong>Fan-out:</strong> when a lane has &gt;5 items, collapse to "show N → all" with the count visible. Never silent truncation (G3).</li>
+        <li><strong>Scale:</strong> K8's downstream reaches ~20 verdicts across 3 scenarios × 6 commitments × 2 plans. The "+ N more" affordance handles this; clicking expands the lane.</li>
+        <li><strong>Connector detail:</strong> edge-type labels on every connector. In implementation, these become hoverable for the full edge metadata.</li>
+        <li><strong>Item detail:</strong> the focus node and its immediate neighbours show a brief annotation (band, status, scenario). Deeper nodes show id only — detail on hover.</li>
+        <li><strong>Re-focus:</strong> clicking any node re-centres the view on it. The one-hop trace menu stays available as a right-click / long-press.</li>
+      </ul>
+      <p class="verdict">Recommended: the horizontal flow is natural for this domain, works at Meridian scale, and is the simplest to implement (CSS flex lanes, no canvas/SVG graph engine needed).</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       OPTION B — VERTICAL DAG
+       ═══════════════════════════════════════════════════════ -->
+  <div class="option-panel" id="panel-b">
+    <div class="selector">
+      <label>Focus item</label>
+      <select disabled>
+        <option>K8 — battery fire-control threshold</option>
+      </select>
+      <div class="depth-control">
+        <label>Max depth</label>
+        <input type="range" min="1" max="6" value="3" disabled>
+        <span class="depth-val">3</span>
+      </div>
+    </div>
+
+    <p class="annotation">Traditional top-to-bottom DAG. Upstream tiers above the focus row, downstream below. Each tier is one traversal hop. Vertical connector lines between tiers; edge labels in the gap rows.</p>
+
+    <div class="dag-frame">
+      <!-- upstream section -->
+      <div class="dag-upstream-section">
+        <div class="dag-tier" style="padding-top:14px">
+          <div class="dir-label">upstream · depth 1</div>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K1</span>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K2</span>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K3</span>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K4</span>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K6</span>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K7</span>
+          <span class="node t-knowledge focus"><span class="type-dot" style="background:var(--t-knowledge)"></span>K8</span>
+          <span class="node t-knowledge"><span class="type-dot" style="background:var(--t-knowledge)"></span>K9</span>
+        </div>
+        <div class="dag-edge-row">
+          <span class="edge-label">compiled_into ↓</span>
+        </div>
+      </div>
+
+      <!-- focus row -->
+      <div class="dag-focus-row">
+        <span class="node t-world focus" style="transform:scale(1.05)"><span class="type-dot" style="background:var(--t-world)"></span>BASE world</span>
+      </div>
+
+      <!-- downstream section -->
+      <div class="dag-downstream-section">
+        <div class="dag-edge-row">
+          <span class="edge-label">↓ scored_from</span>
+        </div>
+        <div class="dag-tier">
+          <div class="dir-label">downstream · depth 1</div>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C1</span>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C2</span>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C3</span>
+          <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C4</span>
+          <span class="node t-verdict" style="opacity:.55"><span class="type-dot" style="background:var(--t-verdict)"></span>+ 8 more</span>
+          <div class="dag-depth-label">depth 1</div>
+        </div>
+        <div class="dag-edge-row">
+          <span class="edge-label">↓ cited_in</span>
+          <span class="edge-label">↓ sacrificed_in</span>
+        </div>
+        <div class="dag-tier" style="padding-bottom:14px">
+          <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P1 (strait-early)</span>
+          <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P2 (sweep-first)</span>
+          <span class="node t-report"><span class="type-dot" style="background:var(--t-report)"></span>R3m relaxation</span>
+          <div class="dag-depth-label">depth 2</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="design-notes">
+      <h3>Design notes — option B</h3>
+      <ul>
+        <li><strong>Familiar form:</strong> the vertical DAG is the standard dependency-graph idiom. Easier to scan when the upstream is wide (many knowledge items feeding one world).</li>
+        <li><strong>Width pressure:</strong> at Meridian scale, the verdict tier (12 items: 2 plans × 6 commitments) wraps to two rows, widening the frame. With scenarios enabled (×3 worlds) this grows further.</li>
+        <li><strong>Asymmetry:</strong> the focus item may not be vertically centred — upstream might be 1 deep, downstream might be 4. The proportions shift as you re-focus.</li>
+        <li><strong>Implementation:</strong> same CSS-flex approach as option A but rotated. No canvas/SVG engine needed; the vertical connectors are styled divs.</li>
+      </ul>
+      <p class="verdict">Good for wide upstream trees (many inputs); less comfortable than the river when the downstream is the bigger side.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       OPTION C — LAYERED LIST
+       ═══════════════════════════════════════════════════════ -->
+  <div class="option-panel" id="panel-c">
+    <div class="selector">
+      <label>Focus item</label>
+      <select disabled>
+        <option>K8 — battery fire-control threshold</option>
+      </select>
+      <div class="depth-control">
+        <label>Max depth</label>
+        <input type="range" min="1" max="6" value="4" disabled>
+        <span class="depth-val">4</span>
+      </div>
+    </div>
+
+    <p class="annotation">Not a visual graph — a structured list grouped by direction and depth. The most compact layout; highest information density per pixel. Connection lines on the left edge trace the chain. Matches the existing one-hop trace menu's information architecture, extended transitively.</p>
+
+    <div class="list-frame">
+      <!-- upstream -->
+      <div class="list-section upstream">
+        <div class="dir-label">▲ upstream (informs K8)</div>
+
+        <div class="list-depth-group">
+          <div class="list-depth-header">depth 1</div>
+          <div class="list-row">
+            <span class="edge-label">source</span>
+            <span class="node dead t-knowledge" style="background:var(--dead-bg)"><span class="type-dot" style="background:var(--dead)"></span>SIGINT report #417</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--dead)">· dead end (G3)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- focus -->
+      <div class="list-section focus-sec">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="node t-knowledge focus"><span class="type-dot" style="background:var(--t-knowledge)"></span>K8</span>
+          <span style="font-family:var(--mono);font-size:10.5px;color:var(--muted)">battery fire-control threshold · band 9–13 km · single_source · answered</span>
+        </div>
+      </div>
+
+      <!-- downstream -->
+      <div class="list-section downstream">
+        <div class="dir-label">▼ downstream (K8 influences)</div>
+
+        <div class="list-depth-group">
+          <div class="list-depth-header">depth 1 — compiled_into</div>
+          <div class="list-row">
+            <span class="edge-label">compiled_into</span>
+            <span class="node t-world"><span class="type-dot" style="background:var(--t-world)"></span>BASE world</span>
+          </div>
+          <div class="list-row">
+            <span class="edge-label">compiled_into</span>
+            <span class="node t-world"><span class="type-dot" style="background:var(--t-world)"></span>R1 world</span>
+          </div>
+          <div class="list-row">
+            <span class="edge-label">compiled_into</span>
+            <span class="node t-world"><span class="type-dot" style="background:var(--t-world)"></span>R2 world</span>
+          </div>
+        </div>
+
+        <div class="list-depth-group">
+          <div class="list-depth-header">depth 2 — scored_from</div>
+          <div class="list-row">
+            <span class="edge-label">scored_from</span>
+            <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P1·C4 BASE</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--t-verdict)">robust · margin [15,19]</span>
+          </div>
+          <div class="list-row">
+            <span class="edge-label">scored_from</span>
+            <span class="node t-verdict"><span class="type-dot" style="background:var(--t-verdict)"></span>P2·C4 BASE</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--t-verdict)">robust · margin [15,19]</span>
+          </div>
+          <div class="list-more">+ 10 more verdicts across R1, R2 scenarios — click to expand</div>
+        </div>
+
+        <div class="list-depth-group">
+          <div class="list-depth-header">depth 3 — cited_in · sacrificed_in</div>
+          <div class="list-row">
+            <span class="edge-label">cited_in</span>
+            <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P1 (strait-early)</span>
+          </div>
+          <div class="list-row">
+            <span class="edge-label">cited_in</span>
+            <span class="node t-plan"><span class="type-dot" style="background:var(--t-plan)"></span>P2 (sweep-first)</span>
+          </div>
+          <div class="list-row">
+            <span class="edge-label">sacrificed_in</span>
+            <span class="node t-report"><span class="type-dot" style="background:var(--t-report)"></span>R3m relaxation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="design-notes">
+      <h3>Design notes — option C</h3>
+      <ul>
+        <li><strong>Density:</strong> the most items per vertical pixel. No wasted connector space. Good for discovery ("what does K8 touch?") when the answer might be large.</li>
+        <li><strong>Grouping:</strong> items grouped by depth AND edge type — more information per row than the graph layouts, since each row names its traversal edge.</li>
+        <li><strong>Scale:</strong> handles Meridian's fan-out gracefully — the "+ N more" affordance is natural in list form. Deep chains just add more depth groups.</li>
+        <li><strong>Loss:</strong> no visual sense of the graph structure — you can't see that K8 feeds a world that feeds verdicts at a glance. The topology is linearised into groups.</li>
+        <li><strong>Implementation:</strong> the simplest of the three — pure HTML, no flex-lane geometry, no connector positioning.</li>
+      </ul>
+      <p class="verdict">Best for information density and large fan-out, but loses the spatial "graph" that the issue asks for. Consider as a secondary/collapsed view alongside A or B.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PLACEMENT OPTIONS
+       ═══════════════════════════════════════════════════════ -->
+  <div class="placement-box">
+    <h4>Placement — where does this view live?</h4>
+    <ul>
+      <li><strong>Option 1: Full-screen overlay</strong> — triggered from the existing one-hop trace menu ("View full graph →" link at the bottom). Dimmed backdrop, close button, the graph fills the viewport. Lowest implementation cost; doesn't touch the tab structure.</li>
+      <li><strong>Option 2: Observer tab sub-mode</strong> — a toggle on the Observer/bridge tab between the current staleness view and the dependency graph. The Observer role already holds the cross-cutting analysis surfaces (sensitivity, discrimination, staleness).</li>
+      <li><strong>Option 3: Fifth tab</strong> — "Dependencies" alongside J-2 / Planner / Commander / Observer. Most visible, but adds permanent chrome to an already four-tab bar for a view that's used on-demand, not continuously.</li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DECISION SUMMARY
+       ═══════════════════════════════════════════════════════ -->
+  <div class="design-notes">
+    <h3>Recommendation</h3>
+    <ul>
+      <li><strong>Layout A (horizontal river)</strong> for the primary view — it matches the domain's left-to-right information flow and works at Meridian scale without a graph engine.</li>
+      <li><strong>Layout C (layered list)</strong> as a compact fallback or tooltip detail for individual nodes — the grouping-by-edge-type is useful information that the river doesn't surface as clearly.</li>
+      <li><strong>Placement 1 (full-screen overlay)</strong> from the trace menu — keeps the tab bar clean, makes the entry point the natural extension of the existing one-hop menu, and the overlay's viewport gives the river room to breathe.</li>
+    </ul>
+    <p class="verdict">All three layouts reuse TraceStore.walk + EDGE_ORIENTATION — the graph mechanics are already built. The remaining work is presentation only.</p>
+  </div>
+</div>
+
+<script>
+// tab switching
+document.getElementById('optionBar').addEventListener('click', (e) => {
+  const btn = e.target.closest('.option-tab');
+  if (!btn) return;
+  document.querySelectorAll('.option-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+  document.querySelectorAll('.option-panel').forEach(p => p.classList.remove('active'));
+  btn.setAttribute('aria-selected', 'true');
+  document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+});
+
+// hover-to-highlight connected nodes (simple demo)
+document.querySelectorAll('.node').forEach(node => {
+  node.addEventListener('mouseenter', () => {
+    const label = node.textContent.trim().split(' ')[0];
+    if (!label) return;
+    // just pulse the hovered node
+    node.style.transition = 'box-shadow .15s';
+  });
+});
+</script>
+</body></html>
