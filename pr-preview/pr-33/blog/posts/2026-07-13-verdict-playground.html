@@ -6,7 +6,7 @@
   across a banded score and watch the verdict flip only at band edges — the
   honesty property oracle O-3 demands. Self-contained and static.
 
-  Frozen at publication — 2026-07-14.
+  Frozen at publication — 2026-07-13.
 -->
 <html lang="en">
 <head>
@@ -80,7 +80,7 @@
   <div class="wrap">
     <div class="crumbs"><a href="../">&larr; Blog</a> &nbsp;&middot;&nbsp; <a href="../../">ASSAY home</a></div>
     <div class="meta">
-      <span>2026-07-14</span>
+      <span>2026-07-13</span>
       <span class="chip illu">illustrative widget &mdash; real rule, fixture data</span>
       <span class="chip spec">SPEC-07</span>
     </div>
@@ -157,8 +157,78 @@
     <b>Illustrative widget, fixture data.</b> The matrix shows Meridian plans P1/P2 scored against
     commitments C1&ndash;C4 under the BASE scenario. The four-stop chips are the same colour
     language the shipped <span style="font-family:var(--mono);font-size:.9em">s2Matrix</span>
-    component uses. Frozen as shipped on 2026-07-14.
+    component uses. Frozen as shipped on 2026-07-13.
   </p>
+
+  <h2>Try it: drag the threshold</h2>
+  <p>
+    The slider below implements the <b>real signs-only rule</b>. The assessed band is fixed at
+    <span style="font-family:var(--mono);font-size:.9em">[9, 13]</span> (the O-3 oracle values).
+    Drag the threshold and watch the verdict flip <b>only at the band edges</b> &mdash; never
+    inside the band.
+  </p>
+  <div class="demo" id="playground">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <label style="font-family:var(--mono);font-size:13px;color:var(--muted)">threshold:</label>
+      <input type="range" id="thresh-slider" min="0" max="22" value="11" step="1"
+        style="flex:1;min-width:140px;accent-color:var(--blue-ink)">
+      <span id="thresh-val" style="font-family:var(--mono);font-size:15px;min-width:28px;text-align:right">11</span>
+    </div>
+    <div style="position:relative;height:48px;background:var(--panel-2);border-radius:8px;border:1px solid var(--line);overflow:hidden;margin-bottom:10px">
+      <div style="position:absolute;left:0;top:0;height:100%;width:100%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--muted)">
+        assessed band [9, 13]
+      </div>
+      <div id="band-bar" style="position:absolute;top:6px;bottom:6px;background:var(--band-fill);border:2px solid var(--band-line);border-radius:4px"></div>
+      <div id="thresh-marker" style="position:absolute;top:0;bottom:0;width:2px;background:var(--blue-ink);transition:left .05s"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">margin band:</span>
+      <span id="margin-display" style="font-family:var(--mono);font-size:13px"></span>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:auto">verdict:</span>
+      <span id="verdict-display"></span>
+    </div>
+  </div>
+  <p class="demo-cap">
+    <b>Illustrative widget, real rule.</b> The verdict mapping is the same signs-only algorithm
+    the shipped scorer uses. The assessed band [9,&nbsp;13] is the O-3 oracle case from the
+    Meridian vignette. Frozen as shipped on 2026-07-13.
+  </p>
+  <script>
+  (function(){
+    var slider = document.getElementById('thresh-slider');
+    var valEl = document.getElementById('thresh-val');
+    var marginEl = document.getElementById('margin-display');
+    var verdictEl = document.getElementById('verdict-display');
+    var bandBar = document.getElementById('band-bar');
+    var threshMarker = document.getElementById('thresh-marker');
+    var LO = 9, HI = 13, MIN = 0, MAX = 22;
+    var STOPS = {
+      robust:   {bg:'#1E6B3A',label:'robust'},
+      marginal: {bg:'#7A6A12',label:'marginal'},
+      tight:    {bg:'#9A5212',label:'tight'},
+      violated: {bg:'#8A2020',label:'violated'}
+    };
+    function pct(v){ return ((v - MIN) / (MAX - MIN)) * 100; }
+    bandBar.style.left = pct(LO) + '%';
+    bandBar.style.width = (pct(HI) - pct(LO)) + '%';
+    function update(){
+      var t = +slider.value;
+      valEl.textContent = t;
+      threshMarker.style.left = pct(t) + '%';
+      var m_lo = LO - t, m_hi = HI - t;
+      marginEl.textContent = '[' + m_lo + ', ' + m_hi + ']';
+      var v;
+      if (m_lo > 0) v = 'robust';
+      else if (m_lo === 0) v = 'marginal';
+      else if (m_hi >= 0) v = 'tight';
+      else v = 'violated';
+      var s = STOPS[v];
+      verdictEl.innerHTML = '<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:600;color:#fff;background:'+s.bg+'">'+s.label+'</span>';
+    }
+    slider.addEventListener('input', update);
+    update();
+  })();
+  </script>
 
   <h2>O-3: the oracle that tests the mapping</h2>
   <p>

@@ -156,46 +156,18 @@
   ],
   "blog": [
     {
-      "date": "2026-07-14",
-      "title": "Trace walk: every output traces back to named knowledge",
-      "href": "blog/posts/2026-07-14-trace-walk.html",
-      "slice": "SPEC-02",
-      "embed": "illustrative widget — real rule, fixture data"
-    },
-    {
-      "date": "2026-07-14",
-      "title": "Content addressing: identity is a hash",
-      "href": "blog/posts/2026-07-14-content-addressing.html",
-      "slice": "SPEC-01",
-      "embed": "illustrative widget — real rule, fixture data"
-    },
-    {
-      "date": "2026-07-14",
-      "title": "Stamp determinism: compile twice, get the same answer",
-      "href": "blog/posts/2026-07-14-stamp-determinism.html",
-      "slice": "SPEC-06",
-      "embed": "illustrative widget — real rule, fixture data"
-    },
-    {
-      "date": "2026-07-14",
+      "date": "2026-07-13",
       "title": "Least-worst: choosing what to sacrifice",
-      "href": "blog/posts/2026-07-14-least-worst.html",
+      "href": "blog/posts/2026-07-13-least-worst.html",
       "slice": "SPEC-09",
       "embed": "illustrative widget — real rule, fixture data"
     },
     {
-      "date": "2026-07-14",
+      "date": "2026-07-13",
       "title": "The verdict playground: four stops, no decimals",
-      "href": "blog/posts/2026-07-14-verdict-playground.html",
+      "href": "blog/posts/2026-07-13-verdict-playground.html",
       "slice": "SPEC-07",
       "embed": "illustrative widget — real rule, fixture data"
-    },
-    {
-      "date": "2026-07-14",
-      "title": "The provenance chip & the K10 refusal",
-      "href": "blog/posts/2026-07-14-provenance-chip.html",
-      "slice": "SPEC-05 / SPEC-14",
-      "embed": "live component — the demonstrator's actual code"
     },
     {
       "date": "2026-07-13",
@@ -203,6 +175,34 @@
       "href": "blog/posts/2026-07-13-band-pill.html",
       "slice": "SPEC-05 / SPEC-14",
       "embed": "live component — the demonstrator's actual code"
+    },
+    {
+      "date": "2026-07-12",
+      "title": "Stamp determinism: compile twice, get the same answer",
+      "href": "blog/posts/2026-07-12-stamp-determinism.html",
+      "slice": "SPEC-06",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-12",
+      "title": "The provenance chip & the K10 refusal",
+      "href": "blog/posts/2026-07-12-provenance-chip.html",
+      "slice": "SPEC-05 / SPEC-14",
+      "embed": "live component — the demonstrator's actual code"
+    },
+    {
+      "date": "2026-07-11",
+      "title": "Trace walk: every output traces back to named knowledge",
+      "href": "blog/posts/2026-07-11-trace-walk.html",
+      "slice": "SPEC-02",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-11",
+      "title": "Content addressing: identity is a hash",
+      "href": "blog/posts/2026-07-11-content-addressing.html",
+      "slice": "SPEC-01",
+      "embed": "illustrative widget — real rule, fixture data"
     }
   ]
 }

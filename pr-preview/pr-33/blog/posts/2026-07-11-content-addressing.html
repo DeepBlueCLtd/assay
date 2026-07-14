@@ -5,7 +5,7 @@
   SPEC-01: the foundation mechanic. Edit a small object, watch its hash
   (identity) change. Immutability by construction. Self-contained and static.
 
-  Frozen at publication — 2026-07-14.
+  Frozen at publication — 2026-07-11.
 -->
 <html lang="en">
 <head>
@@ -75,7 +75,7 @@
   <div class="wrap">
     <div class="crumbs"><a href="../">&larr; Blog</a> &nbsp;&middot;&nbsp; <a href="../../">ASSAY home</a></div>
     <div class="meta">
-      <span>2026-07-14</span>
+      <span>2026-07-11</span>
       <span class="chip illu">illustrative widget &mdash; real rule, fixture data</span>
       <span class="chip spec">SPEC-01</span>
     </div>
@@ -101,34 +101,67 @@
     <span style="font-family:var(--mono);font-size:.9em">delete</span> (knowledge model &sect;2).
   </p>
 
-  <h2>Same content, same hash</h2>
-  <div class="demo">
-    <div class="obj">{ "logical_id": "K2", "value": { "lo": 25, "hi": 40, "unit": "tonnes" } }</div>
+  <h2>Try it: edit the object, watch the hash change</h2>
+  <p>
+    Edit the JSON below. The hash recomputes live using the <b>real algorithm</b> &mdash; SHA-256
+    over canonical JSON (sorted keys, normalised whitespace). Same content always produces the
+    same hash; change one character and the hash is completely different.
+  </p>
+  <div class="demo" id="hash-demo">
+    <textarea id="obj-input" spellcheck="false"
+      style="width:100%;height:70px;font-family:var(--mono);font-size:13px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:10px;resize:vertical;line-height:1.5">{ "logical_id": "K2", "value": { "lo": 25, "hi": 40, "unit": "tonnes" } }</textarea>
     <div class="arrow">&darr;</div>
-    <div class="hash">sha256:7e2a91…b3c4 <span class="match">&check;</span></div>
-    <p style="margin:10px 0 4px;font-size:13px;color:var(--muted)">PUT the same object again:</p>
-    <div class="obj">{ "logical_id": "K2", "value": { "lo": 25, "hi": 40, "unit": "tonnes" } }</div>
-    <div class="arrow">&darr;</div>
-    <div class="hash">sha256:7e2a91…b3c4 <span class="match">&check; idempotent &mdash; same hash returned</span></div>
-  </div>
-
-  <h2>Edit one field, new identity</h2>
-  <div class="demo">
-    <div class="obj">{ "logical_id": "K2", "value": { "lo": 25, "hi": <b style="color:var(--band-ink)">45</b>, "unit": "tonnes" } }</div>
-    <div class="arrow">&darr;</div>
-    <div class="hash">sha256:d14f3b…8e71 <span class="diff">&ne; new hash &mdash; new version</span></div>
-    <p style="margin:10px 0 0;font-size:13px;color:var(--muted)">
-      The old version (sha256:7e2a91…b3c4) still exists in the store &mdash; immutable. The
-      lineage for K2 now has two entries: v1 and v2, ordered by insertion. A trace edge
-      (<span style="font-family:var(--mono);font-size:.9em">supersedes</span>) connects the new
-      hash to the old.
-    </p>
+    <div class="hash" id="hash-output" style="transition:background .2s">computing&hellip;</div>
+    <div id="hash-status" style="font-family:var(--mono);font-size:12px;margin-top:6px;color:var(--muted)"></div>
   </div>
   <p class="demo-cap">
-    <b>Illustrative widget, fixture data.</b> The hashes are representative SHA-256 prefixes from
-    the shipped store running over Meridian K2 fixtures. The canonical JSON uses sorted keys and
-    normalised whitespace so the hash is platform-independent. Frozen as shipped on 2026-07-14.
+    <b>Illustrative widget, real rule.</b> The hash uses the browser's native
+    <span style="font-family:var(--mono);font-size:.9em">crypto.subtle.digest('SHA-256', …)</span>
+    &mdash; the same API the shipped store uses. Keys are sorted to produce canonical JSON. Try
+    swapping key order: the hash stays the same. Frozen as shipped on 2026-07-11.
   </p>
+  <script>
+  (function(){
+    var input = document.getElementById('obj-input');
+    var output = document.getElementById('hash-output');
+    var status = document.getElementById('hash-status');
+    var lastHash = '';
+    function canonicalJson(obj){
+      if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+      if (Array.isArray(obj)) return '[' + obj.map(canonicalJson).join(',') + ']';
+      var keys = Object.keys(obj).sort();
+      return '{' + keys.map(function(k){ return JSON.stringify(k) + ':' + canonicalJson(obj[k]); }).join(',') + '}';
+    }
+    async function computeHash(){
+      var text = input.value;
+      try {
+        var parsed = JSON.parse(text);
+        var canonical = canonicalJson(parsed);
+        var buf = new TextEncoder().encode(canonical);
+        var hashBuf = await crypto.subtle.digest('SHA-256', buf);
+        var arr = Array.from(new Uint8Array(hashBuf));
+        var hex = arr.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+        var display = 'sha256:' + hex.slice(0,6) + '…' + hex.slice(-4);
+        if (lastHash && lastHash !== hex) {
+          output.innerHTML = display + ' <span style="color:var(--band-ink);font-weight:700">≠ changed</span>';
+        } else if (lastHash === hex) {
+          output.innerHTML = display + ' <span style="color:var(--robust-ink);font-weight:700">✓ identical</span>';
+        } else {
+          output.textContent = display;
+        }
+        lastHash = hex;
+        status.textContent = 'canonical: ' + canonical.slice(0, 72) + (canonical.length > 72 ? '…' : '');
+        status.style.color = 'var(--muted)';
+      } catch(e) {
+        output.innerHTML = '<span style="color:var(--muted)">waiting for valid JSON…</span>';
+        status.textContent = e.message;
+        status.style.color = 'var(--band-ink)';
+      }
+    }
+    input.addEventListener('input', computeHash);
+    computeHash();
+  })();
+  </script>
 
   <h2>Why it is load-bearing</h2>
   <p>
