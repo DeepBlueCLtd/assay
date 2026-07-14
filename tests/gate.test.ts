@@ -27,9 +27,9 @@ import { SensitivityService } from '../src/sensitivity.js';
 import { DiscriminationService } from '../src/discrimination.js';
 import { StalenessService } from '../src/staleness.js';
 import * as I from '../src/interval.js';
+import { type CompileResult } from '../src/compile.js';
 import {
   isRefusal,
-  type CompileResult,
   type HandfulResult,
   type RelaxResult,
   type RobustnessResult,
