@@ -20,7 +20,13 @@ import { s2Matrix, type S2Cell } from '../src/components/s2Matrix.js';
 import { handfulStrip, type HandfulStripRow } from '../src/components/handfulStrip.js';
 import { s3Cards, type S3Card } from '../src/components/s3Cards.js';
 import { scenarioStrip } from '../src/components/scenarioStrip.js';
+import { sensitivityTable } from '../src/components/sensitivityTable.js';
+import { discriminationTable } from '../src/components/discriminationTable.js';
+import { stalenessFlags } from '../src/components/stalenessFlags.js';
 import { RobustnessService } from '../src/robustness.js';
+import { SensitivityService } from '../src/sensitivity.js';
+import { DiscriminationService } from '../src/discrimination.js';
+import { StalenessService } from '../src/staleness.js';
 import { checkEncoding } from '../src/encoding.js';
 import { confidenceLint } from '../src/lint.js';
 import { KnowledgeService } from '../src/knowledge.js';
@@ -151,6 +157,64 @@ if (!isRefusal(compiled)) {
   }
 }
 const s2 = matrixRows.length > 0 ? s2Matrix(['C1', 'C2', 'C3', 'C4', 'C5', 'C6'], matrixRows) : '';
+
+// SPEC-11 — sensitivity: which beliefs bear load. Band-edge perturbation of each
+// consumed knowledge object; rank by the number of commitment verdicts that change.
+const sensitivitySvc = new SensitivityService({ store: svc.store, trace: svc.trace, config: vignetteConfig, commitments });
+let sensitivityHtml = '';
+let sensitivityStampLine = '';
+if (!isRefusal(compiled) && stripRows.length > 0) {
+  const sensResult = await sensitivitySvc.analyse({
+    plan: stripRows[0]!.plan,
+    world: compiled.world,
+    scenario: 'BASE',
+    engine_version: '0.1.0',
+  });
+  if (!isRefusal(sensResult)) {
+    sensitivityHtml = sensitivityTable(sensResult.ranking);
+    sensitivityStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">sensitivity stamp ${sensResult.stamp.slice(0, 16)}… · ${sensResult.ranking.length} knowledge objects perturbed · ranked by verdict-change count · single_source carried, not used in ranking (DEC-19)</span>`;
+  }
+}
+
+// SPEC-12 — discrimination: which open questions separate COAs. COA-pair band
+// separation over expected-answer miniatures (DEC-18). Cost shown alongside,
+// never collapsed with value (DEC-19).
+const k11 = kById.get('K11')!;
+const k13 = kById.get('K13')!;
+await svc.store.put(structuredClone(k11) as unknown as Record<string, unknown>);
+await svc.store.put(structuredClone(k13) as unknown as Record<string, unknown>);
+const k11Ref = svc.store.versions('K11').at(-1)!;
+const k13Ref = svc.store.versions('K13').at(-1)!;
+const discriminationSvc = new DiscriminationService({ store: svc.store });
+let discriminationHtml = '';
+let discriminationStampLine = '';
+{
+  const discResult = await discriminationSvc.analyse({
+    questions: [k11Ref, k13Ref],
+    coas: ['R1', 'R2', 'R3'],
+    engine_version: '0.1.0',
+  });
+  if (!isRefusal(discResult)) {
+    discriminationHtml = discriminationTable(discResult.ranking);
+    discriminationStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">discrimination stamp ${discResult.stamp.slice(0, 16)}… · ${discResult.ranking.length} open questions ranked · COA-pair separation over expected-answer bands (DEC-18) · cost alongside, never collapsed (DEC-19)</span>`;
+  }
+}
+
+// SPEC-13 — staleness: what goes stale when knowledge changes. Transitive forward
+// trace walk from K9 (the storm-window knowledge that superseded K5); flags exactly
+// the downstream verdicts and nothing else. Does not recompute — flags, then humans
+// decide. K9 is in the compiled world so the trace walk finds real edges.
+const stalenessSvc = new StalenessService({ store: svc.store, trace: svc.trace });
+const k9Ref = svc.store.versions('K9').at(-1);
+let stalenessHtml = '';
+let stalenessStampLine = '';
+if (k9Ref) {
+  const staleResult = await stalenessSvc.analyse({ changed: k9Ref, engine_version: '0.1.0' });
+  if (!isRefusal(staleResult)) {
+    stalenessHtml = stalenessFlags(staleResult.invalidated, staleResult.chains);
+    stalenessStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">staleness stamp ${staleResult.stamp.slice(0, 16)}… · ${staleResult.invalidated.verdicts.length} verdicts + ${staleResult.invalidated.worlds.length} worlds invalidated · transitive walk from K9 · flags only, no recompute (constitution)</span>`;
+  }
+}
 const strip = stripRows.length > 0 ? handfulStrip(stripRows) : '';
 const scoreStampLine = handfulStamp
   ? `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">handful stamp ${handfulStamp.slice(0, 16)}… · ${matrixRows.length} genuinely distinct plans, organised not authored · same stamp + seed ⇒ identical handful (G1) · every verdict carries a scored_from edge to the world (G3)</span>`
@@ -253,7 +317,16 @@ ${rows}
 <h2 style="font-size:16px;margin-top:32px">Scenario robustness — don't plan on most-likely (SPEC-10)</h2>
 <p style="font-size:12.5px;color:#5B6B77">The Stage-5 demo moment (thesis C; JP 2-01.3: "don't plan on most-likely"). The generated handful scored across <b>BASE, R1, R2, R3</b> — the adversary COA set from the vignette. Each cell is a four-stop verdict chip; a <b>▼</b> marks a verdict that dropped from its BASE value under that scenario ("collapse"). The <b>worst</b> column is the minimax: the plan's worst verdict for that commitment across all scenarios — a real verdict on a real scenario, not a weighted blend (DEC-15/19). <i>Toggle R2 (Strait Denial) and watch the strait-early plan die on C1/C2 while robust alternatives hold.</i> ${robustnessStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${scenarioStripHtml}</div>
-<p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code> · relax per <code>docs/research/04-relaxation.md</code> · robustness per <code>docs/research/06-robustness.md</code></p>
+<h2 style="font-size:16px;margin-top:32px">Sensitivity — which beliefs bear load (SPEC-11)</h2>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-6 sensitivity demo moment (thesis E). Band-edge perturbation of each consumed knowledge object against the first handful plan: push each answer to its lo and hi edges, re-score, and count how many commitment verdicts change. <b>K8 tops the ranking</b> with <code>single_source: true</code> — its band-edge perturbation changes C4 verdicts via the battery fire-control threshold. The <code>single_source</code> flag is carried through from provenance, <b>never used in the ranking arithmetic</b> (DEC-19) — shown alongside so the commander sees the collection risk without it being laundered into a scalar. ${sensitivityStampLine}</p>
+<div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${sensitivityHtml}</div>
+<h2 style="font-size:16px;margin-top:32px">Discrimination — which questions separate COAs (SPEC-12)</h2>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-6 discrimination demo moment (thesis D). COA-pair band separation over open questions' expected-answer miniatures (DEC-18): for each open question with <code>expected_answers</code>, measure how well the answer bands separate each pair of adversary COAs. <b>K11 ranks above K13</b> despite higher collection cost — the R1/R2 expected-answer bands are disjoint (mines loaded vs not), while K13's radio-traffic bands overlap across all COAs. Cost is shown alongside, <b>never collapsed with value</b> (DEC-19): the commander sees both and decides. No Shannon entropy, no VOI, no scenario weights (research note 08-analysis.md §3). ${discriminationStampLine}</p>
+<div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${discriminationHtml}</div>
+<h2 style="font-size:16px;margin-top:32px">Staleness — what goes stale when knowledge changes (SPEC-13)</h2>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-6 staleness demo moment (thesis F). Transitive forward trace walk from <b>K9</b> (the storm-window knowledge that superseded K5): follow every downstream edge — <code>consumed_by</code>, <code>scored_from</code>, <code>compiled_into</code> — using the <code>EDGE_ORIENTATION</code> map from <code>traceView.ts</code>. The walk flags <b>exactly the dependent verdicts</b> and nothing else. It does <b>not recompute</b> — the constitution says flags, then humans decide. ${stalenessStampLine}</p>
+<div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${stalenessHtml}</div>
+<p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code> · relax per <code>docs/research/04-relaxation.md</code> · robustness per <code>docs/research/06-robustness.md</code> · analysis per <code>docs/research/08-analysis.md</code></p>
 </div>
 </body>
 </html>

@@ -8,6 +8,7 @@
  * rather than in the generated schema.
  */
 import type { Ref } from './store.js';
+import type { TraceChain } from './trace.js';
 import type { Band, CommitmentVerdict, PlanScore, RelaxationReport, VerdictBand } from './generated/types.js';
 
 export type RefusalReason =
@@ -157,3 +158,85 @@ export interface RobustnessSuccess {
 }
 
 export type RobustnessResult = RobustnessSuccess | Refusal;
+
+/**
+ * SPEC-11 — sensitivity movement types (seam §8, thesis E). Band-edge
+ * perturbation loop over the scorer; ranks knowledge items by verdict-change
+ * count. The `single_source` flag is carried through from provenance, not
+ * used in the ranking arithmetic (research note `08-analysis.md` §1–2).
+ */
+export interface SensitivityRequest {
+  plan: Ref;
+  world: Ref;
+  scenario: string;
+  engine_version: string;
+}
+
+export interface SensitivityRanking {
+  knowledge: Ref;
+  baseline_verdicts: VerdictBand[];
+  perturbed_verdicts: VerdictBand[];
+  changed_count: number;
+  single_source: boolean;
+}
+
+export interface SensitivitySuccess {
+  ranking: SensitivityRanking[];
+  stamp: string;
+}
+
+export type SensitivityResult = SensitivitySuccess | Refusal;
+
+/**
+ * SPEC-12 — discrimination movement types (seam §8, thesis D). COA-pair
+ * separation over open questions' expected-answer bands (DEC-18). Cost and
+ * value are shown alongside, never collapsed (DEC-19).
+ */
+export interface DiscriminationRequest {
+  questions?: Ref[];
+  coas: string[];
+  engine_version: string;
+}
+
+export interface CoaPairSeparation {
+  coa_a: string;
+  coa_b: string;
+  separation: Band;
+}
+
+export interface DiscriminationEntry {
+  question: Ref;
+  pairs: CoaPairSeparation[];
+  best_separation: Band;
+  cost: Band;
+}
+
+export interface DiscriminationSuccess {
+  ranking: DiscriminationEntry[];
+  stamp: string;
+}
+
+export type DiscriminationResult = DiscriminationSuccess | Refusal;
+
+/**
+ * SPEC-13 — staleness movement types (seam §8, thesis F). Transitive forward
+ * trace walk from a superseded/changed knowledge object; returns exactly the
+ * dependent artefacts and nothing else. Nothing recomputes — flags, then humans
+ * decide (constitution).
+ */
+export interface StalenessRequest {
+  changed: Ref;
+  engine_version: string;
+}
+
+export interface StalenessSuccess {
+  invalidated: {
+    verdicts: Ref[];
+    scores: Ref[];
+    worlds: Ref[];
+  };
+  chains: TraceChain[];
+  stamp: string;
+}
+
+export type StalenessResult = StalenessSuccess | Refusal;

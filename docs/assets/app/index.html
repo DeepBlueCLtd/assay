@@ -937,8 +937,8 @@
     /** POST /knowledge — encoding discipline enforced here; nothing persists on refusal. */
     async create(ko) {
       this.#assertValid(ko);
-      const refusal5 = checkEncoding(ko);
-      if (refusal5) return refusal5;
+      const refusal9 = checkEncoding(ko);
+      if (refusal9) return refusal9;
       const hash = await contentHash(ko);
       const isNew = !this.#store.exists(hash);
       const ref = await this.#store.put(ko);
@@ -951,8 +951,8 @@
     /** POST /knowledge/{id}/supersede — writes a supersedes edge; returns what it staled. */
     async supersede(next, priorId) {
       this.#assertValid(next);
-      const refusal5 = checkEncoding(next);
-      if (refusal5) return refusal5;
+      const refusal9 = checkEncoding(next);
+      if (refusal9) return refusal9;
       const priorHash = this.#latestHash(priorId);
       if (!priorHash) {
         return unknownRef(priorId, `${priorId}: no live version to supersede.`);
@@ -1994,6 +1994,319 @@
     explanation
   });
 
+  // src/robustness.ts
+  var VERDICT_ORDER = {
+    violated: 0,
+    tight: 1,
+    marginal: 2,
+    robust: 3
+  };
+  var VERDICT_NAMES = ["violated", "tight", "marginal", "robust"];
+  var RobustnessService = class {
+    #store;
+    #scorer;
+    #commitmentIds;
+    constructor(opts) {
+      this.#store = opts.store;
+      this.#scorer = opts.scorer;
+      this.#commitmentIds = [...opts.commitments].map((c) => c.logical_id).sort(cmp5);
+    }
+    async robustness(req) {
+      const scenarioIds = Object.keys(req.worlds).sort(cmp5);
+      if (scenarioIds.length === 0) {
+        return refusal5("unknown_ref", [], "no scenario worlds provided.");
+      }
+      const worlds = /* @__PURE__ */ new Map();
+      for (const sid of scenarioIds) {
+        const ref = req.worlds[sid];
+        const w = this.#resolve(ref);
+        if (!w) return refusal5("unknown_ref", [ref], `${ref.logical_id}: no such world for scenario ${sid}.`);
+        worlds.set(sid, w);
+      }
+      const planIds = [];
+      for (const pRef of req.plans) {
+        const p = this.#resolve(pRef);
+        if (!p) return refusal5("unknown_ref", [pRef], `${pRef.logical_id}: no such plan to score.`);
+        planIds.push(pRef.logical_id);
+      }
+      const verdicts = /* @__PURE__ */ new Map();
+      for (const pRef of req.plans) {
+        for (const sid of scenarioIds) {
+          const wRef = req.worlds[sid];
+          const scored = await this.#scorer.score({
+            plan: pRef,
+            world: wRef,
+            scenario: sid,
+            engine_version: req.engine_version
+          });
+          if (isRefusal(scored)) return scored;
+          for (const v of scored.verdicts) {
+            verdicts.set(`${pRef.logical_id}-${v.commitment}-${sid}`, v);
+          }
+        }
+      }
+      const worst_case = /* @__PURE__ */ new Map();
+      for (const pid of planIds) {
+        for (const cid of this.#commitmentIds) {
+          let worstOrd = 3;
+          for (const sid of scenarioIds) {
+            const v = verdicts.get(`${pid}-${cid}-${sid}`);
+            if (v) {
+              const ord = VERDICT_ORDER[v.verdict];
+              if (ord < worstOrd) worstOrd = ord;
+            }
+          }
+          worst_case.set(`${pid}-${cid}`, VERDICT_NAMES[worstOrd]);
+        }
+      }
+      const stamps_compatible = this.#stampsCompatible(worlds);
+      const stamp = await contentHash({
+        plans: req.plans.map((p) => ({ logical_id: p.logical_id, content_hash: p.content_hash })),
+        worlds: scenarioIds.map((sid) => ({ scenario: sid, stamp: worlds.get(sid).stamp })),
+        engine_version: req.engine_version
+      });
+      const tensor = {
+        scenarios: scenarioIds,
+        plans: planIds,
+        commitments: [...this.#commitmentIds],
+        verdicts,
+        worst_case,
+        stamps_compatible
+      };
+      return { tensor, stamp };
+    }
+    #resolve(ref) {
+      if (ref.content_hash) return this.#store.get(ref.content_hash);
+      const versions = this.#store.versions(ref.logical_id);
+      const hash = versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+      return hash ? this.#store.get(hash) : void 0;
+    }
+    #stampsCompatible(worlds) {
+      const consumedSets = [];
+      for (const w of worlds.values()) {
+        const key = w.consumed.map((c) => `${c.logical_id}:${c.content_hash}`).sort().join("|");
+        consumedSets.push(key);
+      }
+      return consumedSets.every((s) => s === consumedSets[0]);
+    }
+  };
+  var cmp5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  var refusal5 = (reason, offending, explanation) => ({
+    refused: true,
+    reason,
+    offending,
+    explanation
+  });
+
+  // src/sensitivity.ts
+  var SensitivityService = class {
+    #store;
+    #trace;
+    #config;
+    #commitments;
+    constructor(opts) {
+      this.#store = opts.store;
+      this.#trace = opts.trace;
+      this.#config = opts.config;
+      this.#commitments = opts.commitments;
+    }
+    async analyse(req) {
+      const world = this.#resolve(req.world);
+      if (!world) return refusal6("unknown_ref", [req.world], `${req.world.logical_id}: no such world.`);
+      const plan2 = this.#resolve(req.plan);
+      if (!plan2) return refusal6("unknown_ref", [req.plan], `${req.plan.logical_id}: no such plan.`);
+      const scorer = new ScoreService({
+        store: this.#store,
+        trace: this.#trace,
+        config: this.#config,
+        commitments: this.#commitments,
+        writtenBy: "sensitivity-service"
+      });
+      const baseResult = await scorer.score({
+        plan: req.plan,
+        world: req.world,
+        scenario: req.scenario,
+        engine_version: req.engine_version
+      });
+      if (isRefusal(baseResult)) return baseResult;
+      const baseVerdicts = baseResult.verdicts.map((v) => v.verdict);
+      const consumed = world.consumed ?? [];
+      const ranking = [];
+      for (const c of consumed) {
+        const ko = this.#resolve({ logical_id: c.logical_id, content_hash: c.content_hash });
+        if (!ko) continue;
+        if (!ko.answer) continue;
+        const loBand = { lo: ko.answer.lo, hi: ko.answer.lo, unit: ko.answer.unit };
+        const hiBand = { lo: ko.answer.hi, hi: ko.answer.hi, unit: ko.answer.unit };
+        const koRef = { logical_id: c.logical_id, content_hash: c.content_hash };
+        const perturbations = [loBand, hiBand];
+        let worstChanged = 0;
+        let worstVerdicts = baseVerdicts;
+        let worstMarginProx = Infinity;
+        for (const band of perturbations) {
+          if (band.lo === ko.answer.lo && band.hi === ko.answer.hi) continue;
+          const override = { ref: koRef, answer: band };
+          const pertResult = await scorer.score({
+            plan: req.plan,
+            world: req.world,
+            scenario: req.scenario,
+            knowledge_overrides: [override],
+            engine_version: req.engine_version
+          });
+          if (isRefusal(pertResult)) continue;
+          const pertVerdicts = pertResult.verdicts.map((v) => v.verdict);
+          let changed = 0;
+          for (let i = 0; i < baseVerdicts.length; i++) {
+            if (baseVerdicts[i] !== pertVerdicts[i]) changed++;
+          }
+          let marginProx = Infinity;
+          for (const v of pertResult.verdicts) {
+            if (v.margin) {
+              const absMin = Math.min(Math.abs(v.margin.lo), Math.abs(v.margin.hi));
+              if (absMin < marginProx) marginProx = absMin;
+            }
+          }
+          if (changed > worstChanged || changed === worstChanged && marginProx < worstMarginProx) {
+            worstChanged = changed;
+            worstVerdicts = pertVerdicts;
+            worstMarginProx = marginProx;
+          }
+        }
+        ranking.push({
+          knowledge: koRef,
+          baseline_verdicts: baseVerdicts,
+          perturbed_verdicts: worstVerdicts,
+          changed_count: worstChanged,
+          single_source: ko.provenance?.single_source ?? false
+        });
+      }
+      ranking.sort((a, b) => {
+        if (b.changed_count !== a.changed_count) return b.changed_count - a.changed_count;
+        return 0;
+      });
+      const stamp = await contentHash({
+        plan: req.plan.logical_id,
+        world: req.world.logical_id,
+        scenario: req.scenario,
+        engine_version: req.engine_version,
+        analysis: "sensitivity"
+      });
+      return { ranking, stamp };
+    }
+    #resolve(ref) {
+      if (ref.content_hash) return this.#store.get(ref.content_hash);
+      const versions = this.#store.versions(ref.logical_id);
+      const hash = versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+      return hash ? this.#store.get(hash) : void 0;
+    }
+  };
+  var refusal6 = (reason, offending, explanation) => ({
+    refused: true,
+    reason,
+    offending,
+    explanation
+  });
+
+  // src/discrimination.ts
+  var DiscriminationService = class {
+    #store;
+    constructor(opts) {
+      this.#store = opts.store;
+    }
+    async analyse(req) {
+      const questions = this.#resolveQuestions(req.questions);
+      if (questions.length === 0) {
+        return refusal7("unknown_ref", req.questions ?? [], "No open questions with expected_answers found.");
+      }
+      if (req.coas.length < 2) {
+        return refusal7("unknown_ref", [], "Discrimination requires at least two COAs.");
+      }
+      const ranking = [];
+      for (const { ref, ko } of questions) {
+        if (!ko.expected_answers || ko.expected_answers.length === 0) continue;
+        const answerByCoa = /* @__PURE__ */ new Map();
+        for (const ea of ko.expected_answers) {
+          answerByCoa.set(ea.coa, ea.band);
+        }
+        const pairs = [];
+        let bestSep;
+        for (let i = 0; i < req.coas.length; i++) {
+          for (let j = i + 1; j < req.coas.length; j++) {
+            const coaA = req.coas[i];
+            const coaB = req.coas[j];
+            const bandA = answerByCoa.get(coaA);
+            const bandB = answerByCoa.get(coaB);
+            if (!bandA || !bandB) continue;
+            const separation = computeSeparation(bandA, bandB);
+            pairs.push({ coa_a: coaA, coa_b: coaB, separation });
+            if (!bestSep || separation.lo > bestSep.lo) {
+              bestSep = separation;
+            }
+          }
+        }
+        if (pairs.length === 0) continue;
+        const cost = ko.collection && ko.collection.length > 0 ? ko.collection[0].cost : { lo: 0, hi: 0, unit: "unknown" };
+        ranking.push({
+          question: ref,
+          pairs,
+          best_separation: bestSep,
+          cost
+        });
+      }
+      ranking.sort((a, b) => {
+        if (b.best_separation.lo !== a.best_separation.lo) return b.best_separation.lo - a.best_separation.lo;
+        return b.best_separation.hi - a.best_separation.hi;
+      });
+      const stamp = await contentHash({
+        questions: ranking.map((e) => e.question.logical_id).sort(),
+        coas: [...req.coas].sort(),
+        engine_version: req.engine_version,
+        analysis: "discrimination"
+      });
+      return { ranking, stamp };
+    }
+    #resolveQuestions(refs) {
+      const results = [];
+      if (refs && refs.length > 0) {
+        for (const ref of refs) {
+          const ko = this.#resolve(ref);
+          if (ko && ko.status === "open" && ko.expected_answers && ko.expected_answers.length > 0) {
+            results.push({ ref, ko });
+          }
+        }
+      } else {
+        const seen = /* @__PURE__ */ new Set();
+        for (let i = 0; i < this.#store.size; i++) {
+        }
+      }
+      return results;
+    }
+    #resolve(ref) {
+      if (ref.content_hash) return this.#store.get(ref.content_hash);
+      const versions = this.#store.versions(ref.logical_id);
+      const hash = versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+      return hash ? this.#store.get(hash) : void 0;
+    }
+  };
+  function computeSeparation(a, b) {
+    if (a.hi < b.lo) {
+      return { lo: b.lo - a.hi, hi: b.lo - a.hi, unit: a.unit };
+    }
+    if (b.hi < a.lo) {
+      return { lo: a.lo - b.hi, hi: a.lo - b.hi, unit: a.unit };
+    }
+    const overlapLo = Math.max(a.lo, b.lo);
+    const overlapHi = Math.min(a.hi, b.hi);
+    const overlapWidth = overlapHi - overlapLo;
+    return { lo: -overlapWidth, hi: -overlapWidth, unit: a.unit };
+  }
+  var refusal7 = (reason, offending, explanation) => ({
+    refused: true,
+    reason,
+    offending,
+    explanation
+  });
+
   // src/traceView.ts
   var EDGE_ORIENTATION = {
     compiled_into: "forward",
@@ -2044,6 +2357,105 @@
     return neighbours(store, hash, "informs", isKnown);
   }
 
+  // src/staleness.ts
+  var StalenessService = class {
+    #store;
+    #trace;
+    constructor(opts) {
+      this.#store = opts.store;
+      this.#trace = opts.trace;
+    }
+    async analyse(req) {
+      const startHash = this.#resolveHash(req.changed);
+      if (!startHash) {
+        return refusal8("unknown_ref", [req.changed], `${req.changed.logical_id}: no such knowledge object.`);
+      }
+      const chains = this.#walkDownstream(startHash);
+      const verdicts = [];
+      const scores = [];
+      const worlds = [];
+      const seen = /* @__PURE__ */ new Set();
+      for (const chain of chains) {
+        for (const hash of chain.nodes) {
+          if (hash === startHash) continue;
+          if (seen.has(hash)) continue;
+          seen.add(hash);
+          const obj = this.#store.get(hash);
+          if (!obj) continue;
+          const ref = {
+            logical_id: obj.logical_id ?? "",
+            content_hash: hash
+          };
+          if (typeof obj.verdict === "string" && typeof obj.commitment === "string") {
+            verdicts.push(ref);
+          } else if (typeof obj.criterion === "string" && typeof obj.score === "object") {
+            scores.push(ref);
+          } else if (Array.isArray(obj.channels) || Array.isArray(obj.consumed)) {
+            worlds.push(ref);
+          }
+        }
+      }
+      const stamp = await contentHash({
+        changed: req.changed.logical_id,
+        engine_version: req.engine_version,
+        analysis: "staleness"
+      });
+      return {
+        invalidated: { verdicts, scores, worlds },
+        chains,
+        stamp
+      };
+    }
+    #walkDownstream(startHash) {
+      const chains = [];
+      const isKnown = (h) => this.#store.exists(h);
+      const visit = (node, nodes, edges, visited) => {
+        const outgoing = [];
+        for (const edge of this.#trace.edges) {
+          const orient = EDGE_ORIENTATION[edge.edge_type];
+          if (orient === "forward" || orient === "either") {
+            if (edge.from_hash === node && !visited.has(edge.to_hash)) {
+              outgoing.push({ target: edge.to_hash, edge });
+            }
+          }
+          if (orient === "backward" || orient === "either") {
+            if (edge.to_hash === node && !visited.has(edge.from_hash)) {
+              outgoing.push({ target: edge.from_hash, edge });
+            }
+          }
+        }
+        if (outgoing.length === 0) {
+          chains.push({
+            nodes: [...nodes],
+            edges: [...edges],
+            complete: isKnown(node)
+          });
+          return;
+        }
+        for (const { target, edge } of outgoing) {
+          visited.add(target);
+          visit(target, [...nodes, target], [...edges, edge], visited);
+          visited.delete(target);
+        }
+      };
+      visit(startHash, [startHash], [], /* @__PURE__ */ new Set([startHash]));
+      return chains;
+    }
+    #resolveHash(ref) {
+      if (ref.content_hash) {
+        return this.#store.exists(ref.content_hash) ? ref.content_hash : void 0;
+      }
+      const versions = this.#store.versions(ref.logical_id);
+      return versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+    }
+  };
+  var refusal8 = (reason, offending, explanation) => ({
+    refused: true,
+    reason,
+    offending,
+    explanation
+  });
+
   // src/components/bandPill.ts
   var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function bandPill(band, opts = {}) {
@@ -2086,12 +2498,12 @@
 
   // src/components/refusalBanner.ts
   var esc3 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  function refusalBanner(refusal5) {
-    const refs = refusal5.offending.map((r) => esc3(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
+  function refusalBanner(refusal9) {
+    const refs = refusal9.offending.map((r) => esc3(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
     return `<div class="assay-refusal" role="alert" style="font-family:ui-monospace,monospace;font-size:11.5px;border:1px solid #EFC6C6;border-left:4px solid #A33131;background:#FBEDED;color:#7A1F1F;padding:8px 11px;border-radius:4px">
-  <span style="font-weight:700">Refused \xB7 ${esc3(refusal5.reason)}</span>
+  <span style="font-weight:700">Refused \xB7 ${esc3(refusal9.reason)}</span>
   <span style="margin-left:8px;color:#9A3B3B">offending: ${refs}</span>
-  <div style="margin-top:3px;color:#5E2020">${esc3(refusal5.explanation)}</div>
+  <div style="margin-top:3px;color:#5E2020">${esc3(refusal9.explanation)}</div>
 </div>`;
   }
 
@@ -2274,6 +2686,198 @@ ${items}
 </div>`;
   }
 
+  // src/components/scenarioStrip.ts
+  var esc9 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var STOP2 = {
+    robust: { bg: "#1E6B3A", fg: "#FFFFFF", label: "robust" },
+    marginal: { bg: "#7A6A12", fg: "#FFFFFF", label: "marginal" },
+    tight: { bg: "#9A5212", fg: "#FFFFFF", label: "tight" },
+    violated: { bg: "#8A2020", fg: "#FFFFFF", label: "violated" }
+  };
+  var VERDICT_ORDER2 = {
+    violated: 0,
+    tight: 1,
+    marginal: 2,
+    robust: 3
+  };
+  var marginText2 = (v) => v.margin === void 0 ? "no margin (objective unreachable)" : v.margin.lo === v.margin.hi ? `margin ${v.margin.lo} ${v.margin.unit}` : `margin ${v.margin.lo}\u2013${v.margin.hi} ${v.margin.unit}`;
+  function chipCell(v, collapsed) {
+    const s = STOP2[v.verdict];
+    const arrow = collapsed ? " \u25BC" : "";
+    return `<td data-glow-id="vs:${esc9(v.plan)}:${esc9(v.commitment)}:${esc9(v.scenario)}" data-glow-sig="${esc9(v.verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="${esc9(v.scenario)}: ${esc9(marginText2(v))}" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}${arrow}</span>
+  </td>`;
+  }
+  function worstChip(planId, commitmentId, verdict) {
+    const s = STOP2[verdict];
+    return `<td data-glow-id="vw:${esc9(planId)}:${esc9(commitmentId)}" data-glow-sig="${esc9(verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2;border-left:2px solid #1B2732">
+    <span class="assay-verdict-chip" title="worst case across all scenarios" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
+  </td>`;
+  }
+  function scenarioStrip(tensor, opts) {
+    const { scenarios, plans, commitments, verdicts, worst_case, stamps_compatible } = tensor;
+    const planName = (id) => opts?.planNames?.[id] ?? id;
+    const incompatBanner = stamps_compatible ? "" : `<div class="assay-scenario-incompat" style="background:#FFF3E0;border:1px solid #E6A817;border-radius:5px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#7A5500;font-family:ui-monospace,monospace">\u26A0 stamp lineages differ \u2014 cross-scenario comparison may be misleading (G1 comparability guard)</div>`;
+    const scenarioHeaders = commitments.map((cid) => {
+      const group = scenarios.map((sid) => `<th style="padding:4px 5px;font-size:9.5px;font-weight:600;color:#5B6B77;text-transform:uppercase;letter-spacing:.03em">${esc9(sid)}</th>`).join("");
+      const worstCol = `<th style="padding:4px 5px;font-size:9.5px;font-weight:700;color:#1B2732;text-transform:uppercase;letter-spacing:.03em;border-left:2px solid #1B2732">worst</th>`;
+      return group + worstCol;
+    }).join("");
+    const commitmentHeaders = commitments.map((cid) => `<th colspan="${scenarios.length + 1}" style="padding:5px 8px;text-align:center;font-size:10.5px;color:#1B2732;letter-spacing:.04em;border-bottom:2px solid #D8DFE4">${esc9(cid)}</th>`).join("");
+    const head = `<tr style="text-align:center">
+    <th style="padding:5px 10px;text-align:left"></th>
+    ${commitmentHeaders}
+  </tr>
+  <tr style="text-align:center">
+    <th style="padding:4px 10px;text-align:left;font-size:10px;color:#5B6B77">plan \\ scenario</th>
+    ${scenarioHeaders}
+  </tr>`;
+    const body = plans.map((pid) => {
+      const cells = commitments.map((cid) => {
+        const baseVerdict = verdicts.get(`${pid}-${cid}-${scenarios[0]}`);
+        const baseOrd = baseVerdict ? VERDICT_ORDER2[baseVerdict.verdict] : 3;
+        const scenarioCells = scenarios.map((sid) => {
+          const v = verdicts.get(`${pid}-${cid}-${sid}`);
+          if (!v) return `<td style="padding:4px 5px;text-align:center;color:#B0BAC2">\u2014</td>`;
+          const collapsed = VERDICT_ORDER2[v.verdict] < baseOrd;
+          return chipCell(v, collapsed);
+        });
+        const wc = worst_case.get(`${pid}-${cid}`) ?? "robust";
+        return scenarioCells.join("") + worstChip(pid, cid, wc);
+      }).join("");
+      return `<tr><td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;white-space:nowrap">${esc9(planName(pid))}</td>${cells}</tr>`;
+    }).join("");
+    return `${incompatBanner}<div style="overflow-x:auto"><table class="assay-scenario-strip" style="border-collapse:collapse;width:100%">
+  <thead>${head}</thead>
+  <tbody>${body}</tbody>
+</table></div>`;
+  }
+
+  // src/components/sensitivityTable.ts
+  var esc10 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var STOP3 = {
+    robust: { bg: "#1E6B3A", fg: "#FFFFFF", label: "robust" },
+    marginal: { bg: "#7A6A12", fg: "#FFFFFF", label: "marginal" },
+    tight: { bg: "#9A5212", fg: "#FFFFFF", label: "tight" },
+    violated: { bg: "#8A2020", fg: "#FFFFFF", label: "violated" }
+  };
+  function verdictChip(v) {
+    const s = STOP3[v];
+    return `<span style="display:inline-block;padding:1px 5px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg};margin:1px 2px">${s.label}</span>`;
+  }
+  function verdictSequence(verdicts) {
+    return verdicts.map(verdictChip).join("");
+  }
+  function sensitivityTable(ranking) {
+    if (ranking.length === 0) {
+      return '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77;padding:8px">No sensitivity data.</div>';
+    }
+    const head = `<tr style="text-align:left">
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Knowledge ID</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:center">Changed</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:center">Source</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Baseline</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Perturbed</th>
+  </tr>`;
+    const rows = ranking.map((entry) => {
+      const logicalId = entry.knowledge.logical_id;
+      const changedStyle = entry.changed_count > 0 ? "font-weight:700;color:#8A2020" : "color:#5B6B77";
+      const singleSourceChip = entry.single_source ? '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:#8A2020;color:#FFFFFF">single-source</span>' : '<span style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77">\u2014</span>';
+      return `<tr data-glow-id="sens:${esc10(logicalId)}" data-glow-sig="${entry.changed_count}">
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc10(logicalId)}</td>
+        <td style="padding:5px 10px;text-align:center;font-family:ui-monospace,monospace;font-size:11px;${changedStyle};border-bottom:1px solid #EDF0F2">${entry.changed_count}</td>
+        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${singleSourceChip}</td>
+        <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${verdictSequence(entry.baseline_verdicts)}</td>
+        <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${verdictSequence(entry.perturbed_verdicts)}</td>
+      </tr>`;
+    }).join("");
+    return `<div style="overflow-x:auto"><table class="assay-sensitivity-table" style="border-collapse:collapse;width:100%">
+  <thead>${head}</thead>
+  <tbody>${rows}</tbody>
+</table></div>`;
+  }
+
+  // src/components/discriminationTable.ts
+  var esc11 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  function bandPill2(b) {
+    const text = b.lo === b.hi ? `${b.lo} ${b.unit}` : `${b.lo}\u2013${b.hi} ${b.unit}`;
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:#E0E8ED;color:#1B2732;margin:1px 2px">${esc11(text)}</span>`;
+  }
+  function separationChip(sep) {
+    const isPositive = sep.lo > 0;
+    const isNegative = sep.hi < 0;
+    const bg = isPositive ? "#1E6B3A" : isNegative ? "#8A2020" : "#7A6A12";
+    const fg = "#FFFFFF";
+    const text = sep.lo === sep.hi ? `${sep.lo} ${sep.unit}` : `${sep.lo}\u2013${sep.hi} ${sep.unit}`;
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${bg};color:${fg};margin:1px 2px">${esc11(text)}</span>`;
+  }
+  function pairChip(pair) {
+    const label = `${esc11(pair.coa_a)} vs ${esc11(pair.coa_b)}`;
+    return `<span style="display:inline-flex;align-items:center;gap:3px;margin:2px 0"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${label}</span>${separationChip(pair.separation)}</span>`;
+  }
+  function discriminationTable(ranking) {
+    if (ranking.length === 0) {
+      return '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77;padding:8px">No discrimination data.</div>';
+    }
+    const head = `<tr style="text-align:left">
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Question ID</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:center">Best Separation</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:center">Cost</th>
+    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Per-pair Separation</th>
+  </tr>`;
+    const rows = ranking.map((entry) => {
+      const logicalId = entry.question.logical_id;
+      const pairChips = entry.pairs.map(pairChip).join("<br>");
+      return `<tr data-glow-id="disc:${esc11(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc11(logicalId)}</td>
+        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${separationChip(entry.best_separation)}</td>
+        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${bandPill2(entry.cost)}</td>
+        <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${pairChips}</td>
+      </tr>`;
+    }).join("");
+    return `<div style="overflow-x:auto"><table class="assay-discrimination-table" style="border-collapse:collapse;width:100%">
+  <thead>${head}</thead>
+  <tbody>${rows}</tbody>
+</table></div>`;
+  }
+
+  // src/components/stalenessFlags.ts
+  var esc12 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var GROUP_STYLE = {
+    worlds: { bg: "#2E5C8A", fg: "#FFFFFF", label: "Worlds" },
+    verdicts: { bg: "#7A6A12", fg: "#FFFFFF", label: "Verdicts" },
+    scores: { bg: "#6B3A6B", fg: "#FFFFFF", label: "Scores" }
+  };
+  function refChip(ref, bg, fg) {
+    return `<span data-glow-id="stale:${esc12(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px">${esc12(ref.logical_id)}</span>`;
+  }
+  function groupSection(groupKey, refs) {
+    if (refs.length === 0) return "";
+    const style = GROUP_STYLE[groupKey];
+    const chips = refs.map((r) => refChip(r, style.bg, style.fg)).join("");
+    return `<div style="margin:6px 0">
+    <div style="font-family:ui-monospace,monospace;font-size:10px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc12(style.label)} (${refs.length})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:2px">${chips}</div>
+  </div>`;
+  }
+  function stalenessFlags(invalidated, chains) {
+    const totalInvalidated = invalidated.worlds.length + invalidated.verdicts.length + invalidated.scores.length;
+    if (totalInvalidated === 0) {
+      return '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77;padding:8px">No staleness invalidations.</div>';
+    }
+    const completeCount = chains.filter((c) => c.complete).length;
+    const chainSummary = `<div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;margin-bottom:8px;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">${chains.length} trace chain${chains.length !== 1 ? "s" : ""} walked, ${completeCount} complete</div>`;
+    const groups = [
+      groupSection("worlds", invalidated.worlds),
+      groupSection("verdicts", invalidated.verdicts),
+      groupSection("scores", invalidated.scores)
+    ].join("");
+    return `<div class="assay-staleness-flags">
+  ${chainSummary}
+  ${groups}
+</div>`;
+  }
+
   // src/components/legends.ts
   var PILL_LEGEND = {
     band: {
@@ -2311,18 +2915,46 @@ ${items}
     sacrifice: {
       term: "sacrificed commitment",
       gloss: 'A commitment this least-worst option gives up \u2014 computed (the scorer returned "violated"), not authored. Never empty and never a silent drop (G4).'
+    },
+    scenario_collapse: {
+      term: "collapse marker (\u25BC)",
+      gloss: "The verdict under this scenario is worse than under BASE \u2014 the plan's performance drops. No robustness score \u2014 the four-stop verdict IS the data."
+    },
+    worst_case: {
+      term: "worst-case verdict",
+      gloss: "The plan's worst verdict for this commitment across all toggled scenarios (minimax). A real verdict on a real scenario, not a weighted blend."
+    },
+    sensitivity: {
+      term: "changed verdicts (count)",
+      gloss: "How many commitment verdicts changed when this knowledge item was perturbed to its band edge. Higher count = the assessment is more load-bearing; zero = verdicts are insensitive to this item."
+    },
+    single_source_flag: {
+      term: "single-source",
+      gloss: "An uncorroborated value flagged per ICD 203 \u2014 only one collection source supports this assessment. Shown alongside sensitivity, never collapsed with it (DEC-19)."
+    },
+    separation: {
+      term: "COA-pair separation (band)",
+      gloss: "The gap between two COAs' expected-answer bands for a question. Positive (green) = disjoint, the question discriminates; negative (amber/red) = overlapping, the question does not distinguish."
+    },
+    collection_cost: {
+      term: "collection cost (band)",
+      gloss: "The cost of collecting on this question, shown alongside discrimination value, never collapsed with it (DEC-19)."
+    },
+    invalidated: {
+      term: "invalidated artefact",
+      gloss: "A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes \u2014 flags only, then humans decide (constitution)."
     }
   };
-  var esc9 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc13 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function legend(pillIds, opts = {}) {
     const title = opts.title ?? "What the pills mean";
     const rows = pillIds.map((id) => PILL_LEGEND[id]).filter((e) => e !== void 0).map(
-      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc9(
+      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc13(
         e.term
-      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc9(e.gloss)}</div></div>`
+      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc13(e.gloss)}</div></div>`
     ).join("");
     return `<details class="assay-legend" style="margin:8px 0;border:1px dashed #C8D2DA;border-radius:6px;padding:4px 10px;background:#F7F9FA">
-  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc9(
+  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc13(
       title
     )}</summary>
   <div style="margin-top:6px">${rows}</div>
@@ -2334,7 +2966,11 @@ ${items}
     s2Matrix: ["verdict"],
     handfulStrip: ["distinct"],
     s3Cards: ["sacrifice", "tier"],
-    refusalBanner: ["refusal"]
+    scenarioStrip: ["verdict", "scenario_collapse", "worst_case"],
+    refusalBanner: ["refusal"],
+    sensitivityTable: ["sensitivity", "single_source_flag", "verdict"],
+    discriminationTable: ["separation", "collection_cost", "band"],
+    stalenessFlags: ["invalidated"]
   };
   function componentLegend(component, title) {
     const pills = COMPONENT_PILLS[component] ?? [];
@@ -2354,6 +2990,10 @@ ${items}
     #scorer;
     #handfulSvc;
     #relaxSvc;
+    #robustnessSvc;
+    #sensitivitySvc;
+    #discriminationSvc;
+    #stalenessSvc;
     #resolved = false;
     #notice;
     constructor(fx) {
@@ -2371,6 +3011,10 @@ ${items}
       await svc.create(structuredClone(this.#kById.get("K12a")));
       await svc.create(structuredClone(this.#kById.get("K12b")));
       svc.contest("K12a", "K12b");
+      const k11 = this.#kById.get("K11");
+      if (k11) await svc.create(structuredClone(k11));
+      const k13 = this.#kById.get("K13");
+      if (k13) await svc.create(structuredClone(k13));
       for (const coa of this.#fx.coas) await svc.store.put(coa);
       for (const c of this.#fx.commitments)
         await svc.store.put(c);
@@ -2393,6 +3037,24 @@ ${items}
         trace: svc.trace,
         scorer: this.#scorer,
         commitments: this.#fx.commitments
+      });
+      this.#robustnessSvc = new RobustnessService({
+        store: svc.store,
+        scorer: this.#scorer,
+        commitments: this.#fx.commitments
+      });
+      this.#sensitivitySvc = new SensitivityService({
+        store: svc.store,
+        trace: svc.trace,
+        config: this.#fx.config,
+        commitments: this.#fx.commitments
+      });
+      this.#discriminationSvc = new DiscriminationService({
+        store: svc.store
+      });
+      this.#stalenessSvc = new StalenessService({
+        store: svc.store,
+        trace: svc.trace
       });
     }
     get store() {
@@ -2457,6 +3119,7 @@ ${items}
     async snapshot(scenario = "BASE") {
       const panels = [];
       const stamps = {};
+      let firstPlanRef;
       const liveIds = this.#resolved ? [...BASE, "K12a"] : [...BASE, "K12a", "K12b"];
       const s1Rows = liveIds.map((id) => {
         const ko = this.#latest(id);
@@ -2506,6 +3169,7 @@ ${items}
         });
         if (!isRefusal(h)) {
           stamps.handful = h.stamp;
+          firstPlanRef = h.plans[0];
           const stripRows = h.plans.map((planRef, i) => {
             const plan2 = this.#svc.store.get(planRef.content_hash);
             return { plan: planRef, name: plan2.name, distinct_because: h.organisation.distinct_because[i] };
@@ -2540,6 +3204,38 @@ ${items}
             html: componentLegend("s2Matrix") + s2Matrix(COMMITMENT_IDS, matrixRows),
             deps: matrixDeps
           });
+          const scenarioWorlds = { BASE: compiled.world };
+          for (const sid of ["R1", "R2", "R3"]) {
+            const sw = await this.#compiler.compile({
+              knowledge: liveIds.map(refFor),
+              config: this.#fx.config,
+              scenario: sid,
+              engine_version: "0.1.0"
+            });
+            if (!isRefusal(sw)) scenarioWorlds[sid] = sw.world;
+          }
+          if (Object.keys(scenarioWorlds).length > 1) {
+            const rr = await this.#robustnessSvc.robustness({
+              plans: h.plans,
+              worlds: scenarioWorlds,
+              engine_version: "0.1.0"
+            });
+            if (!isRefusal(rr)) {
+              stamps.robustness = rr.stamp;
+              const planNames = {};
+              for (const planRef of h.plans) {
+                const plan2 = this.#svc.store.get(planRef.content_hash);
+                planNames[planRef.logical_id] = `${plan2.logical_id} \xB7 ${plan2.name}`;
+              }
+              panels.push({
+                id: "scenarios",
+                tab: "commander",
+                title: "Commander \xB7 scenario robustness (thesis C)",
+                html: componentLegend("scenarioStrip") + scenarioStrip(rr.tensor, { planNames }),
+                deps: /* @__PURE__ */ new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)])
+              });
+            }
+          }
         }
       }
       const r3m = await this.#compiler.compile({
@@ -2584,6 +3280,64 @@ ${items}
               ...rr.report.candidates.map((c) => `plan:${c.plan}`)
             ])
           });
+        }
+      }
+      if (!isRefusal(compiled) && firstPlanRef) {
+        const sensResult = await this.#sensitivitySvc.analyse({
+          plan: firstPlanRef,
+          world: compiled.world,
+          scenario: "BASE",
+          engine_version: "0.1.0"
+        });
+        if (!isRefusal(sensResult)) {
+          stamps.sensitivity = sensResult.stamp;
+          panels.push({
+            id: "sensitivity",
+            tab: "j2",
+            title: "J-2 \xB7 sensitivity ranking (thesis E)",
+            html: componentLegend("sensitivityTable") + sensitivityTable(sensResult.ranking),
+            deps: /* @__PURE__ */ new Set([`sensitivity:${sensResult.stamp}`])
+          });
+        }
+      }
+      {
+        const k11Ref = this.#latestRef("K11");
+        const k13Ref = this.#latestRef("K13");
+        if (k11Ref && k13Ref) {
+          const discResult = await this.#discriminationSvc.analyse({
+            questions: [k11Ref, k13Ref],
+            coas: ["R1", "R2", "R3"],
+            engine_version: "0.1.0"
+          });
+          if (!isRefusal(discResult)) {
+            stamps.discrimination = discResult.stamp;
+            panels.push({
+              id: "discrimination",
+              tab: "j2",
+              title: "J-2 \xB7 discrimination ranking (thesis D)",
+              html: componentLegend("discriminationTable") + discriminationTable(discResult.ranking),
+              deps: /* @__PURE__ */ new Set([`discrimination:${discResult.stamp}`])
+            });
+          }
+        }
+      }
+      if (!isRefusal(compiled)) {
+        const k9Ref = this.#latestRef("K9");
+        if (k9Ref) {
+          const staleResult = await this.#stalenessSvc.analyse({
+            changed: k9Ref,
+            engine_version: "0.1.0"
+          });
+          if (!isRefusal(staleResult)) {
+            stamps.staleness = staleResult.stamp;
+            panels.push({
+              id: "staleness",
+              tab: "observer",
+              title: "Observer \xB7 staleness flags (thesis F)",
+              html: componentLegend("stalenessFlags") + stalenessFlags(staleResult.invalidated, staleResult.chains),
+              deps: /* @__PURE__ */ new Set([`staleness:${staleResult.stamp}`])
+            });
+          }
         }
       }
       const deltas = this.#svc.deltas.all;
@@ -2634,6 +3388,10 @@ ${items}
     #latestHash(id) {
       const versions = this.#svc.store.versions(id);
       return versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+    }
+    #latestRef(id) {
+      const versions = this.#svc.store.versions(id);
+      return versions.length > 0 ? versions[versions.length - 1] : void 0;
     }
     /** A stable per-verdict change key (verdict is not stored content-addressed
      *  here; its (plan, commitment, verdict) triple is its identity for glow). */
