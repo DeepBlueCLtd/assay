@@ -532,6 +532,11 @@ export class AppState {
     return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
   }
 
+  /** Dependency graph by content hash (for re-focusing on a clicked node). */
+  depGraphByHash(hash: string, maxDepth = 4): DepGraph {
+    return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
+  }
+
   /** Detail for a single node in the dependency graph (sidebar). */
   depNodeDetail(hash: string, maxDepth = 4): DepGraphNodeDetail {
     return nodeDetail(hash, this.#svc.trace, this.#svc.store, maxDepth);

@@ -31,8 +31,8 @@ function directionSection(
 ): string {
   if (groups.length === 0) {
     return `<div style="margin:8px 0">
-      <div style="font-size:10.5px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc(title)}</div>
-      <div style="font-size:11px;color:#8091A0">— none —</div>
+      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc(title)}</div>
+      <div style="font-size:11px;color:#5B6B77">— none —</div>
     </div>`;
   }
 
@@ -40,14 +40,14 @@ function directionSection(
     .map(
       (g) =>
         `<div style="margin:4px 0;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">
-          <div style="font-size:9.5px;color:#8091A0;margin-bottom:2px">depth ${g.depth} · ${esc(g.edgeType)}</div>
+          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} · ${esc(g.edgeType)}</div>
           <div style="display:flex;flex-wrap:wrap;gap:2px">${g.nodes.map((n) => nodeChip(n)).join('')}</div>
         </div>`,
     )
     .join('');
 
   return `<div style="margin:8px 0">
-    <div style="font-size:10.5px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc(title)}</div>
+    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc(title)}</div>
     ${rows}
   </div>`;
 }
@@ -58,9 +58,9 @@ export function depGraphSidebar(detail: DepGraphNodeDetail): string {
   return `<div class="assay-dep-sidebar">
   <div style="margin-bottom:8px">
     <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc(detail.node.label)}</span>
-    <span style="font-size:10px;color:#8091A0;margin-left:6px">${esc(detail.node.type)}</span>
+    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc(detail.node.type)}</span>
   </div>
-  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc(detail.metadata)}</div>
+  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc(detail.metadata)}</div>
   ${directionSection('Upstream (depends on)', detail.upstream)}
   ${directionSection('Downstream (feeds into)', detail.downstream)}
 </div>`;

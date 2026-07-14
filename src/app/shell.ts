@@ -444,16 +444,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
 
     depOverlay = doc.createElement('div');
     depOverlay.className = 'assay-dep-overlay';
-    depOverlay.innerHTML = `<div class="assay-dep-overlay-inner">
-      <div class="assay-dep-header">
-        <div style="font-weight:600;font-size:14px">${logicalId} — dependency graph</div>
-        <button class="assay-btn secondary assay-dep-close" style="padding:4px 10px;font-size:11px">Close ✕</button>
-      </div>
-      <div class="assay-dep-body">
-        <div class="assay-dep-river-pane">${depGraphRiver(graph)}</div>
-        <div class="assay-dep-sidebar-pane" style="font-size:12px;color:var(--muted)">Click a node to see its detail.</div>
-      </div>
-    </div>`;
+    renderDepOverlayContent(depOverlay, graph, logicalId);
 
     depOverlay.querySelector('.assay-dep-close')!.addEventListener('click', closeDepOverlay);
     depOverlay.addEventListener('click', (e) => {
@@ -464,20 +455,27 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     doc.body.appendChild(depOverlay);
   }
 
-  function selectDepNode(overlay: HTMLElement, hash: string): void {
-    const river = overlay.querySelector('.assay-dep-river-pane');
-    if (river) {
-      for (const n of Array.from(river.querySelectorAll('.assay-dep-node')) as HTMLElement[]) {
-        n.style.outline = n.dataset.depHash === hash ? '2px solid #1B2732' : '';
-        n.style.outlineOffset = n.dataset.depHash === hash ? '2px' : '';
-      }
-      const target = river.querySelector(`[data-dep-hash="${hash}"]`) as HTMLElement | null;
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-    }
-    const detail = app.depNodeDetail(hash);
-    const sidebar = overlay.querySelector('.assay-dep-sidebar-pane') as HTMLElement;
-    sidebar.innerHTML = depGraphSidebar(detail);
-    wireDepNodes(overlay);
+  function renderDepOverlayContent(overlay: HTMLElement, graph: ReturnType<typeof app.depGraph> & {}, label: string): void {
+    const detail = app.depNodeDetail(graph.focus.hash);
+    overlay.innerHTML = `<div class="assay-dep-overlay-inner">
+      <div class="assay-dep-header">
+        <div style="font-weight:600;font-size:14px">${label} — dependency graph</div>
+        <button class="assay-btn secondary assay-dep-close" style="padding:4px 10px;font-size:11px">Close ✕</button>
+      </div>
+      <div class="assay-dep-body">
+        <div class="assay-dep-river-pane">${depGraphRiver(graph)}</div>
+        <div class="assay-dep-sidebar-pane">${depGraphSidebar(detail)}</div>
+      </div>
+    </div>`;
+    overlay.querySelector('.assay-dep-close')!.addEventListener('click', closeDepOverlay);
+  }
+
+  function refocusDepGraph(hash: string): void {
+    if (!depOverlay) return;
+    const graph = app.depGraphByHash(hash);
+    if (!graph) return;
+    renderDepOverlayContent(depOverlay, graph, graph.focus.label);
+    wireDepNodes(depOverlay);
   }
 
   function wireDepNodes(overlay: HTMLElement): void {
@@ -486,7 +484,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
         ev.stopPropagation();
         const hash = el.dataset.depHash;
         if (!hash) return;
-        selectDepNode(overlay, hash);
+        refocusDepGraph(hash);
       });
     }
   }
