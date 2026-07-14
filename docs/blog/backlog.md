@@ -1,4 +1,4 @@
-# Blog backlog — articles owed by the landed build (Stages 0–4)
+# Blog backlog — articles owed by the landed build (Stages 0–6)
 
 Status: **backlog cleared** · 2026-07-14 · dev-facing (not published — `build-site.ts` skips `.md`)
 Authority: comms plan §6 (blog articles), §6.1 (candidate embeds), §9 (cadence & ownership).
@@ -30,9 +30,12 @@ Slice IDs per `assay-delivery-plan.md`; candidate embeds per comms plan §6.1. "
 | 3 | SPEC-08 handful | The generated handful — four genuinely distinct plans, distinct *because* of the trade axes (optional; no §6.1 row) | Yes — generator + `handfulStrip` shipped | optional |
 | 4 | SPEC-09 relaxation | Least-worst explorer — choose which commitment to sacrifice; see what each relaxation buys and costs | Yes — relax + `s3Cards` shipped | **shipped** → [posts/2026-07-13-least-worst.html](posts/2026-07-13-least-worst.html) |
 
-Future stages (5–6) carry their own §6.1 candidates (SPEC-10 scenario strip, SPEC-11 band-edge
-slider, SPEC-13 supersession fan-out); they are not owed until those stages land and so are out
-of scope for this backlog.
+Stages 5–6 articles shipped alongside their builds:
+
+| Stage | Slice | Article (candidate embed) | Embeddable now? | Status |
+|---|---|---|---|---|
+| 5 | SPEC-10 robustness | Don't plan on most-likely — toggle scenarios to watch the favourite collapse | Yes — `scenarioStrip` shipped | **shipped** → [posts/2026-07-14-dont-plan-on-most-likely.html](posts/2026-07-14-dont-plan-on-most-likely.html) |
+| 6 | SPEC-11/12/13 analysis | What to verify next — sensitivity, discrimination, staleness close the JIPOE cycle | Yes — `sensitivityTable`, `discriminationTable`, `stalenessFlags` shipped | **shipped** → [posts/2026-07-14-what-to-verify-next.html](posts/2026-07-14-what-to-verify-next.html) |
 
 ## Sequencing
 
