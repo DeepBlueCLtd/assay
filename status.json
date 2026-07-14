@@ -65,8 +65,8 @@
       "name": "Surfaces & narratives",
       "blurb": "role bundles + five narrative scripts (post-gate)",
       "status": "not-started",
-      "research_note": "docs/research/07-narratives.md",
-      "research_published": false
+      "research_note": "docs/research/09-narratives.md",
+      "research_published": true
     }
   ],
   "theses": [
