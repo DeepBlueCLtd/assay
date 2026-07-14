@@ -37,6 +37,12 @@ Stages 5–6 articles shipped alongside their builds:
 | 5 | SPEC-10 robustness | Don't plan on most-likely — toggle scenarios to watch the favourite collapse | Yes — `scenarioStrip` shipped | **shipped** → [posts/2026-07-14-dont-plan-on-most-likely.html](posts/2026-07-14-dont-plan-on-most-likely.html) |
 | 6 | SPEC-11/12/13 analysis | What to verify next — sensitivity, discrimination, staleness close the JIPOE cycle | Yes — `sensitivityTable`, `discriminationTable`, `stalenessFlags` shipped | **shipped** → [posts/2026-07-14-what-to-verify-next.html](posts/2026-07-14-what-to-verify-next.html) |
 
+Cross-cutting research spike (no stage gate):
+
+| Stage | Slice | Article (candidate embed) | Embeddable now? | Status |
+|---|---|---|---|---|
+| — | SPEC-18 Q&A→COA | From Q&A to COA — where a banded answer does (K6) and doesn't (K3/K7) reach the verdict; a three-panel live embed of the taxonomy | Yes — `bandPill`, `channelTrace`, `s2Matrix`, `provenanceChip` + real compile/score shipped | **shipped** → [posts/2026-07-14-qa-to-coa.html](posts/2026-07-14-qa-to-coa.html) |
+
 ## Sequencing
 
 Recommended order — highest SME value first, reusing the standalone-embed target as it grows:
