@@ -161,6 +161,94 @@ Examples of foundational tasks (adjust based on your project):
 
 ---
 
+## Phase FINAL: Blog Article & Evidence *(mandatory — definition of done)*
+
+<!--
+  This phase is MANDATORY for every spec — it is part of the definition of done, not
+  optional polish. The spec's "Blog & Evidence Plan" section defines the article plan
+  and the evidence captures; this phase turns those plans into concrete tasks.
+
+  Evidence screenshots are captured by Playwright during test verification — the
+  component is already rendered to verify acceptance scenarios, so the screenshot is
+  free. Do not create a separate screenshot pipeline.
+
+  The blog article follows the conventions in docs/blog/README.md. It is committed to
+  docs/blog/posts/ and wired into the blog index and status.yml in the SAME PR as the
+  feature code. CI handles deployment automatically:
+    - PR preview: build-site.ts assembles site/ (including blog/), CI deploys to
+      gh-pages at pr-preview/pr-{N}/ — reviewer sees the article live.
+    - On merge to main: deploy-pages.yml pushes site/ to gh-pages root.
+  The developer NEVER pushes to gh-pages manually.
+-->
+
+**Purpose**: Ship the blog article and evidence that make this spec's demo moment visible
+
+**⚠️ NOT OPTIONAL**: A spec without its blog article is not done. The article is planned
+in the spec's "Blog & Evidence Plan" section — follow it.
+
+### Evidence capture
+
+- [ ] TXXX **Capture evidence screenshots**: Add Playwright screenshot calls to the acceptance-scenario tests (the component is already rendered for verification). Capture each evidence image defined in the spec's "Evidence captures" list, in both light and dark mode. Output to `docs/blog/evidence/{spec-id}/`. Commit the `.png` files.
+
+### Blog article
+
+<!--
+  THE ARTICLE FILE: docs/blog/posts/YYYY-MM-DD-<slug>.html
+
+  Use docs/blog/posts/2026-07-13-band-pill.html as the structural template.
+  The article is a SINGLE self-contained static HTML file. Requirements:
+
+  STRUCTURE (in order):
+    1. Header block: date, embed label chip, slice IDs
+    2. Article body: thesis statement, worked example over Meridian fixtures,
+       the interactive embed or illustrative widget
+    3. Meridian disclaimer: "Meridian is engineered fiction (ASSAY-DEC-8) …
+       assessment, not fact / explored, not proven"
+    4. Sources & trace: every claim deep-links to a document, research note,
+       or component file (GitHub blob line anchors — named item, not just
+       the document)
+
+  SELF-CONTAINED STATIC HTML:
+    - ALL CSS inline in a <style> block — no external stylesheets
+    - NO external fonts, scripts, or CDN resources
+    - Light + dark mode via prefers-color-scheme media query, using the
+      project's CSS custom property palette (see any existing article)
+    - Must work offline and render correctly on GitHub Pages
+
+  EMBED LABEL (exactly one):
+    - "live component — the demonstrator's actual code" (the shipped
+       component imported and pre-rendered via build-embeds.ts)
+    - "illustrative widget — real rule, fixture data" (a standalone
+       widget using the real algorithm but simplified presentation)
+
+  EVIDENCE IMAGES: reference from docs/blog/evidence/{spec-id}/ using
+  relative paths so they work both in the repo and on the deployed site.
+
+  WHAT NOT TO DO:
+    - No screenshots in place of working embeds
+    - No external dependencies (fonts, scripts, images from CDNs)
+    - No unbanded scalars from assessed sources (G2)
+    - No silent rebuilds of previously published articles (freeze rule)
+-->
+
+- [ ] TXXX **Write the blog article** at `docs/blog/posts/YYYY-MM-DD-<slug>.html` following the spec's "Article plan" (title, thesis, narrative hook, embed type). Copy the structure of `docs/blog/posts/2026-07-13-band-pill.html`. See the checklist in the comment block above. See `docs/blog/README.md` for full conventions.
+- [ ] TXXX **Generate embeds** (if the article uses a live-component embed): run `npm run embeds` to regenerate `docs/blog/embeds/`. Commit the output. If using an illustrative widget instead, the widget JS is inline in the article — no embed generation needed.
+
+### Wiring & propagation
+
+- [ ] TXXX **Blog index**: Add the article card to `docs/blog/index.html` — both the Articles section (newest first) and the updates feed `<ul class="feed">`.
+- [ ] TXXX **Status file**: Add entries to `docs/status.yml` — both the `blog:` list (with date, title, href, slice, embed label) and the `updates:` list.
+- [ ] TXXX **Backlog**: Update `docs/blog/backlog.md` — mark the row as shipped with a relative link to the article.
+- [ ] TXXX **Batch propagation**: Sweep `docs/assay-home.html` and `docs/status.yml` for any stage/thesis state changes this spec demonstrates.
+
+### Verify deployment
+
+- [ ] TXXX **PR preview check**: After pushing, confirm the blog article renders at `https://DeepBlueCLtd.github.io/assay/pr-preview/pr-{N}/blog/posts/YYYY-MM-DD-<slug>.html` (CI deploys automatically — wait for the "PR Preview" check to pass). Verify light mode, dark mode, and embed interaction. Evidence images should be visible at `pr-preview/pr-{N}/blog/evidence/{spec-id}/`.
+
+**Checkpoint**: Blog article renders in PR preview, evidence images visible, index and status updated. On merge, deploy-pages.yml will publish everything to the live site automatically — no manual gh-pages push needed.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
