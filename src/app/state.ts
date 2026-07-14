@@ -33,6 +33,9 @@ import { ScoreService } from '../score.js';
 import { HandfulService } from '../handful.js';
 import { RelaxService } from '../relax.js';
 import { RobustnessService } from '../robustness.js';
+import { SensitivityService } from '../sensitivity.js';
+import { DiscriminationService } from '../discrimination.js';
+import { StalenessService } from '../staleness.js';
 import type { ScenarioVerdictTensor } from '../seam.js';
 import { checkEncoding } from '../encoding.js';
 import { confidenceLint } from '../lint.js';
@@ -45,6 +48,9 @@ import { s2Matrix, type S2Cell } from '../components/s2Matrix.js';
 import { handfulStrip, type HandfulStripRow } from '../components/handfulStrip.js';
 import { s3Cards, type S3Card } from '../components/s3Cards.js';
 import { scenarioStrip } from '../components/scenarioStrip.js';
+import { sensitivityTable } from '../components/sensitivityTable.js';
+import { discriminationTable } from '../components/discriminationTable.js';
+import { stalenessFlags } from '../components/stalenessFlags.js';
 import { componentLegend } from '../components/legends.js';
 
 export type TabId = 'j2' | 'planner' | 'commander' | 'observer';
@@ -62,7 +68,7 @@ export interface Snapshot {
   panels: Panel[];
   resolved: boolean;
   scenario: string;
-  stamps: { world?: string; r3m?: string; handful?: string; relax?: string; robustness?: string };
+  stamps: { world?: string; r3m?: string; handful?: string; relax?: string; robustness?: string; sensitivity?: string; discrimination?: string; staleness?: string };
   deltaCount: number;
   /** Last edit outcome, surfaced to the operator (refusal or lint caution). */
   notice?: { kind: 'refusal' | 'warning'; html: string };
@@ -95,6 +101,9 @@ export class AppState {
   #handfulSvc!: HandfulService;
   #relaxSvc!: RelaxService;
   #robustnessSvc!: RobustnessService;
+  #sensitivitySvc!: SensitivityService;
+  #discriminationSvc!: DiscriminationService;
+  #stalenessSvc!: StalenessService;
   #resolved = false;
   #notice?: Snapshot['notice'];
 
@@ -114,6 +123,11 @@ export class AppState {
     await svc.create(structuredClone(this.#kById.get('K12a')!));
     await svc.create(structuredClone(this.#kById.get('K12b')!));
     svc.contest('K12a', 'K12b'); // open the dispute — compile refuses until resolved (G5)
+    // K11 and K13 are open questions with expected_answers — needed for discrimination (thesis D)
+    const k11 = this.#kById.get('K11');
+    if (k11) await svc.create(structuredClone(k11));
+    const k13 = this.#kById.get('K13');
+    if (k13) await svc.create(structuredClone(k13));
     for (const coa of this.#fx.coas) await svc.store.put(coa as unknown as Record<string, unknown>);
     for (const c of this.#fx.commitments)
       await svc.store.put(c as unknown as Record<string, unknown>);
@@ -142,6 +156,19 @@ export class AppState {
       store: svc.store,
       scorer: this.#scorer,
       commitments: this.#fx.commitments,
+    });
+    this.#sensitivitySvc = new SensitivityService({
+      store: svc.store,
+      trace: svc.trace,
+      config: this.#fx.config,
+      commitments: this.#fx.commitments,
+    });
+    this.#discriminationSvc = new DiscriminationService({
+      store: svc.store,
+    });
+    this.#stalenessSvc = new StalenessService({
+      store: svc.store,
+      trace: svc.trace,
     });
   }
 
@@ -217,6 +244,7 @@ export class AppState {
   async snapshot(scenario = 'BASE'): Promise<Snapshot> {
     const panels: Panel[] = [];
     const stamps: Snapshot['stamps'] = {};
+    let firstPlanRef: Ref | undefined;
 
     // Live knowledge id set: the survivor K12a once resolved, else the whole
     // contested pair (so the compile honestly refuses).
@@ -277,6 +305,7 @@ export class AppState {
       });
       if (!isRefusal(h)) {
         stamps.handful = h.stamp;
+        firstPlanRef = h.plans[0];
         const stripRows: HandfulStripRow[] = h.plans.map((planRef, i) => {
           const plan = this.#svc.store.get(planRef.content_hash) as Plan;
           return { plan: planRef, name: plan.name, distinct_because: h.organisation.distinct_because[i]! };
@@ -394,6 +423,70 @@ export class AppState {
       }
     }
 
+    // ---- J-2 · sensitivity analysis (thesis E) ----
+    if (!isRefusal(compiled) && firstPlanRef) {
+      const sensResult = await this.#sensitivitySvc.analyse({
+        plan: firstPlanRef,
+        world: compiled.world,
+        scenario: 'BASE',
+        engine_version: '0.1.0',
+      });
+      if (!isRefusal(sensResult)) {
+        stamps.sensitivity = sensResult.stamp;
+        panels.push({
+          id: 'sensitivity',
+          tab: 'j2',
+          title: 'J-2 · sensitivity ranking (thesis E)',
+          html: componentLegend('sensitivityTable') + sensitivityTable(sensResult.ranking),
+          deps: new Set([`sensitivity:${sensResult.stamp}`]),
+        });
+      }
+    }
+
+    // ---- J-2 · discrimination analysis (thesis D) ----
+    {
+      const k11Ref = this.#latestRef('K11');
+      const k13Ref = this.#latestRef('K13');
+      if (k11Ref && k13Ref) {
+        const discResult = await this.#discriminationSvc.analyse({
+          questions: [k11Ref, k13Ref],
+          coas: ['R1', 'R2', 'R3'],
+          engine_version: '0.1.0',
+        });
+        if (!isRefusal(discResult)) {
+          stamps.discrimination = discResult.stamp;
+          panels.push({
+            id: 'discrimination',
+            tab: 'j2',
+            title: 'J-2 · discrimination ranking (thesis D)',
+            html: componentLegend('discriminationTable') + discriminationTable(discResult.ranking),
+            deps: new Set([`discrimination:${discResult.stamp}`]),
+          });
+        }
+      }
+    }
+
+    // ---- Observer · staleness analysis (thesis F) ----
+    if (!isRefusal(compiled)) {
+      const k9Ref = this.#latestRef('K9');
+      if (k9Ref) {
+        const staleResult = await this.#stalenessSvc.analyse({
+          changed: k9Ref,
+          engine_version: '0.1.0',
+        });
+        if (!isRefusal(staleResult)) {
+          stamps.staleness = staleResult.stamp;
+          panels.push({
+            id: 'staleness',
+            tab: 'observer',
+            title: 'Observer · staleness flags (thesis F)',
+            html: componentLegend('stalenessFlags') + stalenessFlags(staleResult.invalidated, staleResult.chains),
+            deps: new Set([`staleness:${staleResult.stamp}`]),
+          });
+        }
+      }
+    }
+
     // ---- Observer · the delta feed ----
     const deltas = this.#svc.deltas.all;
     panels.push({
@@ -450,6 +543,11 @@ export class AppState {
   #latestHash(id: string): string | undefined {
     const versions = this.#svc.store.versions(id);
     return versions.length > 0 ? versions[versions.length - 1]!.content_hash : undefined;
+  }
+
+  #latestRef(id: string): Ref | undefined {
+    const versions = this.#svc.store.versions(id);
+    return versions.length > 0 ? versions[versions.length - 1] : undefined;
   }
 
   /** A stable per-verdict change key (verdict is not stored content-addressed

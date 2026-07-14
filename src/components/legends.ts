@@ -74,6 +74,31 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       "The plan's worst verdict for this commitment across all toggled scenarios (minimax). A real verdict on a real scenario, not a weighted blend.",
   },
+  sensitivity: {
+    term: 'changed verdicts (count)',
+    gloss:
+      'How many commitment verdicts changed when this knowledge item was perturbed to its band edge. Higher count = the assessment is more load-bearing; zero = verdicts are insensitive to this item.',
+  },
+  single_source_flag: {
+    term: 'single-source',
+    gloss:
+      'An uncorroborated value flagged per ICD 203 — only one collection source supports this assessment. Shown alongside sensitivity, never collapsed with it (DEC-19).',
+  },
+  separation: {
+    term: 'COA-pair separation (band)',
+    gloss:
+      'The gap between two COAs\' expected-answer bands for a question. Positive (green) = disjoint, the question discriminates; negative (amber/red) = overlapping, the question does not distinguish.',
+  },
+  collection_cost: {
+    term: 'collection cost (band)',
+    gloss:
+      'The cost of collecting on this question, shown alongside discrimination value, never collapsed with it (DEC-19).',
+  },
+  invalidated: {
+    term: 'invalidated artefact',
+    gloss:
+      'A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes — flags only, then humans decide (constitution).',
+  },
 };
 
 const esc = (s: string): string =>
@@ -109,6 +134,9 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   s3Cards: ['sacrifice', 'tier'],
   scenarioStrip: ['verdict', 'scenario_collapse', 'worst_case'],
   refusalBanner: ['refusal'],
+  sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict'],
+  discriminationTable: ['separation', 'collection_cost', 'band'],
+  stalenessFlags: ['invalidated'],
 };
 
 /** Convenience: the legend for a named component. */

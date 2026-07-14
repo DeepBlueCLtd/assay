@@ -13,9 +13,9 @@
 #     the site polices its own optimism rather than trusting a human to.
 #   - Nothing here may show a capability the repository does not contain.
 
-updated: 2026-07-13
-current_stage: 5            # 0..7, the stage in flight
-current_stage_label: "Stage 4 built · Stage 5 next"
+updated: 2026-07-14
+current_stage: 7            # 0..7, the stage in flight
+current_stage_label: "Stage 6 built · Stage 7 next"
 gate_passed: false          # the spine-complete gate (SPEC-15)
 
 stages:
@@ -52,15 +52,15 @@ stages:
   - id: 5
     name: Scenario robustness
     blurb: scoring across the adversary COA set (thesis C)
-    status: not-started
-    research_note: docs/research/05-robustness.md
-    research_published: false
+    status: done
+    research_note: docs/research/06-robustness.md
+    research_published: true
   - id: 6
     name: Analysis loops
     blurb: sensitivity, discrimination, staleness (theses D, E, F)
-    status: not-started
-    research_note: docs/research/06-analysis.md
-    research_published: false
+    status: done
+    research_note: docs/research/08-analysis.md
+    research_published: true
   - id: 7
     name: Surfaces & narratives
     blurb: role bundles + five narrative scripts (post-gate)
@@ -77,16 +77,16 @@ theses:                      # state vocabulary is the register's own
     state: explored
   - id: C
     name: Robustness
-    state: planned
+    state: explored
   - id: D
     name: Collection
-    state: planned
+    state: explored
   - id: E
     name: Sensitivity / deception
-    state: planned
+    state: explored
   - id: F
     name: Staleness
-    state: planned
+    state: explored
   - id: G
     name: Interdependency
     state: horizon
@@ -97,6 +97,19 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-14
+    note: >-
+      Stage 6 built — sensitivity, discrimination, staleness analysis (theses D, E, F live).
+      SPEC-11/12/13 implemented over research note 08-analysis.md. K8 tops sensitivity
+      (single-source, band-edge perturbation changes C4 verdicts); K11 ranks above K13
+      on discrimination (disjoint R1/R2 bands vs overlapping); K5 staleness walk flags
+      exactly the storm-channel-dependent verdicts. 267 tests, typecheck clean.
+  - date: 2026-07-14
+    note: >-
+      Stage 5 built — scenario robustness (thesis C live). SPEC-10 implemented over
+      research note 06-robustness.md. Minimax (worst-case) posture: no scenario weights,
+      no weighted blend. The strait-early plan visibly collapses under R2 while robust
+      alternatives hold.
   - date: 2026-07-13
     note: >-
       Interactive system-flow infographic built (SPEC-14 flow-view sub-slice) —
