@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASSAY — Information-flow schematic (engineering-drawing form) v0.2</title>
+<!--
+  An alternative rendering of assay-flow-infographic-spec.md, drawn as an
+  ENGINEERING FLOWCHART / systems schematic rather than the role-swimlane form
+  in assay-flow-infographic-wireframes.html. Same spec, same seam, same frozen
+  tableau — different idiom: the ASSAY machine drawn as one connected apparatus,
+  knowledge piped in on the left, transformed through labelled stations, gates
+  as inline decision valves, gauges for bands, a title block in the corner.
+
+  v0.2 adds TOUR MODE (spec §4.2 / §8): a wizard steps the canonical six-beat
+  walkthrough (vignette §9 oracle-consistent), animating data through the
+  conduits, pulsing the gate that fires, and landing each honest consequence —
+  the contest refusal, the stamp flip + delta row, the least-worst frontier.
+  The tour is a SCRIPTED replay by design (research note 07 §5): it replays the
+  walkthrough's known, oracle-consistent results and says so; it does not
+  compute. Self-contained — the wizard is inline JS/CSS, no external calls.
+
+  Governed by the same discipline as its peer (spec §2, normative):
+    · bands stay banded — every assessed value is a gauge with lo/hi/unit and a
+      provenance chip; no bare assessed scalar renders anywhere;
+    · gates are surfaced, never suppressed — a refusal is an honest outcome,
+      styled as such, not an error toast;
+    · frozen identifiers only (vignette §8) — K*, C*, R*, W-1, P*, stamps,
+      delta seq; a value the vignette does not define is drift, a defect;
+    · recompute is attribution-visible — the tour flips the stamp AND lands a
+      delta row together (spec §2.2); a value never changes unaccountably;
+    · staleness fan-out is labelled SCRIPTED (Stage 6, not yet computed) per
+      research note 07 §5 — a scripted result never masquerades as computed.
+  Tableau: Meridian Archipelago · D+2 · scenario step 8.
+  Self-contained by intent (spec §4.6) apart from the shared web font.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#E7ECEF; --sheet:#FFFFFF; --ink:#1B2732; --mut:#5B6B77; --line:#CBD4DA;
+    --grid:#EDF1F3; --blue:#3E5D8A;
+    --fact:#14655F; --factbg:#E2EFEA;
+    --asmt:#9A6A14; --asmtbg:#F7EDD8;
+    --rob:#1D7A46; --robbg:#E1F0E6;
+    --marg:#9A6A14; --margbg:#F7EDD8;
+    --tight:#B4541E; --tightbg:#FAE8DC;
+    --viol:#A33131; --violbg:#F8E2E2;
+    --open:#3E5D8A; --openbg:#E6ECF6;
+    --gate:#6B4C9A; --gatebg:#EEE7F6; --gateln:#C9B8E4;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace; --disp:'Archivo',sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto;padding:26px 22px 60px}
+  header.mast{display:flex;align-items:baseline;gap:16px;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:8px;flex-wrap:wrap}
+  .wordmark{font-family:var(--disp);font-weight:700;font-size:28px;letter-spacing:.04em}
+  .mast .vig{font-family:var(--disp);font-weight:500;font-size:14px;color:var(--mut)}
+  .mast .clock{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+  .subnote{font-size:12.5px;color:var(--mut);margin:6px 0 18px;max-width:96ch}
+  .subnote code{font-family:var(--mono);font-size:11.5px;background:#F1F3F5;border:1px solid var(--line);padding:1px 5px;border-radius:3px}
+
+  h2.sec{font-family:var(--disp);font-weight:600;font-size:17px;margin:34px 0 4px;display:flex;align-items:center;gap:10px}
+  h2.sec .tag{font-family:var(--mono);font-size:10.5px;background:var(--ink);color:#fff;padding:2px 8px;border-radius:3px;letter-spacing:.05em}
+  .lead{font-size:12.5px;color:var(--mut);margin:2px 0 12px;max-width:92ch}
+
+  /* legend / key */
+  .keygrid{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px}
+  .keycol{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:13px 15px}
+  .keycol h3{font-family:var(--disp);font-weight:600;font-size:12.5px;margin:0 0 9px;letter-spacing:.01em}
+  .krow{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:12px}
+  .krow:last-child{margin-bottom:0}
+  .krow code{font-family:var(--mono);font-size:10.5px;color:var(--ink);min-width:96px}
+  .krow .d{color:var(--mut);font-size:11.5px}
+  .swatch{width:46px;height:0;flex:none}
+  .nodekey{display:inline-block;width:15px;height:12px;border-radius:2px;flex:none;border:1px solid var(--line)}
+  .nk-k{border-left:3px solid var(--fact)} .nk-p{border-left:3px solid var(--blue)}
+  .nk-v{border-left:3px solid var(--rob)} .nk-r{border-left:3px solid var(--viol);background:var(--violbg)}
+  .nk-s{border-left:3px solid var(--ink)}
+  .gdiamond{width:14px;height:14px;background:var(--gatebg);border:1.5px solid var(--gate);transform:rotate(45deg);flex:none}
+
+  /* ---------- WIZARD / TOUR CONTROLS ---------- */
+  .wizard{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:10px}
+  .wizrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .modeseg{display:flex;border:1px solid var(--ink);border-radius:5px;overflow:hidden}
+  .modeseg button{font-family:var(--mono);font-size:11px;border:0;background:#fff;color:var(--ink);padding:6px 12px;cursor:pointer;border-right:1px solid var(--line)}
+  .modeseg button:last-child{border-right:0}
+  .modeseg button.on{background:var(--ink);color:#fff}
+  .navbtn{font-family:var(--mono);font-size:11.5px;border:1px solid var(--ink);background:#fff;color:var(--ink);padding:6px 12px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .navbtn:hover{background:#F1F3F5}
+  .navbtn:disabled{opacity:.38;cursor:not-allowed}
+  .navbtn.primary{background:var(--ink);color:#fff}
+  .navbtn.primary:hover{background:#334150}
+  .dots{display:flex;gap:6px;align-items:center}
+  .dot{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--mut);font-family:var(--mono);font-size:9.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .dot.done{border-color:var(--blue);color:var(--blue)}
+  .dot.cur{background:var(--ink);border-color:var(--ink);color:#fff}
+  .wizspacer{margin-left:auto}
+  .scripted-tag{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;color:var(--asmt);background:var(--asmtbg);border:1px solid #E7D3A6;border-radius:999px;padding:3px 10px}
+  /* narration card */
+  .narr{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;margin-top:12px;padding-top:11px;border-top:1px dashed var(--line)}
+  .narr .step{font-family:var(--mono);font-size:10.5px;color:#fff;background:var(--blue);border-radius:5px;padding:6px 9px;white-space:nowrap;text-align:center;line-height:1.3}
+  .narr .step b{font-size:15px;display:block}
+  .narr .body h4{font-family:var(--disp);font-weight:600;font-size:14px;margin:0 0 2px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .narr .rolechip{font-family:var(--mono);font-size:9.5px;background:var(--ink);color:#fff;padding:2px 7px;border-radius:3px;letter-spacing:.04em}
+  .narr .body p{margin:3px 0 0;font-size:12.5px;color:var(--ink)}
+  .narr .body .sc{margin-top:6px}
+  .tourhint{font-size:11px;color:var(--mut);margin-top:9px;font-style:italic}
+  .modeseg button, .navbtn, .dot{transition:background .15s,color .15s,opacity .15s}
+
+  /* the drawing sheet */
+  .sheetwrap{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:6px;overflow-x:auto;box-shadow:0 1px 2px rgba(27,39,50,.05)}
+  svg.schem{display:block;width:100%;height:auto;min-width:1000px}
+
+  /* schematic typography (applied via classes on SVG text) */
+  .t-id{font-family:var(--mono);font-size:9.5px;fill:var(--mut);letter-spacing:.02em}
+  .t-role{font-family:var(--mono);font-size:8.5px;fill:var(--mut)}
+  .t-title{font-family:var(--disp);font-weight:600;font-size:12px;fill:var(--ink)}
+  .t-sub{font-family:var(--sans);font-size:10px;fill:var(--mut)}
+  .t-mono{font-family:var(--mono);font-size:9.5px;fill:var(--ink)}
+  .t-edge{font-family:var(--mono);font-size:9px;letter-spacing:.02em}
+  .t-station{font-family:var(--disp);font-weight:700;font-size:13px;fill:var(--ink);letter-spacing:.02em}
+  .t-gate{font-family:var(--mono);font-size:9px;fill:var(--gate)}
+  .t-gaugelab{font-family:var(--mono);font-size:9px;fill:var(--mut)}
+
+  /* ---------- TOUR ANIMATION STATE ---------- */
+  .wire{fill:none}
+  .reveal{opacity:0;transition:opacity .5s ease}
+  .is-shown{opacity:1}
+  .is-glow{filter:drop-shadow(0 0 4px rgba(62,93,138,.7))}
+  .gate.is-pulse{filter:drop-shadow(0 0 4px rgba(107,76,154,.7))}
+  .wire.is-flow{stroke-dasharray:7 5}
+  .is-resolved .gdia{stroke:var(--rob)!important;fill:var(--robbg)!important}
+  @media (prefers-reduced-motion: no-preference){
+    .wire.is-flow{animation:march .6s linear infinite}
+    .gate.is-pulse{animation:glowP 1.05s ease-in-out infinite}
+    .is-glow{animation:glowB 1.15s ease-in-out infinite}
+  }
+  @keyframes march{to{stroke-dashoffset:-12}}
+  @keyframes glowP{0%,100%{filter:drop-shadow(0 0 0 rgba(107,76,154,0))}50%{filter:drop-shadow(0 0 6px rgba(107,76,154,.9))}}
+  @keyframes glowB{0%,100%{filter:drop-shadow(0 0 0 rgba(62,93,138,0))}50%{filter:drop-shadow(0 0 6px rgba(62,93,138,.9))}}
+
+  .foot{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+  .panel{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+  .panel h3{font-family:var(--disp);font-weight:600;font-size:13px;margin:0 0 8px}
+  .panel p{font-size:12px;color:var(--mut);margin:0 0 8px}
+  .panel p:last-child{margin-bottom:0}
+  .panel b{color:var(--ink);font-weight:600}
+  .panel code{font-family:var(--mono);font-size:11px;background:#F1F3F5;border:1px solid var(--line);padding:1px 5px;border-radius:3px}
+  .scripted{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--asmt);background:var(--asmtbg);border:1px solid #E7D3A6;border-radius:3px;padding:1px 6px}
+  @media(max-width:860px){.keygrid{grid-template-columns:1fr}.foot{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <span class="wordmark">ASSAY</span>
+    <span class="vig">Information-flow schematic — engineering-drawing form</span>
+    <span class="clock">Meridian · D+2 · step 8 · sheet 1/1 · rev v0.2</span>
+  </header>
+  <div class="subnote">
+    The demonstrator drawn as one <b>apparatus</b> — assessed knowledge piped in on the left, transformed through
+    labelled stations (<code>compile</code> → <code>score</code> → <code>relax</code> → <code>select</code>), with the
+    six honesty <b>gates</b> as inline decision valves and every assessed value on a <b>gauge</b>. Use the wizard to
+    <b>walk one heartbeat through the machine</b> — press <b>Next</b> and watch the data flow, the gate fire, and the
+    honest consequence land. Wireframe: line routing indicative, not final geometry.
+  </div>
+
+  <!-- ============================= KEY ============================= -->
+  <h2 class="sec"><span class="tag">KEY</span> Reading the schematic</h2>
+  <div class="lead">Seven typed connectors make every claim walkable both directions to a named owner (G3); six gates are where the discipline bites. A gate firing is the exhibit, not a fault.</div>
+  <div class="keygrid">
+    <div class="keycol">
+      <h3>Connectors (labelled flow lines)</h3>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="40" y2="5" stroke="#1B2732" stroke-width="2"/><path d="M40 2 L45 5 L40 8 Z" fill="#1B2732"/></svg><code>compiled_into</code><span class="d">knowledge → world channel</span></div>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="40" y2="5" stroke="#1B2732" stroke-width="2"/><path d="M40 2 L45 5 L40 8 Z" fill="#1B2732"/></svg><code>scored_from</code><span class="d">channel → verdict / score</span></div>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="40" y2="5" stroke="#1B2732" stroke-width="2"/><path d="M40 2 L45 5 L40 8 Z" fill="#1B2732"/></svg><code>cited_in</code><span class="d">verdict → relaxation / rationale</span></div>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="40" y2="5" stroke="#9A6A14" stroke-width="2"/><path d="M40 2 L45 5 L40 8 Z" fill="#9A6A14"/></svg><code>supersedes</code><span class="d">newer answer overtakes older (K9→K5)</span></div>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="41" y2="5" stroke="#A33131" stroke-width="2" stroke-dasharray="1 3" stroke-linecap="round"/></svg><code>contests</code><span class="d">two answers irreconcilable (K12a↔K12b)</span></div>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="40" y2="5" stroke="#1D7A46" stroke-width="2"/><path d="M40 2 L45 5 L40 8 Z" fill="#1D7A46"/></svg><code>resolves</code><span class="d">an adjudication closes a contest</span></div>
+      <div class="krow"><svg class="swatch" height="10" viewBox="0 0 46 10"><line x1="1" y1="5" x2="41" y2="5" stroke="#6B4C9A" stroke-width="2" stroke-dasharray="5 3"/><path d="M41 2 L45 5 L41 8 Z" fill="#6B4C9A"/></svg><code>waives</code><span class="d">a J-3 waiver licenses a use (W-1)</span></div>
+    </div>
+    <div class="keycol">
+      <h3>Gates (decision valves ◇)</h3>
+      <div class="krow"><span class="gdiamond"></span><code>encoding&nbsp;lint</code><span class="d">bad answer refused at write — K10</span></div>
+      <div class="krow"><span class="gdiamond"></span><code>waiver</code><span class="d">hard constraint needs a licence — K8/W-1</span></div>
+      <div class="krow"><span class="gdiamond"></span><code>contest · G5</code><span class="d">contested never compiles — K12</span></div>
+      <div class="krow"><span class="gdiamond"></span><code>compar. · G1</code><span class="d">cross-stamp greys, never lies</span></div>
+      <div class="krow"><span class="gdiamond"></span><code>staleness · F</code><span class="d">flags, no silent recompute</span></div>
+      <div class="krow"><span class="gdiamond"></span><code>least-worst · G4</code><span class="d">infeasible → report, never empty</span></div>
+    </div>
+    <div class="keycol">
+      <h3>Stations &amp; gauges</h3>
+      <div class="krow"><span class="nodekey nk-k"></span><span class="d"><b style="color:var(--ink)">Knowledge</b> — an assessed answer, owned by a named role</span></div>
+      <div class="krow"><span class="nodekey nk-p"></span><span class="d"><b style="color:var(--ink)">Process station</b> — a seam service (compile / score / relax / select)</span></div>
+      <div class="krow"><span class="nodekey nk-v"></span><span class="d"><b style="color:var(--ink)">Verdict</b> — a four-stop reading with its margin band</span></div>
+      <div class="krow"><span class="nodekey nk-r"></span><span class="d"><b style="color:var(--ink)">Refusal</b> — an honest outcome, styled as such</span></div>
+      <div class="krow" style="margin-top:9px">
+        <svg class="swatch" width="60" height="18" viewBox="0 0 60 18" style="flex:none">
+          <rect x="1" y="6" width="58" height="6" rx="2" fill="#EDF0F2" stroke="#CBD4DA"/>
+          <rect x="19" y="7" width="24" height="4" rx="1.5" fill="#9A6A14" opacity="0.55"/>
+        </svg>
+        <span class="d"><b style="color:var(--ink)">Gauge</b> — a band <code>{lo,hi,unit}</code>; the bar <em>is</em> the range, no midpoint</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= WIZARD ======================= -->
+  <h2 class="sec"><span class="tag">WALKTHROUGH</span> One heartbeat, stepped through the machine</h2>
+  <div class="lead">A scripted replay of the canonical walkthrough (vignette §9, oracle-consistent). It replays known results and says so — it does not compute. Press <b>Next</b> (or use ← →).</div>
+
+  <div class="wizard">
+    <div class="wizrow">
+      <div class="modeseg" role="tablist" aria-label="View mode">
+        <button id="mode-tour" class="on" aria-pressed="true">▶ Guided walkthrough</button>
+        <button id="mode-full" aria-pressed="false">▦ Full schematic</button>
+      </div>
+      <div id="tour-nav" class="wizrow" style="gap:10px">
+        <button id="btn-back" class="navbtn" aria-label="Previous step">◀ Back</button>
+        <div class="dots" id="dots" aria-label="Steps"></div>
+        <button id="btn-next" class="navbtn primary" aria-label="Next step">Next ▶</button>
+        <button id="btn-play" class="navbtn" aria-label="Auto-play">▷ Play</button>
+        <button id="btn-restart" class="navbtn" aria-label="Restart">↻</button>
+      </div>
+      <span class="wizspacer"></span>
+      <span class="scripted-tag">scripted replay · vignette §9</span>
+    </div>
+    <div class="narr" id="narr">
+      <div class="step" id="narr-step">STEP<b>0/6</b></div>
+      <div class="body">
+        <h4><span id="narr-role" class="rolechip">—</span><span id="narr-title">Opening state</span></h4>
+        <p id="narr-text"></p>
+        <div class="sc" id="narr-scripted" style="display:none"><span class="scripted">staleness fan-out is scripted — thesis F is Stage 6, not yet computed (research note 07 §5)</span></div>
+      </div>
+    </div>
+    <div class="tourhint" id="tourhint">Watch the delta recorder fill and the world stamp flip as you advance — a value never changes without a delta to name it (spec §2.2). Switch to <b>Full schematic</b> to see the whole apparatus at once.</div>
+  </div>
+
+  <!-- ======================= THE SCHEMATIC ======================== -->
+  <div class="sheetwrap">
+  <svg class="schem" id="schem" data-mode="tour" viewBox="0 0 1180 1000" role="img" aria-label="ASSAY information-flow engineering schematic on the Meridian D+2 step-8 tableau">
+    <defs>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M40 0 H0 V40" fill="none" stroke="var(--grid)" stroke-width="1"/>
+      </pattern>
+      <marker id="ar-ink" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#1B2732"/></marker>
+      <marker id="ar-gate" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#6B4C9A"/></marker>
+      <marker id="ar-amber" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#9A6A14"/></marker>
+      <marker id="ar-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#1D7A46"/></marker>
+      <marker id="ar-viol" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#A33131"/></marker>
+    </defs>
+
+    <!-- drawing sheet: grid + border + registration ticks -->
+    <rect x="0" y="0" width="1180" height="1000" fill="url(#grid)"/>
+    <rect x="10" y="10" width="1160" height="980" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+    <g stroke="var(--mut)" stroke-width="1.2">
+      <path d="M10 34 H30 M34 10 V30" fill="none"/><path d="M1170 34 H1150 M1146 10 V30" fill="none"/>
+      <path d="M10 966 H30 M34 990 V970" fill="none"/><path d="M1170 966 H1150 M1146 990 V970" fill="none"/>
+    </g>
+    <!-- flow-stage band labels across the top -->
+    <g font-family="var(--mono)" font-size="9.5" fill="var(--mut)" letter-spacing="0.08em" text-anchor="middle">
+      <text x="135" y="42">① ASSESS · J-2</text>
+      <text x="360" y="42">② GATE</text>
+      <text x="560" y="42">③ COMPILE · J-3/5</text>
+      <text x="770" y="42">④ SCORE</text>
+      <text x="990" y="42">⑤ DECIDE · CMD</text>
+    </g>
+    <line x1="248" y1="52" x2="248" y2="720" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"/>
+    <line x1="470" y1="52" x2="470" y2="720" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"/>
+    <line x1="672" y1="52" x2="672" y2="720" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"/>
+    <line x1="884" y1="52" x2="884" y2="720" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"/>
+
+    <!-- =================== ① KNOWLEDGE INPUTS =================== -->
+
+    <!-- K9 storm surge (supersedes K5) -->
+    <g id="k9" class="unit">
+      <rect x="34" y="66" width="200" height="118" rx="5" fill="#FCFDFD" stroke="var(--line)"/>
+      <line x1="35.5" y1="66" x2="35.5" y2="184" stroke="var(--fact)" stroke-width="3"/>
+      <text class="t-id" x="46" y="82">K9 · KNOWLEDGE</text>
+      <text class="t-role" x="222" y="82" text-anchor="end">owner · J-2</text>
+      <text class="t-title" x="46" y="100">Storm-surge maximum</text>
+      <text class="t-gaugelab" x="46" y="122">0</text>
+      <text class="t-gaugelab" x="222" y="122" text-anchor="end">3 m</text>
+      <rect x="46" y="126" width="176" height="7" rx="2" fill="#EDF0F2" stroke="var(--line)"/>
+      <g stroke="var(--line)" stroke-width="1"><line x1="104.7" y1="126" x2="104.7" y2="133"/><line x1="163.3" y1="126" x2="163.3" y2="133"/></g>
+      <rect x="110.5" y="127.2" width="41" height="4.6" rx="1.5" fill="var(--asmt)" opacity="0.6"/>
+      <text class="t-mono" x="46" y="150">band 1.1–1.8 m</text>
+      <rect x="134" y="140.5" width="88" height="14" rx="3" fill="var(--asmtbg)" stroke="#E7D3A6"/>
+      <text class="t-edge" x="178" y="150.5" text-anchor="middle" fill="var(--asmt)">reported · high</text>
+      <text class="t-sub" x="46" y="172">supersedes K5 (revision, not deletion)</text>
+    </g>
+
+    <!-- K12 sea-mine stock (contested) -->
+    <g id="k12" class="unit">
+      <rect x="34" y="212" width="200" height="120" rx="5" fill="#FCFDFD" stroke="var(--line)"/>
+      <line x1="35.5" y1="212" x2="35.5" y2="332" stroke="var(--fact)" stroke-width="3"/>
+      <text class="t-id" x="46" y="228">K12 · KNOWLEDGE</text>
+      <text class="t-role" x="222" y="228" text-anchor="end">owner · J-2</text>
+      <text class="t-title" x="46" y="246">Sea-mine stockpile</text>
+      <rect x="46" y="256" width="176" height="22" rx="3" fill="#fff" stroke="var(--line)"/>
+      <text class="t-mono" x="54" y="270">K12a</text><text class="t-mono" x="214" y="270" text-anchor="end">30–60 mines</text>
+      <rect x="46" y="282" width="176" height="22" rx="3" fill="#fff" stroke="var(--line)"/>
+      <text class="t-mono" x="54" y="296">K12b</text><text class="t-mono" x="214" y="296" text-anchor="end">140–220 mines</text>
+      <rect x="46" y="310" width="176" height="15" rx="3" fill="var(--violbg)" stroke="#EFC6C6"/>
+      <text class="t-edge" x="134" y="320.5" text-anchor="middle" fill="var(--viol)">⇄ contested — cannot both stand</text>
+    </g>
+
+    <!-- K8 battery state (waiver) -->
+    <g id="k8" class="unit">
+      <rect x="34" y="360" width="200" height="96" rx="5" fill="#FCFDFD" stroke="var(--line)"/>
+      <line x1="35.5" y1="360" x2="35.5" y2="456" stroke="var(--fact)" stroke-width="3"/>
+      <text class="t-id" x="46" y="376">K8 · KNOWLEDGE</text>
+      <text class="t-role" x="222" y="376" text-anchor="end">owner · J-2</text>
+      <text class="t-title" x="46" y="394">Battery fire-control state</text>
+      <text class="t-sub" x="46" y="412">claims a hard constraint (north approach)</text>
+      <rect x="46" y="422" width="80" height="15" rx="3" fill="#F1F3F5" stroke="var(--line)"/>
+      <text class="t-edge" x="86" y="432.5" text-anchor="middle" fill="var(--mut)">single-source</text>
+      <rect x="132" y="422" width="90" height="15" rx="3" fill="var(--gatebg)" stroke="var(--gateln)"/>
+      <text class="t-edge" x="177" y="432.5" text-anchor="middle" fill="var(--gate)">needs waiver W-1</text>
+    </g>
+
+    <!-- K10 malformed write (encoding-refused) -->
+    <g id="k10" class="unit">
+      <rect x="34" y="484" width="200" height="84" rx="5" fill="#FCFDFD" stroke="var(--line)" stroke-dasharray="4 3"/>
+      <line x1="35.5" y1="484" x2="35.5" y2="568" stroke="var(--mut)" stroke-width="3"/>
+      <text class="t-id" x="46" y="500">K10 · WRITE ATTEMPT</text>
+      <text class="t-role" x="222" y="500" text-anchor="end">J-2</text>
+      <text class="t-title" x="46" y="518" fill="var(--mut)">Malformed answer</text>
+      <text class="t-sub" x="46" y="536"><tspan font-family="var(--mono)" font-size="9.5">assessed·low</tspan> asserting a hard constraint</text>
+      <text class="t-sub" x="46" y="552">— never becomes a K-object (see gate ②)</text>
+    </g>
+
+    <!-- =================== ② GATES (valves) =================== -->
+
+    <!-- wire K9 -> compile (compiled_into) -->
+    <path id="p-compiled" class="wire" d="M234 125 H300 Q312 125 312 137 V250 H452" fill="none" stroke="#1B2732" stroke-width="1.6" marker-end="url(#ar-ink)"/>
+    <text class="t-edge" x="330" y="120" fill="#1B2732">compiled_into</text>
+
+    <!-- gate: contest, on K12 wire -->
+    <path d="M234 272 H300" fill="none" stroke="#1B2732" stroke-width="1.6"/>
+    <g id="g-contest" class="gate unit">
+      <rect class="gdia" x="322" y="250" width="44" height="44" rx="4" fill="var(--gatebg)" stroke="var(--gate)" stroke-width="1.5" transform="rotate(45 344 272)"/>
+      <text class="t-gate" x="344" y="269" text-anchor="middle">contested?</text>
+      <text class="t-gate" x="344" y="280" text-anchor="middle" font-weight="600">G5</text>
+    </g>
+    <!-- contest YES branch -> refusal -->
+    <g id="p-contest-block" class="reveal">
+      <path class="wire" d="M344 300 V340 H420" fill="none" stroke="#A33131" stroke-width="1.6" marker-end="url(#ar-viol)"/>
+      <text class="t-edge" x="352" y="322" fill="#A33131">yes → block compile</text>
+    </g>
+
+    <!-- gate: waiver, on K8 wire -->
+    <path d="M234 408 H300" fill="none" stroke="#1B2732" stroke-width="1.6"/>
+    <g id="g-waiver" class="gate unit">
+      <rect class="gdia" x="322" y="386" width="44" height="44" rx="4" fill="var(--gatebg)" stroke="var(--gate)" stroke-width="1.5" transform="rotate(45 344 408)"/>
+      <text class="t-gate" x="344" y="405" text-anchor="middle">licensed?</text>
+      <text class="t-gate" x="344" y="416" text-anchor="middle" font-weight="600">W-1</text>
+    </g>
+    <!-- granted -> waives edge travels to compile -->
+    <path id="p-waives" class="wire" d="M366 408 H408 Q420 408 420 396 V250" fill="none" stroke="#6B4C9A" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#ar-gate)"/>
+    <text class="t-edge" x="374" y="402" fill="#6B4C9A">waives →</text>
+
+    <!-- gate: encoding lint, on K10 wire -->
+    <path d="M234 524 H300" fill="none" stroke="var(--mut)" stroke-width="1.6"/>
+    <g id="g-lint" class="gate unit">
+      <rect class="gdia" x="322" y="502" width="44" height="44" rx="4" fill="var(--gatebg)" stroke="var(--gate)" stroke-width="1.5" transform="rotate(45 344 524)"/>
+      <text class="t-gate" x="344" y="521" text-anchor="middle">well-</text>
+      <text class="t-gate" x="344" y="531" text-anchor="middle">formed?</text>
+    </g>
+    <path id="p-lint-no" class="wire" d="M344 546 V584" fill="none" stroke="#A33131" stroke-width="1.6" marker-end="url(#ar-viol)"/>
+    <text class="t-edge" x="352" y="570" fill="#A33131">no</text>
+
+    <!-- encoding refusal terminal -->
+    <g id="refuse-lint" class="unit">
+      <rect x="270" y="590" width="196" height="56" rx="5" fill="var(--violbg)" stroke="var(--viol)" stroke-width="1.3"/>
+      <text class="t-id" x="282" y="608" fill="var(--viol)">⛔ REFUSED AT WRITE</text>
+      <text class="t-mono" x="282" y="624" fill="var(--viol)">reason: encoding_violation</text>
+      <text class="t-sub" x="282" y="639">no assessed·low value may assert a hard constraint (DEC-9/15)</text>
+    </g>
+
+    <!-- contest refusal terminal -->
+    <g id="refuse-contest" class="reveal">
+      <rect x="420" y="318" width="230" height="66" rx="5" fill="var(--violbg)" stroke="var(--viol)" stroke-width="1.3"/>
+      <text class="t-id" x="432" y="336" fill="var(--viol)">⛔ COMPILE REFUSED</text>
+      <text class="t-mono" x="432" y="352" fill="var(--viol)">reason: contested_knowledge</text>
+      <text class="t-sub" x="432" y="367">no channel is built from a contested pair (G5).</text>
+      <text class="t-sub" x="432" y="379">resolve K12a/b first → then compile succeeds.</text>
+    </g>
+
+    <!-- =================== ③ COMPILE =================== -->
+    <g id="compile" class="unit">
+      <rect x="452" y="196" width="200" height="150" rx="6" fill="#F7F9FB" stroke="var(--blue)" stroke-width="1.4"/>
+      <rect x="452" y="196" width="200" height="24" rx="6" fill="var(--openbg)"/>
+      <rect x="452" y="208" width="200" height="12" fill="var(--openbg)"/>
+      <text class="t-id" x="464" y="212" fill="var(--blue)">SVC · CompileService</text>
+      <text class="t-role" x="640" y="212" text-anchor="end" fill="var(--blue)">J-3/5</text>
+      <text class="t-station" x="464" y="244">COMPILE</text>
+      <text class="t-sub" x="464" y="262">knowledge → world channels (sparse)</text>
+      <text class="t-sub" x="464" y="278">consumes K9 (not superseded K5)</text>
+      <rect x="464" y="288" width="176" height="44" rx="4" fill="#fff" stroke="var(--line)"/>
+      <text class="t-role" x="472" y="302">WORLD STAMP · comparability G1</text>
+      <text id="stamp-old" class="t-mono" x="472" y="318">7f3a…c91</text>
+      <g id="stamp-new" class="reveal">
+        <text class="t-mono" x="520" y="318" fill="var(--mut)">→</text>
+        <text class="t-mono" x="536" y="318" fill="var(--rob)">9b2e…44a</text>
+        <text class="t-edge" x="632" y="318" text-anchor="end" fill="var(--mut)">on resolve</text>
+      </g>
+    </g>
+
+    <!-- compile -> score : compiled channels feed the scorer -->
+    <path id="p-channels" class="wire" d="M652 250 H770" fill="none" stroke="#1B2732" stroke-width="1.6" marker-end="url(#ar-ink)"/>
+    <text class="t-edge" x="668" y="244" fill="#1B2732">channels</text>
+    <g>
+      <rect x="686" y="256" width="70" height="15" rx="3" fill="#fff" stroke="var(--line)"/>
+      <text class="t-edge" x="721" y="266.5" text-anchor="middle" fill="var(--mut)">tide/storm ch.</text>
+      <rect x="686" y="274" width="70" height="15" rx="3" fill="var(--gatebg)" stroke="var(--gateln)"/>
+      <text class="t-edge" x="721" y="284.5" text-anchor="middle" fill="var(--gate)">threat ch. ·W-1</text>
+    </g>
+
+    <!-- =================== ④ SCORE =================== -->
+    <g id="score" class="unit">
+      <rect x="770" y="196" width="200" height="150" rx="6" fill="#F7F9FB" stroke="var(--blue)" stroke-width="1.4"/>
+      <rect x="770" y="196" width="200" height="24" rx="6" fill="var(--openbg)"/>
+      <rect x="770" y="208" width="200" height="12" fill="var(--openbg)"/>
+      <text class="t-id" x="782" y="212" fill="var(--blue)">SVC · ScoreService</text>
+      <text class="t-role" x="958" y="212" text-anchor="end" fill="var(--blue)">J-3/5</text>
+      <text class="t-station" x="782" y="244">SCORE</text>
+      <text class="t-sub" x="782" y="262">channels → four-stop verdicts</text>
+      <g id="u-verdicts">
+        <rect x="782" y="272" width="176" height="20" rx="3" fill="#fff" stroke="var(--line)"/>
+        <text class="t-mono" x="790" y="286">C1</text>
+        <rect x="812" y="277" width="60" height="4.6" rx="1.5" fill="#EDF0F2" stroke="var(--line)"/><rect x="838" y="277" width="20" height="4.6" rx="1.5" fill="var(--marg)" opacity="0.6"/>
+        <rect x="900" y="276" width="52" height="12" rx="3" fill="var(--margbg)"/><text class="t-edge" x="926" y="285" text-anchor="middle" fill="var(--marg)">marginal</text>
+        <rect x="782" y="296" width="176" height="20" rx="3" fill="#fff" stroke="var(--line)"/>
+        <text class="t-mono" x="790" y="310">C2</text>
+        <rect x="812" y="301" width="60" height="4.6" rx="1.5" fill="#EDF0F2" stroke="var(--line)"/><rect x="832" y="301" width="22" height="4.6" rx="1.5" fill="var(--marg)" opacity="0.6"/>
+        <rect x="900" y="300" width="52" height="12" rx="3" fill="var(--margbg)"/><text class="t-edge" x="926" y="309" text-anchor="middle" fill="var(--marg)">marginal</text>
+        <rect x="782" y="320" width="176" height="20" rx="3" fill="#fff" stroke="var(--line)"/>
+        <text class="t-mono" x="790" y="334">C4</text>
+        <rect x="812" y="325" width="60" height="4.6" rx="1.5" fill="#EDF0F2" stroke="var(--line)"/><rect x="846" y="325" width="18" height="4.6" rx="1.5" fill="var(--tight)" opacity="0.6"/>
+        <rect x="900" y="324" width="52" height="12" rx="3" fill="var(--tightbg)"/><text class="t-edge" x="926" y="333" text-anchor="middle" fill="var(--tight)">tight</text>
+      </g>
+    </g>
+
+    <!-- score -> feasibility gate -->
+    <path id="p-scored" class="wire" d="M970 271 H1012" fill="none" stroke="#1B2732" stroke-width="1.6" marker-end="url(#ar-ink)"/>
+    <text class="t-edge" x="972" y="265" fill="#1B2732">scored_from</text>
+
+    <!-- feasibility gate (least-worst) -->
+    <g id="g-feasible" class="gate unit">
+      <rect class="gdia" x="1040" y="249" width="44" height="44" rx="4" fill="var(--gatebg)" stroke="var(--gate)" stroke-width="1.5" transform="rotate(45 1062 271)"/>
+      <text class="t-gate" x="1062" y="268" text-anchor="middle">feasible?</text>
+      <text class="t-gate" x="1062" y="279" text-anchor="middle" font-weight="600">G4</text>
+    </g>
+    <!-- YES -> select -->
+    <path id="p-yes" class="wire" d="M1062 249 V150 H1030" fill="none" stroke="#1D7A46" stroke-width="1.6" marker-end="url(#ar-green)"/>
+    <text class="t-edge" x="1070" y="196" fill="#1D7A46">yes</text>
+    <!-- NO (R3m) -> relax -->
+    <path id="p-no" class="wire reveal" d="M1062 293 V360" fill="none" stroke="#9A6A14" stroke-width="1.6" marker-end="url(#ar-amber)"/>
+    <text id="p-no-lab" class="t-edge reveal" x="1054" y="322" text-anchor="end" fill="#9A6A14">no · R3m</text>
+
+    <!-- =================== ⑤ RELAX + SELECT =================== -->
+
+    <!-- RELAX station -->
+    <g id="u-relax" class="reveal">
+      <rect x="700" y="366" width="384" height="150" rx="6" fill="#F7F9FB" stroke="var(--blue)" stroke-width="1.4"/>
+      <rect x="700" y="366" width="384" height="24" rx="6" fill="var(--openbg)"/>
+      <rect x="700" y="378" width="384" height="12" fill="var(--openbg)"/>
+      <text class="t-id" x="712" y="382" fill="var(--blue)">SVC · RelaxService</text>
+      <text class="t-role" x="1072" y="382" text-anchor="end" fill="var(--blue)">least-worst · G4 · never empty</text>
+      <text class="t-station" x="712" y="410">RELAX — least-worst frontier</text>
+      <text class="t-sub" x="712" y="428">inclusion-minimal correction sets, ranked least-worst-first · tie_break stated</text>
+      <rect x="712" y="438" width="114" height="66" rx="4" fill="#fff" stroke="var(--line)"/>
+      <text class="t-role" x="722" y="453">rank 1</text><text class="t-mono" x="810" y="453" text-anchor="end">should</text>
+      <text class="t-title" x="722" y="472" font-size="11">sacrifice C4</text>
+      <rect x="722" y="480" width="52" height="14" rx="3" fill="var(--tightbg)"/><text class="t-edge" x="748" y="490" text-anchor="middle" fill="var(--tight)">C4 violated</text>
+      <rect x="835" y="438" width="114" height="66" rx="4" fill="#fff" stroke="var(--line)"/>
+      <text class="t-role" x="845" y="453">rank 2</text><text class="t-mono" x="933" y="453" text-anchor="end">should</text>
+      <text class="t-title" x="845" y="472" font-size="11">sacrifice C3</text>
+      <rect x="845" y="480" width="52" height="14" rx="3" fill="var(--tightbg)"/><text class="t-edge" x="871" y="490" text-anchor="middle" fill="var(--tight)">C3 violated</text>
+      <rect x="958" y="438" width="114" height="66" rx="4" fill="#fff" stroke="var(--line)"/>
+      <text class="t-role" x="968" y="453">rank 3</text><text class="t-mono" x="1056" y="453" text-anchor="end">must · last</text>
+      <text class="t-title" x="968" y="472" font-size="11">sacrifice C2</text>
+      <rect x="968" y="480" width="52" height="14" rx="3" fill="var(--violbg)"/><text class="t-edge" x="994" y="490" text-anchor="middle" fill="var(--viol)">C2 violated</text>
+      <text class="t-edge" x="712" y="528" fill="var(--mut)">tie_break: same-tier C3 / C4 ordered by a stated, content-neutral rule</text>
+      <text class="t-edge" x="712" y="541" fill="var(--mut)">— never a value judgement (DEC-19).</text>
+    </g>
+
+    <!-- relax -> select : cited_in -->
+    <path id="p-cited" class="wire reveal" d="M1084 440 H1126 Q1140 440 1140 428 V150 H1030" fill="none" stroke="#1B2732" stroke-width="1.6" marker-end="url(#ar-ink)"/>
+    <text class="t-edge reveal" id="p-cited-lab" x="1136" y="360" fill="#1B2732" transform="rotate(90 1136 360)">cited_in</text>
+
+    <!-- SELECT station -->
+    <g id="select" class="unit">
+      <rect x="850" y="96" width="180" height="90" rx="6" fill="#F4FAF6" stroke="var(--rob)" stroke-width="1.4"/>
+      <rect x="850" y="96" width="180" height="24" rx="6" fill="var(--robbg)"/>
+      <rect x="850" y="108" width="180" height="12" fill="var(--robbg)"/>
+      <text class="t-id" x="862" y="112" fill="var(--rob)">RATIONALE</text>
+      <text class="t-role" x="1018" y="112" text-anchor="end" fill="var(--rob)">decided_by · CMD</text>
+      <text class="t-station" x="862" y="140" font-size="12">SELECT — the decision</text>
+      <text class="t-sub" x="862" y="158">P2 chosen · cites its verdicts</text>
+      <text class="t-sub" x="862" y="173">walks back to a named owner (G3)</text>
+    </g>
+
+    <!-- =================== STALENESS side-system =================== -->
+    <g id="u-staleness" class="reveal">
+      <rect x="34" y="672" width="616" height="70" rx="6" fill="#FffdF5" stroke="var(--asmt)" stroke-width="1.2" stroke-dasharray="5 3"/>
+      <text class="t-id" x="46" y="690" fill="var(--asmt)">STALENESS BUS · thesis F · flags, never a silent recompute</text>
+      <rect x="470" y="678" width="170" height="16" rx="3" fill="var(--asmtbg)" stroke="#E7D3A6"/>
+      <text class="t-edge" x="555" y="689" text-anchor="middle" fill="var(--asmt)">⚑ SCRIPTED — Stage 6, not yet computed</text>
+      <text class="t-sub" x="46" y="710">K9 superseding K5 fans out to flag <tspan font-family="var(--mono)" font-size="9.5" fill="var(--ink)">exactly</tspan> the K5-dependent artefacts — nothing else, nothing silent:</text>
+      <g font-family="var(--mono)" font-size="9.5">
+        <rect x="46" y="718" width="70" height="16" rx="3" fill="#fff" stroke="var(--asmt)"/><text x="81" y="729" text-anchor="middle" fill="var(--asmt)">⚑ P1 · C2</text>
+        <rect x="122" y="718" width="70" height="16" rx="3" fill="#fff" stroke="var(--asmt)"/><text x="157" y="729" text-anchor="middle" fill="var(--asmt)">⚑ P2 · C1</text>
+        <rect x="198" y="718" width="70" height="16" rx="3" fill="#fff" stroke="var(--asmt)"/><text x="233" y="729" text-anchor="middle" fill="var(--asmt)">⚑ P2 · C2</text>
+      </g>
+    </g>
+    <!-- dashed supersedes lead-in from K9 -->
+    <path id="p-supersede" class="wire reveal" d="M120 184 V196 Q120 208 108 208 H60 Q48 208 48 220 V672" fill="none" stroke="#9A6A14" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ar-amber)" opacity="0.7"/>
+    <text class="t-edge reveal" id="p-supersede-lab" x="52" y="640" fill="#9A6A14">supersedes K5 ⤳ fan-out</text>
+
+    <!-- =================== DELTA RECORDER (Bridge / S4) =================== -->
+    <g>
+      <rect x="34" y="760" width="1036" height="118" rx="6" fill="#FAFBFC" stroke="var(--line)"/>
+      <rect x="34" y="760" width="1036" height="22" rx="6" fill="#F1F3F5"/>
+      <rect x="34" y="772" width="1036" height="10" fill="#F1F3F5"/>
+      <text class="t-id" x="46" y="775">DELTA RECORDER · S4 BRIDGE — watches, never writes · append-only, stamped</text>
+      <text class="t-role" x="1058" y="775" text-anchor="end">seq 42–45</text>
+      <g font-family="var(--mono)" font-size="10">
+        <g id="d45" class="reveal">
+          <text x="46" y="800" fill="var(--mut)">seq 45</text><text x="96" y="800" fill="var(--ink)">Planner</text><text x="170" y="800" fill="var(--ink)"><tspan fill="var(--gate)" font-weight="600">compile</tspan> → world 9b2e…44a · handful P1–P4 re-scored · stamp flipped</text>
+          <line x1="46" y1="808" x2="1058" y2="808" stroke="var(--line)"/>
+        </g>
+        <g id="d44" class="reveal">
+          <text x="46" y="826" fill="var(--mut)">seq 44</text><text x="96" y="826" fill="var(--ink)">J-2</text><text x="170" y="826" fill="var(--ink)"><tspan fill="var(--rob)" font-weight="600">resolve</tspan> K12a → surviving K12b · <tspan fill="var(--rob)">resolves</tspan> edge · contest closed</text>
+          <line x1="46" y1="834" x2="1058" y2="834" stroke="var(--line)"/>
+        </g>
+        <g id="d43" class="reveal">
+          <text x="46" y="852" fill="var(--mut)">seq 43</text><text x="96" y="852" fill="var(--ink)">J-2</text><text x="170" y="852" fill="var(--ink)"><tspan fill="var(--viol)" font-weight="600">contest</tspan> K12a ⇄ K12b · compile blocked (G5) · no new world stamp</text>
+          <line x1="46" y1="860" x2="1058" y2="860" stroke="var(--line)"/>
+        </g>
+        <g id="d42" class="reveal">
+          <text x="46" y="874" fill="var(--mut)">seq 42</text><text x="96" y="874" fill="var(--ink)">J-2</text><text x="170" y="874" fill="var(--ink)"><tspan fill="var(--asmt)" font-weight="600">supersede</tspan> K5 → K9 · staleness fan-out: P1·C2, P2·C1, P2·C2 <tspan fill="var(--asmt)">(scripted)</tspan></text>
+        </g>
+      </g>
+    </g>
+
+    <!-- =================== TITLE BLOCK =================== -->
+    <g>
+      <rect x="770" y="890" width="300" height="86" rx="4" fill="#fff" stroke="var(--ink)" stroke-width="1.3"/>
+      <line x1="770" y1="912" x2="1070" y2="912" stroke="var(--ink)"/>
+      <line x1="920" y1="912" x2="920" y2="976" stroke="var(--line)"/>
+      <line x1="920" y1="944" x2="1070" y2="944" stroke="var(--line)"/>
+      <line x1="770" y1="944" x2="920" y2="944" stroke="var(--line)"/>
+      <text class="t-station" x="782" y="906" font-size="11">ASSAY · INFORMATION-FLOW SCHEMATIC</text>
+      <text class="t-role" x="782" y="928">TABLEAU</text><text class="t-mono" x="782" y="940">Meridian · D+2 · step 8</text>
+      <text class="t-role" x="932" y="928">WORLD</text><text class="t-mono" x="932" y="940" font-size="8.5">7f3a…→9b2e…</text>
+      <text class="t-role" x="782" y="960">SEED</text><text class="t-mono" x="782" y="972">42</text>
+      <text class="t-role" x="932" y="960">SHEET / REV</text><text class="t-mono" x="932" y="972">1/1 · v0.2</text>
+    </g>
+    <text class="t-role" x="46" y="905" fill="var(--mut)">FICTION — the Meridian Archipelago is an engineered scenario (DEC-8). No real operational picture.</text>
+
+  </svg>
+  </div>
+
+  <!-- ======================= FOOT NOTES ======================= -->
+  <div class="foot">
+    <div class="panel">
+      <h3>What the walkthrough shows</h3>
+      <p>Six beats of the canonical heartbeat. J-2 <b>supersedes</b> K5 with a fresher read (the staleness bus flags
+        exactly what leaned on the old answer); <b>contests</b> K12, so the contest gate (G5) <b>refuses compile</b>;
+        <b>resolves</b> it; the planner <b>recompiles</b> to a new stamped world; the least-worst gate (G4) opens
+        <b>relax</b> because R3m is infeasible; the commander <b>selects</b>. A malformed K10 write never enters — the
+        encoding lint refuses it at the door.</p>
+      <p>Switch to <b>Full schematic</b> to see the whole apparatus at once — the walkthrough is that same drawing,
+        revealed one honest consequence at a time.</p>
+    </div>
+    <div class="panel">
+      <h3>Honesty, kept on the face of the drawing</h3>
+      <p><b>Bands stay banded.</b> Every assessed value is a gauge with <code>lo–hi unit</code> and its provenance chip;
+        no bare assessed scalar appears. <b>Gates are the exhibit</b> — each refusal is drawn as an honest outcome.
+        <b>Recompute is attributable</b>: the stamp flips <em>and</em> a delta lands together — never one without the
+        other (spec §2.2).</p>
+      <p><b>Scripted where not yet computed.</b> The tour replays the walkthrough's oracle-consistent results and says
+        so; the <span class="scripted">staleness fan-out</span> is marked scripted — thesis F is Stage 6,
+        <code>not-started</code> (research note 07 §5). It will drive the real seam once Stage 6 lands.</p>
+      <p><b>Alternative, not replacement.</b> A second idiom for <code>assay-flow-infographic-spec.md</code>, alongside
+        the role-swimlane wireframe — offered so the design direction can be chosen from concrete artefacts.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var BEATS = [
+    { role:"—", title:"Opening state · world 7f3a…c91",
+      text:"D+2, step 8. The world is compiled and the handful P1–P4 is scored — everything current. Press Next to inject one new answer and watch the honest consequence flow through the machine.",
+      show:[], hide:[], flow:[], pulse:[], glow:[] },
+    { role:"S1 · J-2", title:"Supersede K5 → K9", scripted:true,
+      text:"J-2 files a fresher storm-surge read. It doesn't overwrite — it supersedes. The staleness bus flags exactly the three verdicts that leaned on the old answer (P1·C2, P2·C1, P2·C2) — nothing else, nothing silent.",
+      show:["u-staleness","p-supersede","p-supersede-lab","d42"], hide:[], flow:["p-supersede"], pulse:[], glow:["k9"] },
+    { role:"S1 · J-2 → S2", title:"Contest K12 → compile refused",
+      text:"Two irreconcilable answers on the mine stockpile are logged. The planner asks for a fresh world — and the contest gate refuses it: no channel is built from a contested pair (G5). No new stamp appears.",
+      show:["p-contest-block","refuse-contest","d43"], hide:[], flow:["p-contest-block"], pulse:["g-contest"], glow:["k12"] },
+    { role:"S1 · J-2", title:"Resolve K12 → K12b",
+      text:"Adjudication keeps K12b (the pre-war manifests) and writes a resolves edge. The contest is closed — compile can proceed.",
+      show:["d44"], hide:["p-contest-block","refuse-contest"], flow:[], pulse:["g-contest"], glow:["k12"] },
+    { role:"S2 · Planner", title:"Recompile → world 9b2e…44a",
+      text:"Compile runs on the resolved knowledge and stamps a new world, 9b2e…44a. The handful re-scores. The stamp flips AND a delta lands — automatic, but never silent: you can always say why a number changed.",
+      show:["stamp-new","d45"], hide:[], flow:["p-compiled","p-waives","p-channels","p-scored"], pulse:["g-waiver"], glow:["compile","u-verdicts"] },
+    { role:"S3 · Commander", title:"Relax under R3m (infeasible)",
+      text:"The R3m commitment set is infeasible. Instead of failing, the least-worst valve opens: three inclusion-minimal candidates sacrificing C4, C3, C2 — ranked, tie-break stated, never empty (G4).",
+      show:["p-no","p-no-lab","u-relax","p-cited","p-cited-lab"], hide:[], flow:["p-no","p-cited"], pulse:["g-feasible"], glow:["u-relax"] },
+    { role:"S3 · Commander", title:"Select P2 → SelectionRationale",
+      text:"The commander selects P2 and records a rationale citing the verdicts it rests on — each walkable back to a named owner (G3). The choice raises K8's verification priority back on the J-2 surface.",
+      show:[], hide:[], flow:["p-cited"], pulse:[], glow:["select"] }
+  ];
+  var LAST = BEATS.length - 1;
+
+  var svg = document.getElementById("schem");
+  var reveals = Array.prototype.slice.call(svg.querySelectorAll(".reveal"));
+  var cur = 0, mode = "tour", playTimer = null;
+
+  function clearTransient(){
+    svg.querySelectorAll(".is-flow").forEach(function(e){ e.classList.remove("is-flow"); });
+    svg.querySelectorAll(".is-pulse").forEach(function(e){ e.classList.remove("is-pulse"); });
+    svg.querySelectorAll(".is-glow").forEach(function(e){ e.classList.remove("is-glow"); });
+  }
+  function id(x){ return document.getElementById(x); }
+
+  function renderTour(k){
+    // cumulative reveal set
+    var shown = {};
+    for(var i=0;i<=k;i++){
+      BEATS[i].show.forEach(function(x){ shown[x]=true; });
+      BEATS[i].hide.forEach(function(x){ delete shown[x]; });
+    }
+    reveals.forEach(function(el){ el.classList.toggle("is-shown", !!shown[el.id]); });
+    clearTransient();
+    var b = BEATS[k];
+    b.flow.forEach(function(x){ var e=id(x); if(e) e.classList.add("is-flow"); });
+    b.pulse.forEach(function(x){ var e=id(x); if(e) e.classList.add("is-pulse"); });
+    b.glow.forEach(function(x){ var e=id(x); if(e) e.classList.add("is-glow"); });
+    var gc = id("g-contest"); if(gc) gc.classList.toggle("is-resolved", k>=3);
+
+    // narration
+    id("narr-step").innerHTML = "STEP<b>"+k+"/"+LAST+"</b>";
+    id("narr-role").textContent = b.role;
+    id("narr-title").textContent = b.title;
+    id("narr-text").textContent = b.text;
+    id("narr-scripted").style.display = b.scripted ? "block" : "none";
+
+    // controls
+    id("btn-back").disabled = (k===0);
+    id("btn-next").disabled = (k===LAST);
+    // dots
+    Array.prototype.forEach.call(document.querySelectorAll(".dot"), function(d,i){
+      d.classList.toggle("cur", i===k);
+      d.classList.toggle("done", i<k);
+    });
+  }
+
+  function renderFull(){
+    stopPlay();
+    reveals.forEach(function(el){ el.classList.add("is-shown"); });
+    clearTransient();
+    var gc = id("g-contest"); if(gc) gc.classList.add("is-resolved");
+  }
+
+  function goto(k){
+    cur = Math.max(0, Math.min(LAST, k));
+    if(mode==="tour") renderTour(cur);
+  }
+  function next(){ if(cur<LAST){ goto(cur+1); } else { stopPlay(); } }
+  function back(){ goto(cur-1); }
+
+  function setMode(m){
+    mode = m;
+    id("mode-tour").classList.toggle("on", m==="tour");
+    id("mode-full").classList.toggle("on", m==="full");
+    id("mode-tour").setAttribute("aria-pressed", m==="tour");
+    id("mode-full").setAttribute("aria-pressed", m==="full");
+    svg.setAttribute("data-mode", m);
+    id("tour-nav").style.visibility = (m==="tour") ? "visible" : "hidden";
+    id("narr").style.opacity = (m==="tour") ? "1" : "0.4";
+    if(m==="tour"){ renderTour(cur); } else { renderFull(); }
+  }
+
+  function stopPlay(){
+    if(playTimer){ clearInterval(playTimer); playTimer=null; id("btn-play").innerHTML="▷ Play"; }
+  }
+  function togglePlay(){
+    if(playTimer){ stopPlay(); return; }
+    if(cur===LAST) goto(0);
+    id("btn-play").innerHTML="⏸ Pause";
+    playTimer = setInterval(function(){ if(cur>=LAST){ stopPlay(); } else { next(); } }, 3400);
+  }
+
+  // build dots
+  var dots = document.getElementById("dots");
+  for(var i=0;i<BEATS.length;i++){
+    (function(i){
+      var d = document.createElement("button");
+      d.className="dot"; d.textContent=String(i); d.title=BEATS[i].title;
+      d.addEventListener("click", function(){ stopPlay(); if(mode!=="tour") setMode("tour"); goto(i); });
+      dots.appendChild(d);
+    })(i);
+  }
+
+  id("btn-next").addEventListener("click", function(){ stopPlay(); next(); });
+  id("btn-back").addEventListener("click", function(){ stopPlay(); back(); });
+  id("btn-restart").addEventListener("click", function(){ stopPlay(); goto(0); });
+  id("btn-play").addEventListener("click", togglePlay);
+  id("mode-tour").addEventListener("click", function(){ setMode("tour"); });
+  id("mode-full").addEventListener("click", function(){ setMode("full"); });
+  document.addEventListener("keydown", function(e){
+    if(mode!=="tour") return;
+    if(e.key==="ArrowRight"){ stopPlay(); next(); e.preventDefault(); }
+    else if(e.key==="ArrowLeft"){ stopPlay(); back(); e.preventDefault(); }
+  });
+
+  setMode("tour");
+  renderTour(0);
+})();
+</script>
+</body>
+</html>
