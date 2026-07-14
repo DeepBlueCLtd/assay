@@ -937,8 +937,8 @@
     /** POST /knowledge — encoding discipline enforced here; nothing persists on refusal. */
     async create(ko) {
       this.#assertValid(ko);
-      const refusal5 = checkEncoding(ko);
-      if (refusal5) return refusal5;
+      const refusal6 = checkEncoding(ko);
+      if (refusal6) return refusal6;
       const hash = await contentHash(ko);
       const isNew = !this.#store.exists(hash);
       const ref = await this.#store.put(ko);
@@ -951,8 +951,8 @@
     /** POST /knowledge/{id}/supersede — writes a supersedes edge; returns what it staled. */
     async supersede(next, priorId) {
       this.#assertValid(next);
-      const refusal5 = checkEncoding(next);
-      if (refusal5) return refusal5;
+      const refusal6 = checkEncoding(next);
+      if (refusal6) return refusal6;
       const priorHash = this.#latestHash(priorId);
       if (!priorHash) {
         return unknownRef(priorId, `${priorId}: no live version to supersede.`);
@@ -1994,6 +1994,110 @@
     explanation
   });
 
+  // src/robustness.ts
+  var VERDICT_ORDER = {
+    violated: 0,
+    tight: 1,
+    marginal: 2,
+    robust: 3
+  };
+  var VERDICT_NAMES = ["violated", "tight", "marginal", "robust"];
+  var RobustnessService = class {
+    #store;
+    #scorer;
+    #commitmentIds;
+    constructor(opts) {
+      this.#store = opts.store;
+      this.#scorer = opts.scorer;
+      this.#commitmentIds = [...opts.commitments].map((c) => c.logical_id).sort(cmp5);
+    }
+    async robustness(req) {
+      const scenarioIds = Object.keys(req.worlds).sort(cmp5);
+      if (scenarioIds.length === 0) {
+        return refusal5("unknown_ref", [], "no scenario worlds provided.");
+      }
+      const worlds = /* @__PURE__ */ new Map();
+      for (const sid of scenarioIds) {
+        const ref = req.worlds[sid];
+        const w = this.#resolve(ref);
+        if (!w) return refusal5("unknown_ref", [ref], `${ref.logical_id}: no such world for scenario ${sid}.`);
+        worlds.set(sid, w);
+      }
+      const planIds = [];
+      for (const pRef of req.plans) {
+        const p = this.#resolve(pRef);
+        if (!p) return refusal5("unknown_ref", [pRef], `${pRef.logical_id}: no such plan to score.`);
+        planIds.push(pRef.logical_id);
+      }
+      const verdicts = /* @__PURE__ */ new Map();
+      for (const pRef of req.plans) {
+        for (const sid of scenarioIds) {
+          const wRef = req.worlds[sid];
+          const scored = await this.#scorer.score({
+            plan: pRef,
+            world: wRef,
+            scenario: sid,
+            engine_version: req.engine_version
+          });
+          if (isRefusal(scored)) return scored;
+          for (const v of scored.verdicts) {
+            verdicts.set(`${pRef.logical_id}-${v.commitment}-${sid}`, v);
+          }
+        }
+      }
+      const worst_case = /* @__PURE__ */ new Map();
+      for (const pid of planIds) {
+        for (const cid of this.#commitmentIds) {
+          let worstOrd = 3;
+          for (const sid of scenarioIds) {
+            const v = verdicts.get(`${pid}-${cid}-${sid}`);
+            if (v) {
+              const ord = VERDICT_ORDER[v.verdict];
+              if (ord < worstOrd) worstOrd = ord;
+            }
+          }
+          worst_case.set(`${pid}-${cid}`, VERDICT_NAMES[worstOrd]);
+        }
+      }
+      const stamps_compatible = this.#stampsCompatible(worlds);
+      const stamp = await contentHash({
+        plans: req.plans.map((p) => ({ logical_id: p.logical_id, content_hash: p.content_hash })),
+        worlds: scenarioIds.map((sid) => ({ scenario: sid, stamp: worlds.get(sid).stamp })),
+        engine_version: req.engine_version
+      });
+      const tensor = {
+        scenarios: scenarioIds,
+        plans: planIds,
+        commitments: [...this.#commitmentIds],
+        verdicts,
+        worst_case,
+        stamps_compatible
+      };
+      return { tensor, stamp };
+    }
+    #resolve(ref) {
+      if (ref.content_hash) return this.#store.get(ref.content_hash);
+      const versions = this.#store.versions(ref.logical_id);
+      const hash = versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+      return hash ? this.#store.get(hash) : void 0;
+    }
+    #stampsCompatible(worlds) {
+      const consumedSets = [];
+      for (const w of worlds.values()) {
+        const key = w.consumed.map((c) => `${c.logical_id}:${c.content_hash}`).sort().join("|");
+        consumedSets.push(key);
+      }
+      return consumedSets.every((s) => s === consumedSets[0]);
+    }
+  };
+  var cmp5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  var refusal5 = (reason, offending, explanation) => ({
+    refused: true,
+    reason,
+    offending,
+    explanation
+  });
+
   // src/traceView.ts
   var EDGE_ORIENTATION = {
     compiled_into: "forward",
@@ -2086,12 +2190,12 @@
 
   // src/components/refusalBanner.ts
   var esc3 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  function refusalBanner(refusal5) {
-    const refs = refusal5.offending.map((r) => esc3(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
+  function refusalBanner(refusal6) {
+    const refs = refusal6.offending.map((r) => esc3(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
     return `<div class="assay-refusal" role="alert" style="font-family:ui-monospace,monospace;font-size:11.5px;border:1px solid #EFC6C6;border-left:4px solid #A33131;background:#FBEDED;color:#7A1F1F;padding:8px 11px;border-radius:4px">
-  <span style="font-weight:700">Refused \xB7 ${esc3(refusal5.reason)}</span>
+  <span style="font-weight:700">Refused \xB7 ${esc3(refusal6.reason)}</span>
   <span style="margin-left:8px;color:#9A3B3B">offending: ${refs}</span>
-  <div style="margin-top:3px;color:#5E2020">${esc3(refusal5.explanation)}</div>
+  <div style="margin-top:3px;color:#5E2020">${esc3(refusal6.explanation)}</div>
 </div>`;
   }
 
@@ -2274,6 +2378,73 @@ ${items}
 </div>`;
   }
 
+  // src/components/scenarioStrip.ts
+  var esc9 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var STOP2 = {
+    robust: { bg: "#1E6B3A", fg: "#FFFFFF", label: "robust" },
+    marginal: { bg: "#7A6A12", fg: "#FFFFFF", label: "marginal" },
+    tight: { bg: "#9A5212", fg: "#FFFFFF", label: "tight" },
+    violated: { bg: "#8A2020", fg: "#FFFFFF", label: "violated" }
+  };
+  var VERDICT_ORDER2 = {
+    violated: 0,
+    tight: 1,
+    marginal: 2,
+    robust: 3
+  };
+  var marginText2 = (v) => v.margin === void 0 ? "no margin (objective unreachable)" : v.margin.lo === v.margin.hi ? `margin ${v.margin.lo} ${v.margin.unit}` : `margin ${v.margin.lo}\u2013${v.margin.hi} ${v.margin.unit}`;
+  function chipCell(v, collapsed) {
+    const s = STOP2[v.verdict];
+    const arrow = collapsed ? " \u25BC" : "";
+    return `<td data-glow-id="vs:${esc9(v.plan)}:${esc9(v.commitment)}:${esc9(v.scenario)}" data-glow-sig="${esc9(v.verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="${esc9(v.scenario)}: ${esc9(marginText2(v))}" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}${arrow}</span>
+  </td>`;
+  }
+  function worstChip(planId, commitmentId, verdict) {
+    const s = STOP2[verdict];
+    return `<td data-glow-id="vw:${esc9(planId)}:${esc9(commitmentId)}" data-glow-sig="${esc9(verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2;border-left:2px solid #1B2732">
+    <span class="assay-verdict-chip" title="worst case across all scenarios" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
+  </td>`;
+  }
+  function scenarioStrip(tensor, opts) {
+    const { scenarios, plans, commitments, verdicts, worst_case, stamps_compatible } = tensor;
+    const planName = (id) => opts?.planNames?.[id] ?? id;
+    const incompatBanner = stamps_compatible ? "" : `<div class="assay-scenario-incompat" style="background:#FFF3E0;border:1px solid #E6A817;border-radius:5px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#7A5500;font-family:ui-monospace,monospace">\u26A0 stamp lineages differ \u2014 cross-scenario comparison may be misleading (G1 comparability guard)</div>`;
+    const scenarioHeaders = commitments.map((cid) => {
+      const group = scenarios.map((sid) => `<th style="padding:4px 5px;font-size:9.5px;font-weight:600;color:#5B6B77;text-transform:uppercase;letter-spacing:.03em">${esc9(sid)}</th>`).join("");
+      const worstCol = `<th style="padding:4px 5px;font-size:9.5px;font-weight:700;color:#1B2732;text-transform:uppercase;letter-spacing:.03em;border-left:2px solid #1B2732">worst</th>`;
+      return group + worstCol;
+    }).join("");
+    const commitmentHeaders = commitments.map((cid) => `<th colspan="${scenarios.length + 1}" style="padding:5px 8px;text-align:center;font-size:10.5px;color:#1B2732;letter-spacing:.04em;border-bottom:2px solid #D8DFE4">${esc9(cid)}</th>`).join("");
+    const head = `<tr style="text-align:center">
+    <th style="padding:5px 10px;text-align:left"></th>
+    ${commitmentHeaders}
+  </tr>
+  <tr style="text-align:center">
+    <th style="padding:4px 10px;text-align:left;font-size:10px;color:#5B6B77">plan \\ scenario</th>
+    ${scenarioHeaders}
+  </tr>`;
+    const body = plans.map((pid) => {
+      const cells = commitments.map((cid) => {
+        const baseVerdict = verdicts.get(`${pid}-${cid}-${scenarios[0]}`);
+        const baseOrd = baseVerdict ? VERDICT_ORDER2[baseVerdict.verdict] : 3;
+        const scenarioCells = scenarios.map((sid) => {
+          const v = verdicts.get(`${pid}-${cid}-${sid}`);
+          if (!v) return `<td style="padding:4px 5px;text-align:center;color:#B0BAC2">\u2014</td>`;
+          const collapsed = VERDICT_ORDER2[v.verdict] < baseOrd;
+          return chipCell(v, collapsed);
+        });
+        const wc = worst_case.get(`${pid}-${cid}`) ?? "robust";
+        return scenarioCells.join("") + worstChip(pid, cid, wc);
+      }).join("");
+      return `<tr><td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;white-space:nowrap">${esc9(planName(pid))}</td>${cells}</tr>`;
+    }).join("");
+    return `${incompatBanner}<div style="overflow-x:auto"><table class="assay-scenario-strip" style="border-collapse:collapse;width:100%">
+  <thead>${head}</thead>
+  <tbody>${body}</tbody>
+</table></div>`;
+  }
+
   // src/components/legends.ts
   var PILL_LEGEND = {
     band: {
@@ -2311,18 +2482,26 @@ ${items}
     sacrifice: {
       term: "sacrificed commitment",
       gloss: 'A commitment this least-worst option gives up \u2014 computed (the scorer returned "violated"), not authored. Never empty and never a silent drop (G4).'
+    },
+    scenario_collapse: {
+      term: "collapse marker (\u25BC)",
+      gloss: "The verdict under this scenario is worse than under BASE \u2014 the plan's performance drops. No robustness score \u2014 the four-stop verdict IS the data."
+    },
+    worst_case: {
+      term: "worst-case verdict",
+      gloss: "The plan's worst verdict for this commitment across all toggled scenarios (minimax). A real verdict on a real scenario, not a weighted blend."
     }
   };
-  var esc9 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc10 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function legend(pillIds, opts = {}) {
     const title = opts.title ?? "What the pills mean";
     const rows = pillIds.map((id) => PILL_LEGEND[id]).filter((e) => e !== void 0).map(
-      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc9(
+      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc10(
         e.term
-      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc9(e.gloss)}</div></div>`
+      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc10(e.gloss)}</div></div>`
     ).join("");
     return `<details class="assay-legend" style="margin:8px 0;border:1px dashed #C8D2DA;border-radius:6px;padding:4px 10px;background:#F7F9FA">
-  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc9(
+  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc10(
       title
     )}</summary>
   <div style="margin-top:6px">${rows}</div>
@@ -2334,6 +2513,7 @@ ${items}
     s2Matrix: ["verdict"],
     handfulStrip: ["distinct"],
     s3Cards: ["sacrifice", "tier"],
+    scenarioStrip: ["verdict", "scenario_collapse", "worst_case"],
     refusalBanner: ["refusal"]
   };
   function componentLegend(component, title) {
@@ -2354,6 +2534,7 @@ ${items}
     #scorer;
     #handfulSvc;
     #relaxSvc;
+    #robustnessSvc;
     #resolved = false;
     #notice;
     constructor(fx) {
@@ -2391,6 +2572,11 @@ ${items}
       this.#relaxSvc = new RelaxService({
         store: svc.store,
         trace: svc.trace,
+        scorer: this.#scorer,
+        commitments: this.#fx.commitments
+      });
+      this.#robustnessSvc = new RobustnessService({
+        store: svc.store,
         scorer: this.#scorer,
         commitments: this.#fx.commitments
       });
@@ -2540,6 +2726,38 @@ ${items}
             html: componentLegend("s2Matrix") + s2Matrix(COMMITMENT_IDS, matrixRows),
             deps: matrixDeps
           });
+          const scenarioWorlds = { BASE: compiled.world };
+          for (const sid of ["R1", "R2", "R3"]) {
+            const sw = await this.#compiler.compile({
+              knowledge: liveIds.map(refFor),
+              config: this.#fx.config,
+              scenario: sid,
+              engine_version: "0.1.0"
+            });
+            if (!isRefusal(sw)) scenarioWorlds[sid] = sw.world;
+          }
+          if (Object.keys(scenarioWorlds).length > 1) {
+            const rr = await this.#robustnessSvc.robustness({
+              plans: h.plans,
+              worlds: scenarioWorlds,
+              engine_version: "0.1.0"
+            });
+            if (!isRefusal(rr)) {
+              stamps.robustness = rr.stamp;
+              const planNames = {};
+              for (const planRef of h.plans) {
+                const plan2 = this.#svc.store.get(planRef.content_hash);
+                planNames[planRef.logical_id] = `${plan2.logical_id} \xB7 ${plan2.name}`;
+              }
+              panels.push({
+                id: "scenarios",
+                tab: "commander",
+                title: "Commander \xB7 scenario robustness (thesis C)",
+                html: componentLegend("scenarioStrip") + scenarioStrip(rr.tensor, { planNames }),
+                deps: /* @__PURE__ */ new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)])
+              });
+            }
+          }
         }
       }
       const r3m = await this.#compiler.compile({
