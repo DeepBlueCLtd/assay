@@ -53,6 +53,10 @@ Recorded while the interview rationale is fresh; these are re-derivation verdict
 
 Appended as explorations conclude: thesis outcomes at stage exits, SME checkpoint results (comms §12), and re-derivation verdicts as REMIT-side citations arrive to close the `pending` entries above.
 
+| ID | Finding | Evidence (ASSAY side) | REMIT side | Verdict · disposition |
+|---|---|---|---|---|
+| ASSAY-FIND-6 | **"No invented quantities" (DEC-19) held under a live challenge to weight civil harm.** SPEC-18 surfaced that C3's `fires` metric is geometric — it never reads the compiled `civil_density` band — and asked whether C3 *should* be population-weighted (a `weighted_civil_harm` metric the infrastructure already supports). The temptation was concrete and cheap to build; DEC-19 held anyway. Decided as ASSAY-DEC-35 (batch 5): C3 stays a geometric red line because "how much worse is firing into 55,000 than 5,000" is a commander value judgement, not a system quantity. The datum: a red line that *could* trivially be turned into a tunable scalar should not be, and the honest gap (band compiled but not read) is a design feature, not a bug. | DEC-35; issue #41; SPEC-18 §1.2, §5 Q1; `tests/k3-trace.test.ts` stages 5–5b (removing K3 leaves every C3 verdict identical) | REMIT DEC-22 (soft = priority-weighted banded penalties) — the same site as FIND-2's divergence: REMIT's model would express civil-harm-vs-force-protection as a weighted penalty; ASSAY declines the weight and keeps the red line binary | Divergent-and-reinforced · **REMIT register candidate**: where a soft constraint encodes a value trade the commander owns (civil harm), examine whether REMIT's priority weights launder that judgement into a tunable number — the same DEC-22 re-examination FIND-2 opened, now with a concrete instance |
+
 ## 4. Open items
 
 1. ~~The two `pending` entries (FIND-2, FIND-4) need their REMIT-side citations~~ — **closed 2026-07-12**: the REMIT register was consulted directly (REMIT DEC-22, DEC-13/NF3, DEC-21, DEC-25, NF10/DEC-14); FIND-2 concluded divergent, FIND-4 convergent, and FIND-1's REMIT-side citation was tightened from recollection to the register text.

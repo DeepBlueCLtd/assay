@@ -115,6 +115,8 @@ Target set (peers, batch-propagated):
 
 18. ~~Propagation feedback ("glow") as G6 made visible…~~ — **ratified 2026-07-14 as ASSAY-DEC-34** (batch 4): value-keyed glow (row/cell-level, never over-reports) renders G6 as an operator-visible affordance; one-hop trace menu on demand.
 
+19. ~~Should C3 read civil population — a `weighted_civil_harm` metric over the `civil_density` channel (issue #41)?~~ — **ratified 2026-07-14 as ASSAY-DEC-35** (batch 5): **no.** C3 stays a geometric red line; civil harm is not quantified, weighted, or traded (option (a), the honest default). Whether firing into 55,000 is "worse" than 5,000 is a commander/SME value judgement DEC-19 forbids the system from encoding. Resolves issue #41 (surfaced by SPEC-18 §1.2, §5 Q1); affirms DEC-19 and Principle II.
+
 ## 7. Research starting points (ASSAY-DEC-11)
 
 Not a syllabus — first footholds for stage research notes. Developers are expected to search beyond this list and to prefer primary doctrine over summaries.
