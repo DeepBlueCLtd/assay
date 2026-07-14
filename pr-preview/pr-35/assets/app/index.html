@@ -2456,6 +2456,171 @@
     explanation
   });
 
+  // src/depGraph.ts
+  function classifyObject(obj) {
+    if (!obj) return "unknown";
+    if (typeof obj.verdict === "string" && typeof obj.commitment === "string") return "verdict";
+    if (typeof obj.criterion === "string" && typeof obj.score === "object") return "report";
+    if (Array.isArray(obj.channels) || Array.isArray(obj.consumed)) return "world";
+    if (Array.isArray(obj.waypoints) || typeof obj.approach === "string") return "plan";
+    if (typeof obj.status === "string" && typeof obj.logical_id === "string") {
+      const id = obj.logical_id;
+      if (id.startsWith("K")) return "knowledge";
+      if (id.startsWith("C")) return "report";
+    }
+    if (typeof obj.logical_id === "string") {
+      const id = obj.logical_id;
+      if (id.startsWith("K")) return "knowledge";
+      if (id.startsWith("C")) return "report";
+      if (id.startsWith("P")) return "plan";
+    }
+    if (typeof obj.sacrificed !== "undefined" || typeof obj.tie_break === "string") return "report";
+    return "unknown";
+  }
+  function labelObject(hash, obj) {
+    if (!obj) return `${hash.slice(0, 8)}\u2026 (dead end \u2014 G3)`;
+    if (typeof obj.logical_id === "string" && obj.logical_id) {
+      return typeof obj.name === "string" ? `${obj.logical_id} \xB7 ${obj.name}` : obj.logical_id;
+    }
+    if (typeof obj.stamp === "string") {
+      const scenario = typeof obj.scenario === "string" ? obj.scenario : "";
+      return scenario ? `${scenario} world` : `world ${obj.stamp.slice(0, 8)}\u2026`;
+    }
+    if (typeof obj.verdict === "string" && typeof obj.plan === "string" && typeof obj.commitment === "string") {
+      return `${obj.plan}\xB7${obj.commitment}`;
+    }
+    return `${hash.slice(0, 8)}\u2026`;
+  }
+  function metadataString(obj) {
+    if (!obj) return "trace dead end \u2014 no object in store (G3)";
+    const parts = [];
+    if (typeof obj.logical_id === "string") parts.push(obj.logical_id);
+    if (typeof obj.name === "string") parts.push(obj.name);
+    if (typeof obj.status === "string") parts.push(`status: ${obj.status}`);
+    if (typeof obj.scenario === "string") parts.push(`scenario: ${obj.scenario}`);
+    if (typeof obj.verdict === "string") parts.push(`verdict: ${obj.verdict}`);
+    if (typeof obj.plan === "string") parts.push(`plan: ${obj.plan}`);
+    if (typeof obj.commitment === "string") parts.push(`commitment: ${obj.commitment}`);
+    if (obj.value && typeof obj.value === "object") {
+      const v = obj.value;
+      if (typeof v.lo === "number") parts.push(`band: ${v.lo}\u2013${v.hi} ${v.unit ?? ""}`);
+    }
+    if (obj.single_source === true) parts.push("single_source");
+    if (typeof obj.stamp === "string") parts.push(`stamp: ${obj.stamp.slice(0, 8)}\u2026`);
+    return parts.join(" \xB7 ");
+  }
+  function walkDirection(startHash, direction, trace, store, maxDepth) {
+    const layers = [];
+    const visited = /* @__PURE__ */ new Set([startHash]);
+    let frontier = [startHash];
+    for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth++) {
+      const layerNodes = [];
+      const layerEdges = [];
+      const nextFrontier = [];
+      for (const node of frontier) {
+        for (const edge of trace.edges) {
+          const orient = EDGE_ORIENTATION[edge.edge_type];
+          let target;
+          if (direction === "downstream") {
+            if ((orient === "forward" || orient === "either") && edge.from_hash === node) {
+              target = edge.to_hash;
+            }
+            if ((orient === "backward" || orient === "either") && edge.to_hash === node) {
+              target = edge.from_hash;
+            }
+          } else {
+            if ((orient === "forward" || orient === "either") && edge.to_hash === node) {
+              target = edge.from_hash;
+            }
+            if ((orient === "backward" || orient === "either") && edge.from_hash === node) {
+              target = edge.to_hash;
+            }
+          }
+          if (target === void 0 || target === node) continue;
+          const edgeRecord = {
+            from: direction === "downstream" ? node : target,
+            to: direction === "downstream" ? target : node,
+            edge_type: edge.edge_type,
+            depth
+          };
+          if (!visited.has(target)) {
+            visited.add(target);
+            const obj = store.get(target);
+            layerNodes.push({
+              hash: target,
+              label: labelObject(target, obj),
+              type: classifyObject(obj),
+              known: store.exists(target),
+              depth
+            });
+            nextFrontier.push(target);
+          }
+          const edgeKey = `${edgeRecord.from}|${edgeRecord.to}|${edgeRecord.edge_type}`;
+          if (!layerEdges.some((e) => `${e.from}|${e.to}|${e.edge_type}` === edgeKey)) {
+            layerEdges.push(edgeRecord);
+          }
+        }
+      }
+      if (layerNodes.length > 0) {
+        layers.push({ depth, nodes: layerNodes, edges: layerEdges });
+      }
+      frontier = nextFrontier;
+    }
+    return layers;
+  }
+  function buildDepGraph(focusHash, trace, store, maxDepth = 4) {
+    const focusObj = store.get(focusHash);
+    const focus = {
+      hash: focusHash,
+      label: labelObject(focusHash, focusObj),
+      type: classifyObject(focusObj),
+      known: store.exists(focusHash),
+      depth: 0
+    };
+    return {
+      focus,
+      upstream: walkDirection(focusHash, "upstream", trace, store, maxDepth),
+      downstream: walkDirection(focusHash, "downstream", trace, store, maxDepth)
+    };
+  }
+  function nodeDetail(hash, trace, store, maxDepth = 4) {
+    const obj = store.get(hash);
+    const node = {
+      hash,
+      label: labelObject(hash, obj),
+      type: classifyObject(obj),
+      known: store.exists(hash),
+      depth: 0
+    };
+    const upLayers = walkDirection(hash, "upstream", trace, store, maxDepth);
+    const downLayers = walkDirection(hash, "downstream", trace, store, maxDepth);
+    const groupByEdgeType = (layers) => {
+      const result = [];
+      for (const layer of layers) {
+        const byType = /* @__PURE__ */ new Map();
+        for (const e of layer.edges) {
+          const targetHash = layer.nodes.find((n) => n.hash === e.from || n.hash === e.to)?.hash;
+          if (!targetHash) continue;
+          const targetNode = layer.nodes.find((n) => n.hash === targetHash);
+          if (!targetNode) continue;
+          if (!byType.has(e.edge_type)) byType.set(e.edge_type, []);
+          const arr = byType.get(e.edge_type);
+          if (!arr.some((n) => n.hash === targetNode.hash)) arr.push(targetNode);
+        }
+        for (const [edgeType, nodes] of byType) {
+          result.push({ depth: layer.depth, edgeType, nodes });
+        }
+      }
+      return result;
+    };
+    return {
+      node,
+      metadata: metadataString(obj),
+      upstream: groupByEdgeType(upLayers),
+      downstream: groupByEdgeType(downLayers)
+    };
+  }
+
   // src/components/bandPill.ts
   var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function bandPill(band, opts = {}) {
@@ -2703,9 +2868,9 @@ ${items}
   var marginText2 = (v) => v.margin === void 0 ? "no margin (objective unreachable)" : v.margin.lo === v.margin.hi ? `margin ${v.margin.lo} ${v.margin.unit}` : `margin ${v.margin.lo}\u2013${v.margin.hi} ${v.margin.unit}`;
   function chipCell(v, collapsed) {
     const s = STOP2[v.verdict];
-    const arrow = collapsed ? " \u25BC" : "";
+    const arrow2 = collapsed ? " \u25BC" : "";
     return `<td data-glow-id="vs:${esc9(v.plan)}:${esc9(v.commitment)}:${esc9(v.scenario)}" data-glow-sig="${esc9(v.verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="${esc9(v.scenario)}: ${esc9(marginText2(v))}" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}${arrow}</span>
+    <span class="assay-verdict-chip" title="${esc9(v.scenario)}: ${esc9(marginText2(v))}" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}${arrow2}</span>
   </td>`;
   }
   function worstChip(planId, commitmentId, verdict) {
@@ -3371,6 +3536,16 @@ ${items}
         influences: label(influences(this.#svc.trace, hash, known))
       };
     }
+    /** Full transitive dependency graph around an item (issue #24). */
+    depGraph(logicalId, maxDepth = 4) {
+      const hash = this.#latestHash(logicalId);
+      if (!hash) return void 0;
+      return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
+    }
+    /** Detail for a single node in the dependency graph (sidebar). */
+    depNodeDetail(hash, maxDepth = 4) {
+      return nodeDetail(hash, this.#svc.trace, this.#svc.store, maxDepth);
+    }
     /** A short, readable label for a content hash (for the trace menu). */
     describeHash(hash) {
       const o = this.#svc.store.get(hash);
@@ -3424,6 +3599,102 @@ ${items}
     return tabs;
   }
 
+  // src/components/depGraphRiver.ts
+  var esc14 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var NODE_STYLE = {
+    knowledge: { bg: "#2E5C8A", fg: "#FFFFFF" },
+    world: { bg: "#3B7A57", fg: "#FFFFFF" },
+    verdict: { bg: "#7A6A12", fg: "#FFFFFF" },
+    plan: { bg: "#6B3A6B", fg: "#FFFFFF" },
+    report: { bg: "#9A5212", fg: "#FFFFFF" },
+    unknown: { bg: "#8091A0", fg: "#FFFFFF" }
+  };
+  function nodeChip(node, opts = {}) {
+    const style = NODE_STYLE[node.type];
+    const border = opts.focus ? "border:2px solid #1B2732;" : "border:1px solid transparent;";
+    const opacity = node.known ? "" : "opacity:0.6;";
+    const deadEnd = node.known ? "" : " (dead end \u2014 G3)";
+    return `<div class="assay-dep-node" data-dep-hash="${esc14(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc14(node.hash)}${esc14(deadEnd)}">${esc14(node.label)}</div>`;
+  }
+  function layerColumn(layer) {
+    const nodes = layer.nodes.map((n) => nodeChip(n)).join("");
+    return `<div class="assay-dep-layer" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:80px;gap:2px">
+    <div style="font-size:9px;color:#8091A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">depth ${layer.depth}</div>
+    ${nodes}
+  </div>`;
+  }
+  function arrow() {
+    return '<div style="display:flex;align-items:center;padding:0 4px;color:#C8D2DA;font-size:16px">\u2192</div>';
+  }
+  function depGraphRiver(graph) {
+    const upLayers = [...graph.upstream].reverse();
+    const parts = [];
+    for (const layer of upLayers) {
+      parts.push(layerColumn(layer));
+      parts.push(arrow());
+    }
+    parts.push(`<div class="assay-dep-layer assay-dep-focus" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:80px">
+    <div style="font-size:9px;color:#8091A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">focus</div>
+    ${nodeChip(graph.focus, { focus: true })}
+  </div>`);
+    for (const layer of graph.downstream) {
+      parts.push(arrow());
+      parts.push(layerColumn(layer));
+    }
+    const totalNodes = graph.upstream.reduce((s, l) => s + l.nodes.length, 0) + 1 + graph.downstream.reduce((s, l) => s + l.nodes.length, 0);
+    const totalEdges = graph.upstream.reduce((s, l) => s + l.edges.length, 0) + graph.downstream.reduce((s, l) => s + l.edges.length, 0);
+    return `<div class="assay-dep-river" style="overflow-x:auto">
+  <div style="display:flex;align-items:stretch;min-width:max-content;padding:8px 0">${parts.join("")}</div>
+  <div style="font-size:10px;color:#8091A0;margin-top:6px">${totalNodes} node${totalNodes !== 1 ? "s" : ""}, ${totalEdges} edge${totalEdges !== 1 ? "s" : ""} \u2014 click a node for detail</div>
+</div>`;
+  }
+
+  // src/components/depGraphSidebar.ts
+  var esc15 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var TYPE_COLOUR = {
+    knowledge: "#2E5C8A",
+    world: "#3B7A57",
+    verdict: "#7A6A12",
+    plan: "#6B3A6B",
+    report: "#9A5212",
+    unknown: "#8091A0"
+  };
+  function nodeChip2(node) {
+    const colour = TYPE_COLOUR[node.type];
+    const opacity = node.known ? "" : "opacity:0.6;";
+    return `<span class="assay-dep-node" data-dep-hash="${esc15(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc15(node.hash)}">${esc15(node.label)}</span>`;
+  }
+  function directionSection(title, groups) {
+    if (groups.length === 0) {
+      return `<div style="margin:8px 0">
+      <div style="font-size:10.5px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
+      <div style="font-size:11px;color:#8091A0">\u2014 none \u2014</div>
+    </div>`;
+    }
+    const rows = groups.map(
+      (g) => `<div style="margin:4px 0;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">
+          <div style="font-size:9.5px;color:#8091A0;margin-bottom:2px">depth ${g.depth} \xB7 ${esc15(g.edgeType)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:2px">${g.nodes.map((n) => nodeChip2(n)).join("")}</div>
+        </div>`
+    ).join("");
+    return `<div style="margin:8px 0">
+    <div style="font-size:10.5px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
+    ${rows}
+  </div>`;
+  }
+  function depGraphSidebar(detail) {
+    const typeColour = TYPE_COLOUR[detail.node.type];
+    return `<div class="assay-dep-sidebar">
+  <div style="margin-bottom:8px">
+    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc15(detail.node.label)}</span>
+    <span style="font-size:10px;color:#8091A0;margin-left:6px">${esc15(detail.node.type)}</span>
+  </div>
+  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc15(detail.metadata)}</div>
+  ${directionSection("Upstream (depends on)", detail.upstream)}
+  ${directionSection("Downstream (feeds into)", detail.downstream)}
+</div>`;
+  }
+
   // src/app/shell.ts
   var TABS = [
     { id: "j2", label: "J-2 workbench", role: "ROLE: J-2" },
@@ -3456,6 +3727,13 @@ ${items}
 .assay-menu .row{padding:2px 0;font-family:ui-monospace,monospace;font-size:11px}
 .assay-menu .edge{color:#8091A0}
 .assay-notice{margin:10px 0}
+.assay-dep-overlay{position:fixed;inset:0;z-index:100;background:rgba(27,39,50,.6);display:flex;align-items:stretch;justify-content:center}
+.assay-dep-overlay-inner{background:#fff;margin:24px;border-radius:12px;display:flex;flex-direction:column;width:100%;max-width:1400px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
+.assay-dep-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.assay-dep-body{display:flex;flex:1;overflow:hidden}
+.assay-dep-river-pane{flex:1;overflow:auto;padding:14px 18px}
+.assay-dep-sidebar-pane{width:320px;border-left:1px solid var(--line);overflow-y:auto;padding:14px;background:#FCFDFD}
+.assay-dep-node:hover{filter:brightness(1.15)}
 `;
   function mountShell(root, app) {
     const doc = root.ownerDocument;
@@ -3624,11 +3902,61 @@ ${items}
       };
       menuEl = doc.createElement("div");
       menuEl.className = "assay-menu";
-      menuEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${logicalId} \u2014 relationships</div>` + section("Informs (upstream)", m.informs) + section("Influences (downstream)", m.influences) + `<div style="margin-top:6px;font-size:10px;color:var(--muted)">one hop \u2014 click a chip again to walk further</div>`;
+      menuEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${logicalId} \u2014 relationships</div>` + section("Informs (upstream)", m.informs) + section("Influences (downstream)", m.influences) + `<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><a href="#" class="assay-dep-open" style="font-size:11px;color:#3E5D8A;font-weight:600;text-decoration:none" data-dep-logical-id="${logicalId}">View full graph \u2192</a></div><div style="margin-top:4px;font-size:10px;color:var(--muted)">one hop \u2014 click a chip again to walk further</div>`;
+      const depLink = menuEl.querySelector(".assay-dep-open");
+      depLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+        openDepOverlay(logicalId);
+      });
       menuEl.style.left = `${ev.pageX + 6}px`;
       menuEl.style.top = `${ev.pageY + 6}px`;
       menuEl.addEventListener("click", (e) => e.stopPropagation());
       doc.body.appendChild(menuEl);
+    }
+    let depOverlay = null;
+    function closeDepOverlay() {
+      if (depOverlay) {
+        depOverlay.remove();
+        depOverlay = null;
+      }
+    }
+    function openDepOverlay(logicalId) {
+      closeDepOverlay();
+      const graph = app.depGraph(logicalId);
+      if (!graph) return;
+      depOverlay = doc.createElement("div");
+      depOverlay.className = "assay-dep-overlay";
+      depOverlay.innerHTML = `<div class="assay-dep-overlay-inner">
+      <div class="assay-dep-header">
+        <div style="font-weight:600;font-size:14px">${logicalId} \u2014 dependency graph</div>
+        <button class="assay-btn secondary assay-dep-close" style="padding:4px 10px;font-size:11px">Close \u2715</button>
+      </div>
+      <div class="assay-dep-body">
+        <div class="assay-dep-river-pane">${depGraphRiver(graph)}</div>
+        <div class="assay-dep-sidebar-pane" style="font-size:12px;color:var(--muted)">Click a node to see its detail.</div>
+      </div>
+    </div>`;
+      depOverlay.querySelector(".assay-dep-close").addEventListener("click", closeDepOverlay);
+      depOverlay.addEventListener("click", (e) => {
+        if (e.target === depOverlay) closeDepOverlay();
+      });
+      wireDepNodes(depOverlay, logicalId);
+      doc.body.appendChild(depOverlay);
+    }
+    function wireDepNodes(overlay, currentFocusId) {
+      for (const el2 of Array.from(overlay.querySelectorAll(".assay-dep-node"))) {
+        el2.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          const hash = el2.dataset.depHash;
+          if (!hash) return;
+          const detail = app.depNodeDetail(hash);
+          const sidebar = overlay.querySelector(".assay-dep-sidebar-pane");
+          sidebar.innerHTML = depGraphSidebar(detail);
+          wireDepNodes(sidebar, currentFocusId);
+        });
+      }
     }
     void rerender();
   }
