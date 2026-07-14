@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<!--
+  ASSAY blog article — scenario robustness / "don't plan on most-likely" (comms plan §6).
+
+  Thesis C's argument surface: score each plan against every adversary COA,
+  watch the favourite collapse under the scenario it wasn't designed for.
+  The minimax posture over Meridian fixtures. Self-contained and static.
+
+  Frozen at publication — 2026-07-14.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Don't plan on most-likely — ASSAY</title>
+<meta name="description" content="Score every plan against every adversary COA. The favourite collapses under the scenario it wasn't designed for — and the scenario strip shows exactly where.">
+<style>
+  :root { color-scheme: light dark;
+    --ink:#1B2732; --ink-soft:#33414D; --muted:#5B6B77; --page:#EDF0F2; --panel:#FCFDFD;
+    --panel-2:#F1F3F5; --line:#D8DFE4; --line-soft:#E4E9ED;
+    --band-ink:#9A6A14; --band-fill:#F7EDD8; --band-line:#E7D3A6;
+    --robust-ink:#14655F; --robust-fill:#E2EFEA; --robust-line:#BFDCD3;
+    --blue-ink:#3E5D8A; --blue-fill:#E6ECF6; --blue-line:#C8D5EA;
+    --red-ink:#A33131; --red-fill:#F8E2E2; --red-line:#EFC6C6;
+    --shadow:0 1px 2px rgba(27,39,50,.05),0 8px 24px rgba(27,39,50,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark){ :root{
+    --ink:#E7ECF0; --ink-soft:#C4CED6; --muted:#93A2AE; --page:#10171D; --panel:#17212A;
+    --panel-2:#131C24; --line:#2A3945; --line-soft:#222E38;
+    --band-ink:#E0B457; --band-fill:#2E2513; --band-line:#4A3C1C;
+    --robust-ink:#63C3B6; --robust-fill:#122824; --robust-line:#1F3F39;
+    --blue-ink:#8FB0DE; --blue-fill:#182333; --blue-line:#2A3A52;
+    --red-ink:#E88A8A; --red-fill:#2D1515; --red-line:#4A1E1E;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans);
+    font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a { color:var(--blue-ink); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+  header.top { background:var(--panel); border-bottom:1px solid var(--line); }
+  header.top .wrap { padding:30px 24px 28px; }
+  .crumbs { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .crumbs a { text-decoration:none; } .crumbs a:hover { color:var(--blue-ink); }
+  .meta-line { font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:16px 0 0; }
+  .chip { padding:2px 9px; border-radius:999px; border:1px solid; }
+  .chip.illu { border-color:var(--band-line); background:var(--band-fill); color:var(--band-ink); }
+  .chip.spec { border-color:var(--line); background:var(--panel-2); color:var(--muted); }
+  h1 { font-size:clamp(26px,4.4vw,34px); letter-spacing:-.02em; line-height:1.15; margin:14px 0 6px; }
+  article { padding:32px 0 10px; }
+  article p { margin:0 0 18px; color:var(--ink-soft); }
+  article h2 { font-size:21px; letter-spacing:-.01em; margin:34px 0 10px; }
+  article b { color:var(--ink); }
+  .demo { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:20px 22px; box-shadow:var(--shadow); margin:6px 0 8px; overflow-x:auto; }
+  .demo-cap { font-size:13px; color:var(--muted); margin:8px 2px 26px; }
+  .demo-cap b { color:var(--band-ink); }
+  .matrix { border-collapse:collapse; font-family:var(--mono); font-size:13px; width:100%; }
+  .matrix th { padding:6px 10px; text-align:left; color:var(--muted); font-weight:400;
+    border-bottom:2px solid var(--line); }
+  .matrix td { padding:6px 10px; text-align:center; border-bottom:1px solid var(--line-soft); }
+  .matrix .plan-name { text-align:left; color:var(--ink); font-weight:600; white-space:nowrap; }
+  .v-chip { display:inline-block; padding:2px 10px; border-radius:4px; font-size:12px;
+    font-weight:600; color:#fff; }
+  .v-robust { background:#1E6B3A; } .v-marginal { background:#7A6A12; }
+  .v-tight { background:#9A5212; } .v-violated { background:#8A2020; }
+  .collapse-mark { font-size:10px; vertical-align:super; color:var(--red-ink); }
+  .note { border:1px solid var(--band-line); background:var(--band-fill); color:var(--band-ink);
+    border-radius:12px; padding:15px 18px; font-size:14.5px; line-height:1.6; margin:6px 0 26px; }
+  .note b { color:var(--band-ink); }
+  .doctrine { border:1px solid var(--line); background:var(--panel-2); border-radius:12px;
+    padding:15px 18px; font-size:15px; line-height:1.6; font-style:italic; color:var(--ink-soft);
+    margin:6px 0 20px; }
+  .doctrine cite { font-style:normal; font-family:var(--mono); font-size:12px; color:var(--muted);
+    display:block; margin-top:6px; }
+  .toggle-row { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 8px; }
+  .toggle-btn { font-family:var(--mono); font-size:12px; padding:5px 14px; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel-2); color:var(--muted); cursor:pointer;
+    transition:all .12s; }
+  .toggle-btn:hover { border-color:var(--blue-line); color:var(--blue-ink); }
+  .toggle-btn.active { background:var(--blue-fill); border-color:var(--blue-line); color:var(--blue-ink); font-weight:600; }
+  .sources { border-top:1px solid var(--line-soft); margin-top:28px; padding-top:18px;
+    font-size:14px; color:var(--muted); }
+  .sources a { text-decoration:none; }
+  .sources li { margin-bottom:5px; }
+  footer { border-top:1px solid var(--line); background:var(--panel); margin-top:26px; }
+  footer .wrap { padding:24px; color:var(--muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="crumbs"><a href="../">&larr; Blog</a> &nbsp;&middot;&nbsp; <a href="../../">ASSAY home</a></div>
+    <div class="meta-line">
+      <span>2026-07-14</span>
+      <span class="chip illu">illustrative widget &mdash; real rule, fixture data</span>
+      <span class="chip spec">SPEC-10</span>
+    </div>
+    <h1>Don&rsquo;t plan on most-likely</h1>
+  </div>
+</header>
+
+<div class="wrap">
+<article>
+  <p>
+    A plan that looks excellent against the most-likely adversary course of action may
+    catastrophically fail under the most-dangerous one. Doctrine has said this for decades.
+    ASSAY makes it <b>computable and visible</b> &mdash; not as an assertion that &ldquo;you should
+    consider R2,&rdquo; but as scored data the commander reads directly.
+  </p>
+
+  <div class="doctrine">
+    &ldquo;The commander should not plan solely on the most likely enemy COA.&rdquo;
+    <cite>JP 5-0, Joint Planning, ch. IV</cite>
+  </div>
+
+  <h2>Three postures, two rejected</h2>
+  <p>
+    Robust-optimisation literature offers three postures for multi-scenario planning.
+    <b>Scenario-weighted</b> (probability-weighted expected value) is the civilian OR default
+    &mdash; and exactly the posture JP 2-01.3&rsquo;s doctrine warns against. In ASSAY it is
+    doubly forbidden: the <span style="font-family:var(--mono);font-size:.9em">scenario_weight</span>
+    firewall (knowledge model &sect;9) blocks scenario probabilities from entering any computation,
+    and a probability-weighted band would collapse three interval-valued outcomes into a false-precision
+    scalar (DEC-15).
+  </p>
+  <p>
+    <b>Minimax regret</b> (Savage, 1951) measures each plan&rsquo;s shortfall from the per-scenario
+    optimum. The problem: regret is relative. A plan with violated <span style="font-family:var(--mono);font-size:.9em">must</span>
+    commitments can show low regret if the per-scenario optimum is also poor. The commander asking
+    &ldquo;does this plan survive R2?&rdquo; does not want &ldquo;it&rsquo;s only 3 steps worse than
+    the best R2 plan&rdquo; &mdash; they want the actual verdict. Regret launders absolute failure
+    into relative mediocrity.
+  </p>
+  <p>
+    <b>Minimax (worst-case)</b> survives. The plan is judged by its worst scenario&rsquo;s verdicts
+    &mdash; real verdicts on real scenarios, traced back to named knowledge (G3). No information is
+    destroyed. No weights, no blending, no invented robustness index.
+  </p>
+
+  <h2>The scenario strip</h2>
+  <p>
+    The mechanism is a thin loop over the SPEC-07 scorer (DEC-10): compile one world per scenario,
+    score each plan against each world, assemble the <span style="font-family:var(--mono);font-size:.9em">plan
+    &times; commitment &times; scenario</span> verdict tensor. The
+    <span style="font-family:var(--mono);font-size:.9em">scenarioStrip</span> component renders it as
+    a grid &mdash; same plans, same commitments, but with the scenario dimension fanned out. Toggle a
+    scenario to see what changes.
+  </p>
+
+  <div class="demo" id="strip-demo">
+    <div class="toggle-row">
+      <button class="toggle-btn active" data-scenario="BASE" onclick="toggleScenario(this)">BASE</button>
+      <button class="toggle-btn" data-scenario="R1" onclick="toggleScenario(this)">R1 Fortress</button>
+      <button class="toggle-btn" data-scenario="R2" onclick="toggleScenario(this)">R2 Strait Denial</button>
+    </div>
+    <table class="matrix" id="strip-table">
+      <thead>
+        <tr id="strip-header"></tr>
+      </thead>
+      <tbody id="strip-body"></tbody>
+    </table>
+    <div id="worst-row" style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted)"></div>
+  </div>
+  <p class="demo-cap">
+    <b>Illustrative widget, fixture data.</b> The strip shows Meridian plans P1 (strait-early) and
+    P2 (sweep-first) scored against commitments C1&ndash;C4 under each scenario. Toggle R2 on to see
+    P1&rsquo;s C1/C2 collapse. The verdict chips follow the shipped
+    <span style="font-family:var(--mono);font-size:.9em">scenarioStrip</span> component&rsquo;s colour
+    language. Frozen as shipped on 2026-07-14.
+  </p>
+
+  <script>
+  (function(){
+    var VERDICTS = {
+      'P1-C1-BASE':'robust','P1-C2-BASE':'robust','P1-C3-BASE':'marginal','P1-C4-BASE':'tight',
+      'P1-C1-R1':'robust','P1-C2-R1':'robust','P1-C3-R1':'marginal','P1-C4-R1':'tight',
+      'P1-C1-R2':'violated','P1-C2-R2':'violated','P1-C3-R2':'tight','P1-C4-R2':'violated',
+      'P2-C1-BASE':'marginal','P2-C2-BASE':'tight','P2-C3-BASE':'robust','P2-C4-BASE':'robust',
+      'P2-C1-R1':'marginal','P2-C2-R1':'marginal','P2-C3-R1':'robust','P2-C4-R1':'robust',
+      'P2-C1-R2':'marginal','P2-C2-R2':'marginal','P2-C3-R2':'robust','P2-C4-R2':'robust'
+    };
+    var PLANS = ['P1 strait-early','P2 sweep-first'];
+    var PLAN_IDS = ['P1','P2'];
+    var COMMITS = ['C1 depth','C2 width','C3 clearance','C4 capacity'];
+    var COMMIT_IDS = ['C1','C2','C3','C4'];
+    var activeScenarios = ['BASE'];
+    var STOP = {robust:'#1E6B3A',marginal:'#7A6A12',tight:'#9A5212',violated:'#8A2020'};
+    var ORD = {violated:0,tight:1,marginal:2,robust:3};
+    var NAMES = ['violated','tight','marginal','robust'];
+
+    function chip(v, collapsed) {
+      var arrow = collapsed ? ' ▼' : '';
+      return '<span style="display:inline-block;min-width:52px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#fff;background:'+STOP[v]+'">'+v+arrow+'</span>';
+    }
+
+    window.toggleScenario = function(btn) {
+      var s = btn.getAttribute('data-scenario');
+      if (s === 'BASE') return;
+      var idx = activeScenarios.indexOf(s);
+      if (idx > -1) { activeScenarios.splice(idx,1); btn.classList.remove('active'); }
+      else { activeScenarios.push(s); btn.classList.add('active'); }
+      render();
+    };
+
+    function render() {
+      var hdr = '<th style="padding:6px 10px;text-align:left;color:var(--muted);font-weight:400;border-bottom:2px solid var(--line)"></th>';
+      for (var ci=0;ci<COMMITS.length;ci++) {
+        hdr += '<th colspan="'+activeScenarios.length+'" style="padding:6px 10px;text-align:center;color:var(--ink);font-weight:600;border-bottom:2px solid var(--line);font-size:12px">'+COMMITS[ci]+'</th>';
+        hdr += '<th style="padding:6px 10px;text-align:center;color:var(--ink);font-weight:700;border-bottom:2px solid var(--line);border-left:2px solid var(--ink);font-size:11px">worst</th>';
+      }
+      document.getElementById('strip-header').innerHTML = hdr;
+
+      var subHdr = '<tr><td></td>';
+      for (var ci=0;ci<COMMITS.length;ci++) {
+        for (var si=0;si<activeScenarios.length;si++) {
+          subHdr += '<td style="padding:3px 6px;text-align:center;font-family:var(--mono);font-size:9.5px;color:var(--muted);font-weight:600;text-transform:uppercase">'+activeScenarios[si]+'</td>';
+        }
+        subHdr += '<td style="border-left:2px solid var(--ink)"></td>';
+      }
+      subHdr += '</tr>';
+
+      var body = subHdr;
+      for (var pi=0;pi<PLANS.length;pi++) {
+        var row = '<tr><td class="plan-name" style="padding:6px 10px;font-size:12px">'+PLANS[pi]+'</td>';
+        for (var ci=0;ci<COMMITS.length;ci++) {
+          var worstOrd = 3;
+          for (var si=0;si<activeScenarios.length;si++) {
+            var key = PLAN_IDS[pi]+'-'+COMMIT_IDS[ci]+'-'+activeScenarios[si];
+            var v = VERDICTS[key] || 'robust';
+            var baseKey = PLAN_IDS[pi]+'-'+COMMIT_IDS[ci]+'-BASE';
+            var baseV = VERDICTS[baseKey] || 'robust';
+            var collapsed = ORD[v] < ORD[baseV];
+            row += '<td style="padding:4px 6px;text-align:center;border-bottom:1px solid var(--line-soft)">'+chip(v,collapsed)+'</td>';
+            if (ORD[v] < worstOrd) worstOrd = ORD[v];
+          }
+          row += '<td style="padding:4px 6px;text-align:center;border-bottom:1px solid var(--line-soft);border-left:2px solid var(--ink)">'+chip(NAMES[worstOrd],false)+'</td>';
+        }
+        row += '</tr>';
+        body += row;
+      }
+      document.getElementById('strip-body').innerHTML = body;
+    }
+
+    render();
+  })();
+  </script>
+
+  <h2>The R1-optimal collapse</h2>
+  <p>
+    Meridian&rsquo;s vignette engineers the robustness trap. R1 (Fortress Halcyon, most-likely) does
+    not mine the strait. P1 (strait-early) routes PACKHORSE through Halcyon Strait &mdash; fast,
+    efficient, <span class="v-chip v-robust">robust</span> on C1 and C2 under BASE and R1.
+  </p>
+  <p>
+    Toggle <b>R2</b> (Strait Denial). Mines appear in the strait early and deep. P1&rsquo;s mobility
+    factor through those cells drops to <span style="font-family:var(--mono);font-size:.9em">[0.1, 0.4]</span>,
+    threat rises to <span style="font-family:var(--mono);font-size:.9em">[0.6, 0.95]</span>. The
+    strait-open timing band inflates past the C2 threshold. C1 and C2 collapse to
+    <span class="v-chip v-violated">violated</span>. The favourite dies.
+  </p>
+  <p>
+    P2 (sweep-first) avoids the early strait transit. Its C2 stays
+    <span class="v-chip v-marginal">marginal</span> under all scenarios &mdash; slightly worse
+    against R1, surviving against all three. The scenario strip shows the trade at a glance: the
+    commander sees <em>which</em> commitments fail and <em>under which scenario</em>, at the
+    four-stop scale, without a single scalar summarising &ldquo;how robust&rdquo; each plan is.
+  </p>
+
+  <h2>What the strip does not show</h2>
+  <p>
+    Three deliberate absences. <b>No scenario weights</b> &mdash; K14a&ndash;c are firewalled from
+    the computation and the surface (DEC-15, knowledge model &sect;9). The strip orders scenarios by
+    logical id, not by probability. <b>No robustness index</b> &mdash; any scalar summary would
+    collapse the verdict tensor past banded honesty. <b>No recommendation</b> &mdash; the strip
+    shows data; the insight (&ldquo;don&rsquo;t plan on most-likely&rdquo;) is the commander&rsquo;s
+    own, drawn from reading the collapse, not from a system-generated label.
+  </p>
+
+  <div class="note">
+    <b>Assessment, not fact &mdash; and demonstrator, not product.</b> Every number here renders the
+    <b>Meridian Archipelago</b>, an engineered fiction (ASSAY-DEC-8). Nothing on this page reflects
+    any real operational picture. A thesis in ASSAY is only ever <em>explored</em>, never claimed
+    proven.
+  </div>
+
+  <div class="sources">
+    <p style="margin-bottom:10px"><b>Sources &amp; trace</b></p>
+    <ul>
+      <li>Robustness service &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/robustness.ts">src/robustness.ts</a></li>
+      <li>Scenario strip &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/src/components/scenarioStrip.ts">src/components/scenarioStrip.ts</a></li>
+      <li>Research note &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/research/06-robustness.md">06-robustness.md</a> (the minimax decision)</li>
+      <li>Minimax posture &mdash; A. Wald, <em>Statistical Decision Functions</em> (1950); scenario-weighted and minimax regret rejected &sect;1</li>
+      <li>JP 5-0, ch. IV &mdash; &ldquo;the commander should not plan solely on the most likely enemy COA&rdquo;</li>
+      <li>JP 2-01.3, &sect;II-9 &mdash; most-likely / most-dangerous COA doctrine (JIPOE step 4)</li>
+      <li>Fixtures &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/assay-vignette.md">R1, R2</a> (Fortress Halcyon, Strait Denial) in the Meridian vignette &sect;4</li>
+      <li>Scenario-weight firewall &mdash; <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/assay-register.md">ASSAY-DEC-15</a> in the decision register</li>
+    </ul>
+  </div>
+</article>
+</div>
+
+<footer>
+  <div class="wrap">
+    ASSAY &mdash; a docs-first demonstrator. <a href="https://github.com/DeepBlueCLtd/assay">github.com/DeepBlueCLtd/assay</a>
+  </div>
+</footer>
+</body>
+</html>
