@@ -100,56 +100,119 @@
     every verdict it influenced.
   </p>
 
-  <h2>Backward walk: verdict &rarr; knowledge</h2>
+  <h2>Try it: click a node, see what it reaches</h2>
   <p>
-    Start at a verdict and walk backward through the trace graph. Each edge names its type &mdash;
-    <span style="font-family:var(--mono);font-size:.9em">scored_from</span>,
-    <span style="font-family:var(--mono);font-size:.9em">compiled_into</span>,
-    <span style="font-family:var(--mono);font-size:.9em">source</span> &mdash; so the
-    chain is not just "connected" but <em>typed</em>: you know whether the link is "was scored
-    from" or "was compiled from" or "was sourced from."
+    Click any node below. <b>Forward walk</b> (click a knowledge item) lights up everything it
+    feeds &mdash; the channels it compiles into, the verdicts those channels produce. <b>Backward
+    walk</b> (click a verdict) lights up everything that fed it. The edges are typed: you see
+    <em>how</em> each link connects, not just that it does.
   </p>
-  <div class="demo">
-    <p style="margin:0 0 8px;font-size:13px;color:var(--muted)">Backward walk from a P1-C1 verdict:</p>
-    <div class="trace-row">
-      <span class="t-node t-verdict">P1-C1 robust</span>
-      <span class="t-edge">&larr; scored_from</span>
-      <span class="t-node t-channel">FE-DEPTH</span>
-      <span class="t-edge">&larr; compiled_into</span>
-      <span class="t-node t-knowledge">K1 (depth)</span>
+  <div class="demo" id="trace-demo">
+    <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Click a node to walk its closure:</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="trace-row" style="justify-content:center">
+        <span class="t-node t-knowledge" data-trace="k1" style="cursor:pointer">K1 (depth)</span>
+        <span class="t-node t-knowledge" data-trace="k2" style="cursor:pointer">K2 (capacity)</span>
+        <span class="t-node t-knowledge" data-trace="k5" style="cursor:pointer">K5 (weather)</span>
+      </div>
+      <div style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        <span data-edge="k1-d">&darr; compiled_into</span> &nbsp;&nbsp;
+        <span data-edge="k2-c">&darr; compiled_into</span> &nbsp;&nbsp;
+        <span data-edge="k5-c k5-d">&darr; compiled_into</span>
+      </div>
+      <div class="trace-row" style="justify-content:center">
+        <span class="t-node t-channel" data-trace="depth" style="cursor:pointer">FE-DEPTH</span>
+        <span class="t-node t-channel" data-trace="capacity" style="cursor:pointer">FE-CAPACITY</span>
+      </div>
+      <div style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        <span data-edge="d-v11 d-v21">&darr; scored_from</span> &nbsp;&nbsp;
+        <span data-edge="c-v14 c-v24">&darr; scored_from</span>
+      </div>
+      <div class="trace-row" style="justify-content:center">
+        <span class="t-node t-verdict" data-trace="v11" style="cursor:pointer">P1-C1</span>
+        <span class="t-node t-verdict" data-trace="v14" style="cursor:pointer">P1-C4</span>
+        <span class="t-node t-verdict" data-trace="v21" style="cursor:pointer">P2-C1</span>
+        <span class="t-node t-verdict" data-trace="v24" style="cursor:pointer">P2-C4</span>
+      </div>
     </div>
-    <p style="margin:14px 0 8px;font-size:13px;color:var(--muted)">Backward walk from a P1-C4 verdict:</p>
-    <div class="trace-row">
-      <span class="t-node t-verdict">P1-C4 tight</span>
-      <span class="t-edge">&larr; scored_from</span>
-      <span class="t-node t-channel">FE-CAPACITY</span>
-      <span class="t-edge">&larr; compiled_into</span>
-      <span class="t-node t-knowledge">K2 (capacity)</span>
-    </div>
+    <div id="trace-info" style="margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--muted);min-height:20px"></div>
   </div>
-
-  <h2>Forward walk: knowledge &rarr; everything it touches</h2>
-  <p>
-    Walk forward from K2 (causeway capacity) and you reach every channel, score, and verdict that
-    K2 feeds. This is the shape behind the interactive app's <b>glow</b> (SPEC-16): when K2
-    changes, the glow lights up exactly the forward closure &mdash; not everything on the screen,
-    and not less than what actually moved. The glow <em>is</em> the trace walk, made visible.
+  <p class="demo-cap">
+    <b>Illustrative widget, fixture data.</b> The graph is a simplified view of Meridian's trace
+    topology. Click K2 to see the forward closure (FE-CAPACITY &rarr; P1-C4, P2-C4). Click
+    P1-C1 to see the backward closure (FE-DEPTH &larr; K1). Frozen as shipped on 2026-07-11.
   </p>
-  <div class="demo">
-    <p style="margin:0 0 8px;font-size:13px;color:var(--muted)">Forward walk from K2:</p>
-    <div class="trace-row">
-      <span class="t-node t-knowledge">K2 (capacity)</span>
-      <span class="t-edge">compiled_into &rarr;</span>
-      <span class="t-node t-channel">FE-CAPACITY</span>
-      <span class="t-edge">scored_from &rarr;</span>
-      <span class="t-node t-verdict">P1-C4</span>
-    </div>
-    <div class="trace-row" style="margin-left:0">
-      <span style="width:108px;display:inline-block"></span>
-      <span class="t-edge" style="margin-left:110px">scored_from &rarr;</span>
-      <span class="t-node t-verdict">P2-C4</span>
-    </div>
-  </div>
+  <script>
+  (function(){
+    var GRAPH = {
+      k1:       {fwd:['depth'],    bwd:[]},
+      k2:       {fwd:['capacity'], bwd:[]},
+      k5:       {fwd:['depth','capacity'], bwd:[]},
+      depth:    {fwd:['v11','v21'], bwd:['k1','k5']},
+      capacity: {fwd:['v14','v24'], bwd:['k2','k5']},
+      v11:      {fwd:[], bwd:['depth']},
+      v14:      {fwd:[], bwd:['capacity']},
+      v21:      {fwd:[], bwd:['depth']},
+      v24:      {fwd:[], bwd:['capacity']}
+    };
+    var EDGE_MAP = {
+      'k1-d':'k1→depth', 'k2-c':'k2→capacity', 'k5-c':'k5→capacity', 'k5-d':'k5→depth',
+      'd-v11':'depth→v11', 'd-v21':'depth→v21', 'c-v14':'capacity→v14', 'c-v24':'capacity→v24'
+    };
+    var demo = document.getElementById('trace-demo');
+    var info = document.getElementById('trace-info');
+    var nodes = demo.querySelectorAll('[data-trace]');
+    var edges = demo.querySelectorAll('[data-edge]');
+    function closure(id, dir){
+      var visited = new Set(); var queue = [id];
+      while(queue.length){
+        var n = queue.shift();
+        if(visited.has(n)) continue;
+        visited.add(n);
+        var next = GRAPH[n] ? GRAPH[n][dir] : [];
+        next.forEach(function(x){ queue.push(x); });
+      }
+      return visited;
+    }
+    function highlight(clicked){
+      var isKnowledge = clicked === 'k1' || clicked === 'k2' || clicked === 'k5';
+      var dir = isKnowledge ? 'fwd' : 'bwd';
+      var lit = closure(clicked, dir);
+      lit.add(clicked);
+      nodes.forEach(function(el){
+        var id = el.getAttribute('data-trace');
+        el.style.opacity = lit.has(id) ? '1' : '0.25';
+        el.style.transform = lit.has(id) ? 'scale(1.08)' : 'scale(1)';
+        el.style.transition = 'opacity .2s, transform .2s';
+      });
+      edges.forEach(function(el){
+        var ids = el.getAttribute('data-edge').split(' ');
+        var anyLit = ids.some(function(eid){
+          var parts = Object.keys(EDGE_MAP).filter(function(k){ return k === eid; });
+          if(!parts.length) return false;
+          var mapped = EDGE_MAP[eid].split('→');
+          return lit.has(mapped[0]) && lit.has(mapped[1]);
+        });
+        el.style.opacity = anyLit ? '1' : '0.2';
+        el.style.fontWeight = anyLit ? '700' : '400';
+        el.style.transition = 'opacity .2s';
+      });
+      var label = isKnowledge ? 'Forward' : 'Backward';
+      var reachable = Array.from(lit).filter(function(x){ return x !== clicked; });
+      info.textContent = label + ' walk from ' + clicked + ': reaches ' + reachable.join(', ');
+    }
+    nodes.forEach(function(el){
+      el.addEventListener('click', function(){ highlight(el.getAttribute('data-trace')); });
+    });
+    demo.addEventListener('click', function(e){
+      if(!e.target.hasAttribute('data-trace')){
+        nodes.forEach(function(el){ el.style.opacity='1'; el.style.transform='scale(1)'; });
+        edges.forEach(function(el){ el.style.opacity='1'; el.style.fontWeight='400'; });
+        info.textContent = '';
+      }
+    });
+  })();
+  </script>
   <p class="demo-cap">
     <b>Illustrative widget, fixture data.</b> The trace chains are simplified views of the
     shipped <span style="font-family:var(--mono);font-size:.9em">TraceStore.walk()</span>
