@@ -54,7 +54,7 @@ export function sensitivityTable(ranking: SensitivityRanking[]): string {
       const singleSourceChip = entry.single_source
         ? '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:#8A2020;color:#FFFFFF">single-source</span>'
         : '<span style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77">—</span>';
-      return `<tr data-glow-id="sens:${esc(logicalId)}" data-glow-sig="${entry.changed_count}">
+      return `<tr data-logical-id="${esc(logicalId)}" data-glow-id="sens:${esc(logicalId)}" data-glow-sig="${entry.changed_count}">
         <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc(logicalId)}</td>
         <td style="padding:5px 10px;text-align:center;font-family:ui-monospace,monospace;font-size:11px;${changedStyle};border-bottom:1px solid #EDF0F2">${entry.changed_count}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${singleSourceChip}</td>

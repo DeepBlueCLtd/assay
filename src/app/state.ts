@@ -40,6 +40,7 @@ import type { ScenarioVerdictTensor } from '../seam.js';
 import { checkEncoding } from '../encoding.js';
 import { confidenceLint } from '../lint.js';
 import { informs, influences, type Neighbour } from '../traceView.js';
+import { buildDepGraph, nodeDetail, type DepGraph, type DepGraphNodeDetail } from '../depGraph.js';
 
 import { s1Table, type S1Row } from '../components/s1Table.js';
 import { channelTrace } from '../components/channelTrace.js';
@@ -522,6 +523,23 @@ export class AppState {
       informs: label(informs(this.#svc.trace, hash, known)),
       influences: label(influences(this.#svc.trace, hash, known)),
     };
+  }
+
+  /** Full transitive dependency graph around an item (issue #24). */
+  depGraph(logicalId: string, maxDepth = 4): DepGraph | undefined {
+    const hash = this.#latestHash(logicalId);
+    if (!hash) return undefined;
+    return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
+  }
+
+  /** Dependency graph by content hash (for re-focusing on a clicked node). */
+  depGraphByHash(hash: string, maxDepth = 4): DepGraph {
+    return buildDepGraph(hash, this.#svc.trace, this.#svc.store, maxDepth);
+  }
+
+  /** Detail for a single node in the dependency graph (sidebar). */
+  depNodeDetail(hash: string, maxDepth = 4): DepGraphNodeDetail {
+    return nodeDetail(hash, this.#svc.trace, this.#svc.store, maxDepth);
   }
 
   /** A short, readable label for a content hash (for the trace menu). */

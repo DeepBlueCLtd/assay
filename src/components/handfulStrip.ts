@@ -29,7 +29,7 @@ export function handfulStrip(rows: HandfulStripRow[]): string {
       const id = esc(r.plan.logical_id);
       const name = r.name ? `<span style="color:#5B6B77;font-size:11.5px">${esc(r.name)}</span>` : '';
       const sig = `${r.name ?? ''}|${r.distinct_because}`;
-      return `<li data-glow-id="plan:${id}" data-glow-sig="${esc(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      return `<li data-logical-id="${id}" data-glow-id="plan:${id}" data-glow-sig="${esc(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${id}</span>
       ${name}

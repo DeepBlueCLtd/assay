@@ -54,7 +54,7 @@ export interface S2Cell {
 export function s2Matrix(commitmentIds: string[], rows: S2Cell[]): string {
   const head = `<tr style="text-align:center;color:#5B6B77;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em">
     <th style="padding:6px 10px;text-align:left">plan \\ commitment</th>
-    ${commitmentIds.map((c) => `<th style="padding:6px 8px">${esc(c)}</th>`).join('')}
+    ${commitmentIds.map((c) => `<th data-logical-id="${esc(c)}" style="padding:6px 8px;cursor:pointer;text-decoration:underline dotted">${esc(c)}</th>`).join('')}
   </tr>`;
   const body = rows
     .map((row) => {
@@ -65,7 +65,8 @@ export function s2Matrix(commitmentIds: string[], rows: S2Cell[]): string {
           return v ? chip(v) : `<td style="padding:5px 7px;text-align:center;color:#B0BAC2">—</td>`;
         })
         .join('');
-      return `<tr><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc(row.plan)}</td>${cells}</tr>`;
+      const planId = row.plan.split(' ')[0] ?? row.plan;
+      return `<tr data-logical-id="${esc(planId)}"><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc(row.plan)}</td>${cells}</tr>`;
     })
     .join('');
   return `<table class="assay-s2-matrix" style="border-collapse:collapse;width:100%">
