@@ -76,10 +76,10 @@ describe('K3 end-to-end trace: civil population → COA verdict', () => {
     expect(k3.question).toBe('What is the civil population in the Port Halcyon district?');
     expect(k3.subject).toBe('civil_density.port_district');
     expect(k3.answer).toEqual({ lo: 35000, hi: 55000, unit: 'persons' });
-    expect(k3.provenance.source_class).toBe('reported');
-    expect(k3.provenance.confidence).toBe('moderate');
+    expect(k3.provenance!.source_class).toBe('reported');
+    expect(k3.provenance!.confidence).toBe('moderate');
     console.log('[K3] answer band: [%d, %d] %s', k3.answer!.lo, k3.answer!.hi, k3.answer!.unit);
-    console.log('[K3] provenance: %s confidence, source: %s', k3.provenance.confidence, k3.provenance.source_class);
+    console.log('[K3] provenance: %s confidence, source: %s', k3.provenance!.confidence, k3.provenance!.source_class);
   });
 
   it('Stage 2 — config routes K3.subject to civil_density channel / port_district region', () => {
@@ -152,14 +152,14 @@ describe('K3 end-to-end trace: civil population → COA verdict', () => {
     console.log('[C3] scope: %s (region x:%d-%d, y:%d-%d)', c3.scope, portRegion.x0, portRegion.x1, portRegion.y0, portRegion.y1);
 
     console.log('[P1] FE-FALCON route:');
-    for (const leg of falconP1.route) {
+    for (const leg of falconP1.route!) {
       const inside = leg.x >= portRegion.x0 && leg.x <= portRegion.x1 &&
                      leg.y >= portRegion.y0 && leg.y <= portRegion.y1;
       console.log('  leg (%d,%d) steps %d-%d: %s port_district', leg.x, leg.y, leg.enter_step, leg.exit_step, inside ? 'INSIDE' : 'outside');
     }
 
     console.log('[P2] FE-FALCON route:');
-    for (const leg of falconP2.route) {
+    for (const leg of falconP2.route!) {
       const inside = leg.x >= portRegion.x0 && leg.x <= portRegion.x1 &&
                      leg.y >= portRegion.y0 && leg.y <= portRegion.y1;
       console.log('  leg (%d,%d) steps %d-%d: %s port_district', leg.x, leg.y, leg.enter_step, leg.exit_step, inside ? 'INSIDE' : 'outside');
@@ -189,7 +189,7 @@ describe('K3 end-to-end trace: civil population → COA verdict', () => {
     const p2 = plans.find((p) => p.logical_id === 'P2')!;
 
     const falconP2 = p2.elements.find((e) => e.force_element === 'FE-FALCON')!;
-    const districtLeg = falconP2.route.find((leg) => {
+    const districtLeg = falconP2.route!.find((leg) => {
       const pr = config.regions.find((r) => r.name === 'port_district')!;
       return leg.x >= pr.x0 && leg.x <= pr.x1 && leg.y >= pr.y0 && leg.y <= pr.y1;
     });
