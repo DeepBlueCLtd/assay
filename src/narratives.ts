@@ -54,13 +54,13 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'j2',
         title: 'The knowledge base — what we hold and how strongly',
         presenterNote:
-          'This is the "J-2 · knowledge base" panel. Every value is a range, not a number: K8\'s band is 30 to 60, never a single midpoint. The provenance chips alongside each entry show source class and confidence — they are welded on, never optional. Notice K8: it is single-source, held under waiver W-1.',
+          'This is the "J-2 · knowledge base" panel — the table lists every assessed belief by its ID, question, and answer band. Every value is a range, not a number: K8 "Is the battery fire-control radar operational?" has a band of 30 to 60, never a single midpoint. The provenance chips alongside each entry show source class and confidence — they are welded on, never optional. Notice K8: it is single-source, held under waiver W-1.',
       },
       {
         tab: 'j2',
         title: 'Sensitivity ranking — which beliefs are load-bearing',
         presenterNote:
-          'The "J-2 · sensitivity ranking" panel ranks which beliefs are load-bearing. K8 tops the ranking: perturbing its band edge changes commitment verdicts on C3 and C4 — more than any other knowledge object. It is also single-source (ICD 203 flag). The system identifies that K8 is load-bearing; the J-2 decides what to do about it.',
+          'The "J-2 · sensitivity ranking" panel ranks which beliefs are load-bearing. K8 tops the ranking: perturbing its band edge changes commitment verdicts on C3 "no fires into the port district" and C4 "amphibious group not exposed" — more than any other knowledge object. It is also single-source (ICD 203 flag). The system identifies that K8 is load-bearing; the J-2 decides what to do about it.',
         doctrinalQuote:
           'JP 2-01.3 ch. IV: source diversification — an assessment resting on a single source is flagged, never silently relied upon.',
       },
@@ -68,13 +68,13 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'j2',
         title: 'Discrimination ranking — which questions to answer next',
         presenterNote:
-          'The "J-2 · discrimination ranking" panel ranks unanswered questions by how much they would tell us. K11 ranks above K13 despite higher collection cost — the R1/R2 expected-answer bands are disjoint (the question discriminates between scenarios), while K13\'s bands overlap. Value and cost sit side by side, never collapsed into one number. The system ranks; the J-2 tasks.',
+          'The "J-2 · discrimination ranking" panel ranks unanswered questions by how much they would tell us. K11 ranks above K13 despite higher collection cost — the R1 "Fortress Halcyon" / R2 "Strait Denial" expected-answer bands are disjoint for K11 (the question discriminates between scenarios), while K13\'s bands overlap. Value and cost sit side by side, never collapsed into one number. The system ranks; the J-2 tasks.',
       },
       {
         tab: 'observer',
         title: 'Staleness — a changed answer flags exactly what it invalidates',
         presenterNote:
-          'On the Observer / bridge tab, the "Observer · staleness flags" panel shows the effect of supersession: K9 superseding K5 flags exactly P1·C2, P2·C1, P2·C2 — the K5-dependent verdicts and nothing else. These flags come from a transitive trace walk, not a recompute. The planner decides when to recompile; the system flags, it does not act.',
+          'On the Observer / bridge tab, the "Observer · staleness flags" panel shows the effect of supersession: a new answer K9 superseding the old K5 "storm-season likelihood" flags exactly the K5-dependent verdicts — P1·C2, P2·C1, P2·C2 — and nothing else. These flags come from a transitive trace walk, not a recompute. The planner decides when to recompile; the system flags, it does not act.',
       },
       {
         tab: 'j2',
@@ -99,13 +99,13 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'planner',
         title: 'The honest matrix — plans vs commitments',
         presenterNote:
-          'This is the "Planner · the honest matrix" — plans as rows, commitments as columns, each cell a four-stop verdict chip: robust, marginal, tight, violated. There is no total row and no weighted sum — the pattern of verdicts IS the comparison, and the commander weighs it, not the machine. Under the BASE scenario, P1 holds C1 and C2 robust.',
+          'This is the "Planner · the honest matrix" — plans as rows (P1 "strait-early", P2 "sweep-first"), commitments as columns (C1 "relief ships alongside by D+10", C2 "strait swept by D+7", and so on), each cell a four-stop verdict chip: robust, marginal, tight, violated. There is no total row and no weighted sum — the pattern of verdicts IS the comparison, and the commander weighs it, not the machine. Under the BASE scenario (the unmodified world), P1 holds C1 and C2 robust.',
       },
       {
         tab: 'commander',
         title: 'Scenario robustness — the favourite under stress (thesis C)',
         presenterNote:
-          'The "Commander · scenario robustness" panel lets you toggle R2 (Strait Denial). P1\'s C1 and C2 drop from robust to violated — the strait-early plan dies under mines. P2 holds. P1 is robust under BASE but violated under R2; the verdict is a category, not a rank. The collapse markers (▼) show exactly which cells degraded.',
+          'The "Commander · scenario robustness" panel lets you toggle between enemy courses of action. Select R2 "Strait Denial" — P1\'s C1 and C2 drop from robust to violated; the strait-early plan dies under mines. P2 holds. P1 is robust under BASE but violated under R2; the verdict is a category, not a rank. The collapse markers (▼) show exactly which cells degraded.',
         doctrinalQuote:
           'JP 2-01.3: "Don\'t plan on most-likely." The most-likely scenario is an anchor (Tversky & Kahneman 1974); the strip makes the most-dangerous visible.',
       },
@@ -113,7 +113,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'commander',
         title: 'Least-worst under R3m — the relaxation cards (thesis B)',
         presenterNote:
-          'The "Commander · least-worst" panel shows what happens when no plan satisfies all commitments. Under R3m (both approaches mined, causeway dropped), three least-worst cards appear — each names the sacrifice in command language: "Maintain the causeway, violated under R3m." The sacrifice is stated in the commander\'s words, not in system terms. C3 is sacrificed before C4 because of the stated tie-break — these are least-worst options, never optimal ones.',
+          'The "Commander · least-worst" panel shows what happens when no plan satisfies all commitments. Under R3m "Spoiling Withdrawal — mining branch" (both approaches mined, causeway dropped), three least-worst cards appear — each names the sacrifice in command language: "Maintain the causeway, violated under R3m." The sacrifice is stated in the commander\'s words, not in system terms. C3 "no fires into the port district" is sacrificed before C4 "amphibious group not exposed" because of the stated tie-break — these are least-worst options, never optimal ones.',
       },
       {
         tab: 'planner',
@@ -136,7 +136,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'commander',
         title: 'The least-worst argument — three cards, never silent',
         presenterNote:
-          'The "Commander · least-worst, never silence" panel under R3m shows three cards. Each card names a sacrifice in command language — the commitment\'s own label, authored in the commander\'s frame. "Opens the strait D+9, two days late" is command language; "C2 margin band [−2, 4]" is system language. Command language leads; system detail is available on hover or click. The report is never empty (G4): if nothing is feasible, it says so with the least-worst set.',
+          'The "Commander · least-worst, never silence" panel under R3m "Spoiling Withdrawal — mining branch" shows three cards. Each card names a sacrifice in command language — the commitment\'s own label, authored in the commander\'s frame. "Opens the strait D+9, two days late" is command language; "C2 margin band [−2, 4]" is system language. Command language leads; system detail is available on hover or click. The report is never empty (G4): if nothing is feasible, it says so with the least-worst set.',
         doctrinalQuote:
           'FM 6-0 §5-27: "The commander alone decides." The staff presents the trade in the commander\'s frame; the machine enumerates, the commander weighs.',
       },
@@ -150,7 +150,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'planner',
         title: 'The honest matrix — the trade the cards summarise',
         presenterNote:
-          'On the "Planner · the honest matrix", the same verdicts that fill the cards are the cells of the matrix. The card is a summary; the matrix is the detail. Neither has a total row. P2 holds C1 robust, C2 marginal, C3 tight, C4 violated — never "P2 scores 2.5 out of 4."',
+          'On the "Planner · the honest matrix", the same verdicts that fill the cards are the cells of the matrix. The card is a summary; the matrix is the detail. Neither has a total row. P2 "sweep-first" holds C1 "relief ships by D+10" robust, C2 "strait swept by D+7" marginal, C3 tight, C4 violated — never "P2 scores 2.5 out of 4."',
       },
       {
         tab: 'commander',
@@ -179,7 +179,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'j2',
         title: 'The J-2 edits a band — supersession in action',
         presenterNote:
-          'On the "J-2 · knowledge base" panel, the "Edit assessed band" control lets you supersede K1\'s band — change from the current range to a shifted range. The supersede writes a new version, a supersedes edge, and a delta — all visible in the "Observer · the seam, watched" panel. The glow tells you who is affected: the J-2 workbench tab does not glow (it originated the change), but the Planner and Commander tabs do (their content depends on this knowledge).',
+          'On the "J-2 · knowledge base" panel, the "Edit assessed band" control lets you supersede K1 "number of transit steps" — change from the current range to a shifted range. The supersede writes a new version, a supersedes edge, and a delta — all visible in the "Observer · the seam, watched" panel. The glow tells you who is affected: the J-2 workbench tab does not glow (it originated the change), but the Planner and Commander tabs do (their content depends on this knowledge).',
         action: 'edit-k8',
       },
       {
@@ -233,7 +233,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'observer',
         title: 'Centrepiece — the full heartbeat, end-to-end',
         presenterNote:
-          'Back on Observer / bridge, resolving K12 and then editing a band triggers the full pipeline. The "Observer · the seam, watched" panel shows the sequence: create → supersede → contest → resolve → recompile → score → relax, each stamped, each typed, each traced. The seam is one shared store, walked end-to-end. That is the claim: the architecture holds under the invariants the register imposes (G1–G6), and every joint is examinable.',
+          'Back on Observer / bridge, resolving the K12 "minefield extent" contest and then editing a band triggers the full pipeline. The "Observer · the seam, watched" panel shows the sequence: create → supersede → contest → resolve → recompile → score → relax, each stamped, each typed, each traced. The seam is one shared store, walked end-to-end. That is the claim: the architecture holds under the invariants the register imposes (G1–G6), and every joint is examinable.',
         action: 'resolve',
       },
     ],
