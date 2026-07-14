@@ -65,8 +65,8 @@ stages:
     name: Surfaces & narratives
     blurb: role bundles + five narrative scripts (post-gate)
     status: not-started
-    research_note: docs/research/07-narratives.md
-    research_published: false
+    research_note: docs/research/09-narratives.md
+    research_published: true
 
 theses:                      # state vocabulary is the register's own
   - id: A
@@ -102,6 +102,11 @@ updates:
       Blog backlog cleared — six owed articles from Stages 0–4 shipped: provenance chip &
       K10 refusal (SPEC-05), verdict playground (SPEC-07), least-worst explorer (SPEC-09),
       stamp determinism (SPEC-06), content addressing (SPEC-01), trace walk (SPEC-02).
+  - date: 2026-07-14
+    note: >-
+      Register batch 4 ratified (ASSAY-DEC-28…34): sparse channels, SPA shell,
+      glow, in-browser pipeline, blog cadence, home-page currency, flow-view
+      behaviours — seven candidates built under delegated authority now settled.
   - date: 2026-07-14
     note: >-
       Stage 6 built — sensitivity, discrimination, staleness analysis (theses D, E, F live).
