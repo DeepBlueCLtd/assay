@@ -161,6 +161,35 @@ Examples of foundational tasks (adjust based on your project):
 
 ---
 
+## Phase FINAL: Blog Article & Evidence *(mandatory — definition of done)*
+
+<!--
+  This phase is MANDATORY for every spec — it is part of the definition of done, not
+  optional polish. The spec's "Blog & Evidence Plan" section defines the article plan
+  and the evidence captures; this phase turns those plans into concrete tasks.
+
+  Evidence screenshots are captured by Playwright during test verification — the
+  component is already rendered to verify acceptance scenarios, so the screenshot is
+  free. Do not create a separate screenshot pipeline.
+
+  The blog article follows the conventions in docs/blog/README.md. It is committed to
+  docs/blog/posts/ and wired into the blog index and status.yml in the same PR.
+-->
+
+**Purpose**: Ship the blog article and evidence that make this spec's demo moment visible
+
+**⚠️ NOT OPTIONAL**: A spec without its blog article is not done. The article is planned
+in the spec's "Blog & Evidence Plan" section — follow it.
+
+- [ ] TXXX **Evidence capture**: Add Playwright screenshot calls to the acceptance-scenario tests (the component is already rendered for verification). Capture each evidence image defined in the spec's "Evidence captures" list, in both light and dark mode. Output to `docs/blog/evidence/{spec-id}/`. Commit the images.
+- [ ] TXXX **Blog article**: Write the article following the spec's "Article plan" (title, thesis, narrative hook, embed type). Use `docs/blog/posts/2026-07-13-band-pill.html` as the template. Self-contained static HTML, inline CSS, light/dark mode. Carry the Meridian disclaimer, embed label, and Sources & trace section with deep links. See `docs/blog/README.md` for full conventions.
+- [ ] TXXX **Blog index & status**: Add the article to `docs/blog/index.html` (Articles section + updates feed) and to `docs/status.yml` (`blog:` + `updates:` lists). Update `docs/blog/backlog.md` if applicable.
+- [ ] TXXX **Batch propagation**: Sweep `docs/assay-home.html` and `docs/status.yml` for any stage/thesis state changes this spec demonstrates.
+
+**Checkpoint**: Blog article renders correctly, evidence images committed, index and status updated
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

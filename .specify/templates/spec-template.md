@@ -117,6 +117,58 @@
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
 
+## Blog & Evidence Plan *(mandatory)*
+
+<!--
+  A blog article is part of a spec's DEFINITION OF DONE — not a downstream chore.
+  The spec author is in the best position to plan the article because they know the
+  demo moment, the thesis being explored, and what the evidence should show.
+
+  This section is the input to the task generator: it produces explicit tasks for
+  evidence capture (Playwright screenshots during test verification), blog article
+  authoring, and evidence commit. If those tasks don't exist, the blog won't happen.
+
+  Evidence images are committed to `docs/blog/evidence/{spec-id}/` and referenced
+  from both the blog article and the PR description.
+
+  Follow the conventions in `docs/blog/README.md` — in particular: self-contained
+  static HTML, one of two embed labels (live component / illustrative widget), the
+  Meridian disclaimer, and Sources & trace with deep links.
+-->
+
+### Article plan
+
+- **Title**: [The article headline — short, thesis-forward, e.g. "Don't plan on most-likely"]
+- **Thesis / demo moment**: [Which thesis (A–H) this demonstrates and the key exhibit, e.g. "Thesis C: the R1-optimal plan collapses under R2 in the scenario strip"]
+- **Narrative hook**: [One sentence — the problem this slice solves, e.g. "A plan optimised against the most-likely scenario may catastrophically fail under the most-dangerous one"]
+- **Embed type**: [live component | illustrative widget] — [brief justification for the choice]
+
+### Evidence captures
+
+<!--
+  Define 2–4 screenshots that prove the demo moment. Each capture specifies:
+  - WHAT: the page/component being captured
+  - STATE: the exact interaction state to reach (e.g. "R2 toggled on, P1 collapse visible")
+  - VARIANTS: light + dark mode (both required)
+  - FILE: the output filename in docs/blog/evidence/{spec-id}/
+
+  These captures become Playwright screenshot tasks. The tests that verify the
+  acceptance scenarios should capture these screenshots as a side effect — the
+  component is already rendered to verify it, so the screenshot is free.
+-->
+
+1. **[Descriptive name]**
+   - Page/component: [e.g. `scenarioStrip` in the gallery, or `blog/posts/...`]
+   - State: [e.g. "R2 scenario toggled on, P1 C1/C2 showing violated with collapse markers"]
+   - Files: `docs/blog/evidence/{spec-id}/[slug]-light.png`, `[slug]-dark.png`
+
+2. **[Descriptive name]**
+   - Page/component: [e.g. `sensitivityTable` in the gallery]
+   - State: [e.g. "K8 at top of ranking with single-source badge visible"]
+   - Files: `docs/blog/evidence/{spec-id}/[slug]-light.png`, `[slug]-dark.png`
+
+[Add more captures as needed — 2–4 is typical]
+
 ## Assumptions
 
 <!--
