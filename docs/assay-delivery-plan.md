@@ -24,7 +24,7 @@ Every build specification inherits the DEC-11 rule verbatim: **its research note
 
 ## 2. The specification series
 
-Two kinds of slice. **Document slices (D#)** author the missing canonical set and are register/design work, not spec-kit features. **Build specifications (SPEC-##)** are spec-kit features (`specs/NNN-name/` → spec → plan → tasks), each an independently testable slice with the build plan's exit criteria as its acceptance scenarios.
+Three kinds of slice (ASSAY-DEC-12, DEC-30). **Document slices (D#)** author the missing canonical set and are register/design work, not spec-kit features. **Build specifications (SPEC-##)** are spec-kit features (`specs/NNN-name/` → spec → plan → tasks), each an independently testable slice with the build plan's exit criteria as its acceptance scenarios. **Communications artefacts** (Home page, roadmap/updates feed, blog articles) are projections of already-shipped work, authored under register/comms honesty discipline, and are never themselves spec-kit features (DEC-30); each build specification carries a home-page-currency step assessing whether the slice moves a thesis or stage from planned to demonstrated (DEC-28).
 
 ### 2.1 Document slices
 
