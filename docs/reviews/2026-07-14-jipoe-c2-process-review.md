@@ -236,7 +236,54 @@ Triggers follow the queue conventions. **[RC]** = requires a register candidate 
 
 ---
 
-## 10. Key sources (beyond the repository)
+## 10. Addendum (2026-07-15) — recommendations grouped into a spec series
+
+**Owner direction received after the initial review:** the venture is *not* aiming at a wargame. It is developing **information models, business processes, UI interactions, and viewports** in support of a future C2 application delivering JIPOE; the fictional data and web stack exist to iterate quickly. Accordingly: the wargame-positioning proposals (§6.1's seminar-wargame lane, action B2, mockup M2, way-of-working W3, and the wargaming-SME panel addition in A3/W2) are **withdrawn** from the action plan. The wargaming *precedents* in §6 stand as design sources — the mechanics they justify (consequence preview, public verdict legend, argument cards, AAR replay) all serve the C2-application aim directly.
+
+**Also overtaken by events:** SPEC-19 (spatial & temporal COA visualisation) has since been implemented and promoted (ASSAY-DEC-36). That **delivers mockup M6** (spatial bands on the map) and establishes the interaction substrate (drag-to-rescore, scenario-clock scrub) that M3 extends. The groupings below account for it.
+
+The surviving recommendations group into **six proposed build slices** plus a small set of non-spec companions. Numbering is indicative (next free is 020); the delivery plan assigns final numbers and lanes. Every slice follows house discipline: research note first (DEC-11), register candidates flagged before build (DEC-2), no new engine where a scorer-in-a-loop or a projection suffices (DEC-10, DEC-5).
+
+### S-A · "JIPOE anchoring" — the knowledge model names its doctrinal origin *(information model)*
+Folds in: **A7** (annotate K1–K14 with originating JIPOE step) and the §4.1 crosswalk made auditable.
+Scope: a `jipoe_step` slot (or structured annotation) on `KnowledgeObject` **[register candidate — schema change]**; fixtures annotated; the provenance chip/legend renders it; a lint that a knowledge object without a step annotation warns at write. Research note: an amendment or companion to `01-knowledge.md` (whose §3 already demands exactly this). Exit: the "doctrinally shaped, not invented" claim is machine-auditable — every K traces to a JIPOE step the way every value traces to an owner.
+Companions shipped alongside (comms category, DEC-30 — not spec features): the **divergence register** (A1) and the **crosswalk table** (§4.1) as a site page; the **citation-hardening pass** (A2) over notes 02/03/05/08; the **README status fix** (A6).
+
+### S-B · "Compile-overlay precedence" — excursions beat base *(information model, fix-class)*
+Folds in: **A5/§3.6** (the C5 wrinkle: under R3m the causeway-demolition override loses to the base engineering estimate under innermost-wins, so the computed world contradicts the vignette narrative).
+Scope: decide and implement override-precedence semantics (excursion layer beats base for the same region; stated tie order for the rest) **[register candidate — compile semantics]**; amendment to `02-compile.md`; an oracle-class test asserting the R3m world matches the vignette's story (C5 scores what the narrative says). Smallest slice; should go first — it is the one place computed world and canonical fiction disagree.
+
+### S-C · "Attention ordering" — the scenario-weight firewall's positive half *(business process)*
+Folds in: **A4/§3.5/M11** (the register-blessed claim that likelihood weights "order attention and reporting" has no visible implementation).
+Scope: render K14a–c's overlapping likelihood bands on the scenario strip — ordered by band, visibly overlapping, visibly *not* feeding any verdict; S1 queue tie-breaks on scenario weight where discrimination is equal; the firewall's negative half (never compiles) stays test-asserted. **[register candidate — sharpens what "order attention and reporting" means; likely small]**. Exit: an observer can see likelihood doing its one legitimate job and *only* that job — the demo answer to "you hold likelihoods and do nothing with them?"
+
+### S-D · "The Decision Support Matrix surface" — decisions in time *(viewport + business process; the keystone)*
+Folds in: **B1/M1/§4.2**.
+Scope: research note first (the DP derivation rule — which verdict patterns constitute a decision point; the LTIOV computation — `collection.earliest_result` vs decision step, including the honest red state "this collection cannot answer in time") **[register candidate — new derived surface + derivation rule]**. Then the surface: per selected plan, one row per derived decision point — the commitment at stake, the discriminating knowledge (the NAI analogue), the collection option that answers it, the computed LTIOV, the staleness tripwire — every cell banded and trace-walkable, nothing authored. All inputs exist (tight/scenario-divergent verdicts, discrimination ranking, validity windows, `earliest_result`); the slice is a projection plus one derivation rule, per DEC-5. Exit: the artefact a J-3 actually recognises, derived not drawn — the strongest doctrinal exhibit available to the future C2 application.
+Sequencing: research note can start immediately; benefits from S-C (attention) and S-E (discrimination v2) but is blocked by neither. A later increment can locate DPs on the SPEC-19 map (a decision point *is* a place and a time).
+
+### S-E · "Collection discrimination v2" — sharper where-to-look *(business process + information model)*
+Folds in: **B7/§3.4** and the knowledge-model open item it seconds.
+Scope: condition the ranking on the **operative pair** (the COA pair the current plan's verdicts actually turn on) rather than best-pair-anywhere; distinguish nested from partially-overlapping expected bands (never-discriminates vs could-discriminate); add provenance to `ExpectedAnswer` ("who says the COA would look like that?") **[register candidate — schema change]** so the event matrix carries a chip like everything else. Research note: amendment to `08-analysis.md`. Exit: K11-vs-K13 still reproduces, and a constructed case where best-pair and operative-pair rankings differ shows v2 picking the operative one.
+
+### S-F · "Verdict legibility & the argument surface" *(UI interactions)*
+Folds in: **M4** (public verdict legend), **M3** (consequence preview), **§3.3** (relaxation-card "put at risk" line), **M8** (argument-card format + challenge affordance), **M10** (per-role action menus), **§3.1** (the `marginal`-is-measure-zero disclosure).
+Scope, in likely priority order: (1) the **legend** — a small always-visible diagram mapping margin-band position → four-stop verdict, the O-3 sweep as its illustration, with the honest footnote that `marginal` fires only at exact band-edge coincidence *(presentation-only; likely no register candidate)*; (2) **consequence preview** — arm any mutating act (resolve, supersede, waiver, plan edit) and see the real verdict-matrix ghost-diff before commit, computed by the SPEC-16/19 pipeline, rendered with pre-glow **[register candidate — a preview is a new interaction class; the honesty rule is "previewed = computed, never estimated"]**; (3) **relaxation cards v2** — a derived "puts at risk" line (verdict deltas vs incumbent) under the `sacrificed` headline, plus matrix-game-style numbered-reasons formatting; (4) a **challenge affordance** — on any verdict, surface the top sensitivity contributors as a key-assumptions check ("this leans on K8, single-source — challenge it"), which is a re-rendering of `/analyse/sensitivity`, no new compute; (5) **per-role action menus** — each tab surfaces its legal verbs (J-2: collect/contest/resolve; planner: compile/generate/relax; commander: select/waive), making the business-process role separation legible in the shell.
+Items (1), (3), (4), (5) are thin projections over existing outputs and could ship as one slice; (2) is the substantive build and could split out if the slice balloons.
+
+### S-G · "History, replay & trace depth" *(viewports)*
+Folds in: **M5** (AAR scrubber), **M7** (recursive provenance tooltips), and the on-ramp to **issue #24**.
+Scope: a **session-history scrubber** over the stamp/delta log — drag to replay compiles, refusals, verdict flips, with glow re-firing per step (distinct from SPEC-19's scenario-clock scrub: that scrubs *world time*, this scrubs *decision history*; the two compose — "what did we believe, and when did we believe it"). Stage-7 narratives become curated scrub paths, unifying the narrative runner with the replay mechanism. Plus **recursive-on-demand trace tooltips** (CK3-style, depth-capped ~2–3), whose full-screen big brother is #24's dependency-graph view — this slice is #24's shallow end and should be planned with it. **[register candidates — replay surface; recursive-trace affordance]**. For the future C2 application this is the audit/accountability story: the record *is* the interface.
+
+### Suggested wave order
+1. **S-B** (fix-class, smallest, removes the one world/narrative contradiction) → **S-A** (+ its doc companions A1/A2/A6) — the information-model wave.
+2. **S-C** and **S-E** — the business-process wave (both small; both feed S-D).
+3. **S-D** — the keystone viewport (note authored during wave 1–2).
+4. **S-F** and **S-G** — the interaction/viewport depth wave (S-G planned jointly with #24).
+
+Dropped or deferred relative to §9: B2/M2/W3 and the wargamer-SME addition (withdrawn — wargame aim excluded); M6 (delivered by SPEC-19); M9 (facilitator reveal controls — deferred; revisit only if the Stage-7 narrative runner proves to need staging); C1–C6 unchanged (they live in #43/#24 and the thesis catalogue).
+
+## 11. Key sources (beyond the repository)
 
 Doctrine: JP 2-01.3 *JIPOE* (2014); ATP 2-01.3 / MCRP 2-10B.1 *IPB* (2019); JP 5-0 *Joint Planning* (2020); FM 5-0 / FM 6-0 / ADP 6-0; NATO ACO COPD v3.x; ICD 203 *Analytic Standards* (2015); PHIA Probability Yardstick (2019); NATO STO-MP-SAS-114 (uncertainty communication); DoD *JADC2 Strategy Summary* (2022).
 Prior works: Surdu, *The Deep Green Concept* (2008); Lempert, Popper & Bankes, *Shaping the Next One Hundred Years* (RAND 2003); Bankes, *Exploratory Modeling for Policy Analysis* (1993); Dewar, *Assumption-Based Planning* (2002); Ben-Haim, *Info-Gap Decision Theory* (2001/2006); Kott et al. on CADET/RAID (arXiv 1601.06108); Heuer, *Psychology of Intelligence Analysis* (1999); Dhami et al., ACH effectiveness (2019); Kent, *Words of Estimative Probability* (1964); Mattis, USJFCOM EBO guidance memo (2008); Rittel & Webber (1973); Klein, *Sources of Power* (1998).
