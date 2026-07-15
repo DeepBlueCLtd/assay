@@ -114,6 +114,10 @@
   "updates": [
     {
       "date": "2026-07-15",
+      "note": "SPEC-20 built (compile-overlay precedence, fix-class — review 2026-07-14 §3.6 / slice S-B): channel materialisation now resolves overlapping region overrides by LAYER before geometry — a scenario excursion's override beats a base-knowledge override on the cells it re-describes (research note 02-compile.md §6 amendment, the DEC-11 gate; register candidate concept §6.22). This removes the one place the computed world contradicted the vignette narrative: under R3/R3m the causeway demolition now wins over K2's base engineering estimate, C5 \"taken intact\" scores violated, and the Stage-4 least-worst exhibit's sacrifice sets become {C4,C5}, {C3,C5}, {C2,C5} — the exhibit changed because the world got more honest, and the coverage row, walkthrough beat 4, and gallery captions moved with it in the same change (never a silent test edit). engine_version bumps to 0.2.0; old stamps stay honest about what computed them (G1); mixed-engine worlds now grey the scenario strip. BASE worlds, oracles O-1…O-4, and every other frozen-tableau verdict are unchanged."
+    },
+    {
+      "date": "2026-07-15",
       "note": "Register batch 6 ratified (ASSAY-DEC-36): the SME checkpoint endorsed the SPEC-19 spatial/temporal UI model (findings ledger ASSAY-FIND-7), closing concept §6 item 21 — the banded-surface convention, the temporal convention, drag-to-recompute, and promotion. The surface is promoted into the live app as a fifth shared \"Spatial · COA\" tab over the same single store: the map refuses with the compile while K12 is contested (G5) and appears, glowing, on resolve; dragging a waypoint authors a new plan version and re-scores through the real pipeline (G1/G6). DEC-32's four role tabs stand; the spatial tab is a cross-role surface. DEC-31(d)'s never-silently-optimise caution binds."
     },
     {
