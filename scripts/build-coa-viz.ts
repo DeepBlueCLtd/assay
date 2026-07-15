@@ -6,10 +6,15 @@
  * re-scores through the shipped ScoreService — no faked compute, no
  * precomputed downstream (DEC-4).
  *
- * The page is the artefact research note 10's review invitation points at
- * (US1/US3): it carries the two review questions, the Meridian disclaimer, and
- * a frozen date. Page chrome is dark-mode aware; the components themselves ship
- * their own light styling (the SPEC-14 gallery convention).
+ * The page began as the artefact research note 10's review invitation pointed
+ * at (US1/US3). That review has concluded: the SME endorsed the UI model
+ * (findings ledger ASSAY-FIND-7) and the conventions + promotion ratified as
+ * ASSAY-DEC-36 (register batch 6) — the same surface now also ships as the
+ * "Spatial · COA" tab in the live demonstrator, over the app's single store.
+ * This standalone page remains the focused, single-surface home (and the blog
+ * article's embed); its header records the review outcome rather than posing
+ * the questions as open. Page chrome is dark-mode aware; the components
+ * themselves ship their own light styling (the SPEC-14 gallery convention).
  */
 import { build } from 'esbuild';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -35,7 +40,7 @@ const html = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ASSAY — where the plan meets the water (SPEC-19 mockup, for review)</title>
+<title>ASSAY — where the plan meets the water (SPEC-19 · ASSAY-DEC-36)</title>
 <style>
 :root{color-scheme:light dark;--page:#EDF0F2;--page-ink:#1B2732;--page-muted:#5B6B77;--page-line:#D8DFE4;--accent:#3E5D8A}
 @media (prefers-color-scheme: dark){:root{--page:#111820;--page-ink:#E8EEF2;--page-muted:#9FB0BC;--page-line:#2C4A6E}}
@@ -54,14 +59,11 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
 <body>
 <div class="coaviz-head">
   <h1>Where the plan meets the water — a COA as a route through a banded surface</h1>
-  <p class="sub"><b>SPEC-19 mockup, for review</b> · frozen ${FROZEN_DATE} · research note <code>10-spatial-temporal.md</code> (DEC-11). Every region is its fixture bounding box, every route its stated <code>plans.json</code> legs, every channel value the real compiled world — a projection of fixtures, not a drawing (DEC-4). Dragging a waypoint authors a <b>new plan version</b> and re-scores it through the <b>real in-browser pipeline</b>; what changed glows (G6). No assessed value renders as a single stop anywhere (G2).</p>
+  <p class="sub"><b>SPEC-19 · reviewed, endorsed, and ratified (ASSAY-DEC-36)</b> · ${FROZEN_DATE} · research note <code>10-spatial-temporal.md</code> (DEC-11). Every region is its fixture bounding box, every route its stated <code>plans.json</code> legs, every channel value the real compiled world — a projection of fixtures, not a drawing (DEC-4). Dragging a waypoint authors a <b>new plan version</b> and re-scores it through the <b>real in-browser pipeline</b>; what changed glows (G6). No assessed value renders as a single stop anywhere (G2). The same surface now also runs as the <b>Spatial · COA</b> tab of the live demonstrator, over the app's single store — where the map refuses while K12 is contested and appears, glowing, on resolve.</p>
   <p class="disclaimer">The Meridian scenario is engineered fiction (DEC-8). Every banded value on this page is an assessment, not a fact; bands are shown as bands — there is no midpoint, no most-likely value, no heat stop standing in for an interval (DEC-15).</p>
 </div>
 <div class="coaviz-review">
-  <div class="box"><b>Reviewers — two questions</b> (research note 10, closing invitation):<br>
-  1. <b>Spatial</b> — is the banded-surface treatment (split fill, hatch for band width, exact [lo, hi] on hover, regions first) <i>honest and legible</i>? Can you find the K6→C4 exposure riser in <code>fac_waters</code> and the K7 route-miss (<code>air_defence</code> untouched) without being told?<br>
-  2. <b>Temporal</b> — is the window treatment (discrete validity/task extents, the K5→K9 supersession edge, lapse marking, the quoted-not-curved storm peak) <i>honest and legible</i>? Does scrubbing feel like inspecting a compiled world rather than watching an animation assert one?<br>
-  Reactions land via the comms §12 listening loop and feed whether this surface hardens (concept §6 item 21(d), held open on purpose).</div>
+  <div class="box"><b>The review, and its outcome.</b> Research note 10 closed with two questions — is the <b>spatial</b> treatment (split fill, hatch for band width, exact [lo, hi] on hover, regions first) honest and legible, and is the <b>temporal</b> treatment (discrete validity/task extents, the K5→K9 supersession edge, lapse marking, the quoted-not-curved storm peak) honest and legible? The SME checkpoint <b>endorsed the UI model</b> (${FROZEN_DATE}; findings ledger ASSAY-FIND-7, comms §12), and the conventions + promotion ratified as <b>ASSAY-DEC-36</b> (register batch 6, closing concept §6 item 21). Still worth trying yourself: find the K6→C4 exposure riser in <code>fac_waters</code> and the K7 route-miss (<code>air_defence</code> untouched) without being told — further reactions remain welcome through the same listening loop.</div>
 </div>
 <div id="coaviz-root"></div>
 <div class="coaviz-foot">Part of the ASSAY demonstrator (reachable from the Home page card) · identifiers are frozen vignette identifiers (K*, C*, FE-*, P*) · self-contained page, no network calls.</div>
