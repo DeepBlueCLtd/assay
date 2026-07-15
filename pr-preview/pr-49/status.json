@@ -1,0 +1,234 @@
+{
+  "updated": "2026-07-15",
+  "current_stage": 7,
+  "current_stage_label": "Stage 6 built · Stage 7 next",
+  "gate_passed": false,
+  "stages": [
+    {
+      "id": 0,
+      "name": "Foundations",
+      "blurb": "store, trace graph, type-gen, fixtures",
+      "status": "done",
+      "research_note": "docs/research/00-foundations.md",
+      "research_published": true
+    },
+    {
+      "id": 1,
+      "name": "Knowledge capture & discipline",
+      "blurb": "band pill, provenance chip, encoding firewall, K10 refusal",
+      "status": "done",
+      "research_note": "docs/research/01-knowledge.md",
+      "research_published": true
+    },
+    {
+      "id": 2,
+      "name": "Compile",
+      "blurb": "knowledge → stamped world channels (sparse)",
+      "status": "done",
+      "research_note": "docs/research/02-compile.md",
+      "research_published": true
+    },
+    {
+      "id": 3,
+      "name": "Score, then plan",
+      "blurb": "four-stop banded verdicts, oracle cases, the generated handful",
+      "status": "done",
+      "research_note": "docs/research/03-score-plan.md",
+      "research_published": true
+    },
+    {
+      "id": 4,
+      "name": "Least-worst",
+      "blurb": "relaxation under infeasibility (thesis B)",
+      "status": "done",
+      "research_note": "docs/research/04-relaxation.md",
+      "research_published": true
+    },
+    {
+      "id": 5,
+      "name": "Scenario robustness",
+      "blurb": "scoring across the adversary COA set (thesis C)",
+      "status": "done",
+      "research_note": "docs/research/06-robustness.md",
+      "research_published": true
+    },
+    {
+      "id": 6,
+      "name": "Analysis loops",
+      "blurb": "sensitivity, discrimination, staleness (theses D, E, F)",
+      "status": "done",
+      "research_note": "docs/research/08-analysis.md",
+      "research_published": true
+    },
+    {
+      "id": 7,
+      "name": "Surfaces & narratives",
+      "blurb": "role bundles + five narrative scripts (post-gate)",
+      "status": "not-started",
+      "research_note": "docs/research/09-narratives.md",
+      "research_published": true
+    }
+  ],
+  "theses": [
+    {
+      "id": "A",
+      "name": "Pipeline",
+      "state": "explored"
+    },
+    {
+      "id": "B",
+      "name": "Least-worst",
+      "state": "explored"
+    },
+    {
+      "id": "C",
+      "name": "Robustness",
+      "state": "explored"
+    },
+    {
+      "id": "D",
+      "name": "Collection",
+      "state": "explored"
+    },
+    {
+      "id": "E",
+      "name": "Sensitivity / deception",
+      "state": "explored"
+    },
+    {
+      "id": "F",
+      "name": "Staleness",
+      "state": "explored"
+    },
+    {
+      "id": "G",
+      "name": "Interdependency",
+      "state": "horizon"
+    },
+    {
+      "id": "H",
+      "name": "Reactive red",
+      "state": "horizon"
+    }
+  ],
+  "updates": [
+    {
+      "date": "2026-07-15",
+      "note": "SPEC-19 built (spatial & temporal COA visualisation, review-first): research note 10-spatial-temporal.md decides the banded-surface rule (split fill + hatch, never a single stop for an assessed channel — G2) and the temporal rule (discrete validity/ task windows, lapse marked, stated peaks quoted never curved — thesis F); a reviewable map + timeline mockup renders the real fixture geometry and compiled bands, with the C4 exposure staircase making the SPEC-18 honest gap visible as geometry (K6 propagates, K7's region is never entered, K3 is never read); dragging a waypoint authors a new plan version and re-scores through the real in-browser pipeline with value-keyed glow (G6), byte-identical to a from-scratch run (G1). Thesis states unchanged (A/B already explored; this is a presentation-lane slice). SME review invited (comms §12) before the surface promotes (concept §6 item 21(d))."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Register batch 5 ratified (ASSAY-DEC-35): civil harm stays a geometric red line, never a quantified metric (issue #41). C3 counts whether FE-FALCON fires into the populated port district — it does not weight by population. Whether firing into 55,000 is \"worse\" than 5,000 is a commander value judgement the system is forbidden from encoding (DEC-19). The proposed weighted_civil_harm metric is declined; the honest gap SPEC-18 found (density band compiled but not read) is a design feature."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Stage 5 & 6 blog articles shipped: \"don't plan on most-likely\" (SPEC-10, thesis C) and \"what to verify next\" (SPEC-11/12/13, theses D/E/F). Both carry illustrative widgets over Meridian fixtures — the scenario strip with interactive scenario toggles, and the sensitivity/discrimination/staleness ranking tables."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Blog backlog cleared — six owed articles from Stages 0–4 shipped: provenance chip & K10 refusal (SPEC-05), verdict playground (SPEC-07), least-worst explorer (SPEC-09), stamp determinism (SPEC-06), content addressing (SPEC-01), trace walk (SPEC-02)."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Register batch 4 ratified (ASSAY-DEC-28…34): sparse channels, SPA shell, glow, in-browser pipeline, blog cadence, home-page currency, flow-view behaviours — seven candidates built under delegated authority now settled."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Stage 6 built — sensitivity, discrimination, staleness analysis (theses D, E, F live). SPEC-11/12/13 implemented over research note 08-analysis.md. K8 tops sensitivity (single-source, band-edge perturbation changes C4 verdicts); K11 ranks above K13 on discrimination (disjoint R1/R2 bands vs overlapping); K5 staleness walk flags exactly the storm-channel-dependent verdicts. 267 tests, typecheck clean."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Stage 5 built — scenario robustness (thesis C live). SPEC-10 implemented over research note 06-robustness.md. Minimax (worst-case) posture: no scenario weights, no weighted blend. The strait-early plan visibly collapses under R2 while robust alternatives hold."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Interactive system-flow infographic built (SPEC-14 flow-view sub-slice) — the S4 Bridge grown into a stakeholder explainer with a guided tour and a bounded sandbox driving the real seam (compile/score/relax), one self-contained embed in two homes. Auto-recompute is stamped and attributed, never silent; unbuilt computations (staleness fan-out, selection) are scripted and visibly labelled. Reachable from the Home page."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Communications scaffold landed — status.yml single source of truth, the blog + standalone-embed pipeline, and the first pattern-setter article (the band pill, live).",
+      "article": "blog/posts/2026-07-13-band-pill.html"
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Stage 4 built — least-worst relaxation over R3m (thesis B live). SPEC-09 implemented."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Stage 3 built — the four-stop scorer and the generated handful (SPEC-07, SPEC-08)."
+    },
+    {
+      "date": "2026-07-12",
+      "note": "Stage 2 built — compile to a stamped world of sparse channels (SPEC-06)."
+    },
+    {
+      "date": "2026-07-12",
+      "note": "Register batch 3 ratified (ASSAY-DEC-22…27); walkthrough and findings ledger canonical."
+    }
+  ],
+  "blog": [
+    {
+      "date": "2026-07-14",
+      "title": "What to verify next",
+      "href": "blog/posts/2026-07-14-what-to-verify-next.html",
+      "slice": "SPEC-11 / SPEC-12 / SPEC-13",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-14",
+      "title": "Don't plan on most-likely",
+      "href": "blog/posts/2026-07-14-dont-plan-on-most-likely.html",
+      "slice": "SPEC-10",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-13",
+      "title": "Least-worst: choosing what to sacrifice",
+      "href": "blog/posts/2026-07-13-least-worst.html",
+      "slice": "SPEC-09",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-13",
+      "title": "The verdict playground: four stops, no decimals",
+      "href": "blog/posts/2026-07-13-verdict-playground.html",
+      "slice": "SPEC-07",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-13",
+      "title": "The band pill: why a range is more honest than a number",
+      "href": "blog/posts/2026-07-13-band-pill.html",
+      "slice": "SPEC-05 / SPEC-14",
+      "embed": "live component — the demonstrator's actual code"
+    },
+    {
+      "date": "2026-07-12",
+      "title": "Stamp determinism: compile twice, get the same answer",
+      "href": "blog/posts/2026-07-12-stamp-determinism.html",
+      "slice": "SPEC-06",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-12",
+      "title": "The provenance chip & the K10 refusal",
+      "href": "blog/posts/2026-07-12-provenance-chip.html",
+      "slice": "SPEC-05 / SPEC-14",
+      "embed": "live component — the demonstrator's actual code"
+    },
+    {
+      "date": "2026-07-11",
+      "title": "Trace walk: every output traces back to named knowledge",
+      "href": "blog/posts/2026-07-11-trace-walk.html",
+      "slice": "SPEC-02",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-11",
+      "title": "Content addressing: identity is a hash",
+      "href": "blog/posts/2026-07-11-content-addressing.html",
+      "slice": "SPEC-01",
+      "embed": "illustrative widget — real rule, fixture data"
+    }
+  ]
+}

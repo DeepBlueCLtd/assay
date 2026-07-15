@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where the plan meets the water — ASSAY blog</title>
+<style>
+  body{margin:0;background:#EDF0F2;color:#1B2732;font-family:system-ui,sans-serif;font-size:16px;line-height:1.6}
+  .wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+  a{color:#3E5D8A}
+  h1{font-size:30px;line-height:1.2;margin:8px 0 4px}
+  h2{font-size:20px;margin:32px 0 6px;border-bottom:2px solid #1B2732;padding-bottom:4px}
+  .meta{font-size:13px;color:#5B6B77}
+  .label{display:inline-block;font-family:ui-monospace,monospace;font-size:11px;color:#3E5D8A;background:#E6ECF6;border:1px solid #C8D5EA;border-radius:999px;padding:3px 10px;margin:2px 4px 2px 0}
+  .embed{background:#fff;border:1px solid #C8D2DA;border-radius:10px;overflow:hidden;margin:18px 0;box-shadow:0 2px 10px rgba(27,39,50,.08)}
+  .embed .cap{font-size:12px;color:#5B6B77;padding:8px 12px;border-bottom:1px solid #E4E9ED;background:#F7F9FA}
+  iframe{width:100%;height:900px;border:0;display:block}
+  .aside{background:#F7F9FA;border:1px dashed #C8D2DA;border-radius:8px;padding:12px 16px;font-size:14px;color:#33414D;margin:18px 0}
+  code{font-family:ui-monospace,monospace;font-size:.92em;background:#EDF0F2;padding:1px 5px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="meta"><a href="../index.html">← ASSAY blog</a></p>
+  <span class="label">Mockup for review</span>
+  <span class="label">SPEC-19</span>
+  <span class="label">live component</span>
+  <span class="label">embed frozen at publication</span>
+  <h1>Where the plan meets the water</h1>
+  <p class="meta">2026-07-15 · a COA as a route through a banded surface over time — and why the map is the most dangerous place in the whole demonstrator.</p>
+
+  <p><a href="2026-07-14-qa-to-coa.html">The previous article</a> proved something in prose: a banded answer reaches a verdict only where the metric <em>reads the channel</em> and the route <em>enters the region</em>. K6's wide sortie-rate band propagates into C4 because TG ANVIL dwells in <code>fac_waters</code>; K7's air-defence envelope never reaches C4 because the route never enters <code>air_defence</code>; K3's census never reaches C3 at all, because that commitment is a geometric red line. Words, with numbers to check them. What nothing did was <em>show</em> it. Every ASSAY surface to date is a table — honest, but flat. A verdict is a route walking through a banded surface over time, and until now that geometry lived only in the reader's head.</p>
+
+  <p>So this slice draws it. And drawing it is exactly where the honesty rules earn their keep, because <strong>a map is the single most tempting place to launder banded intelligence into false precision</strong>. A heat-map cell wants one colour; a timeline wants a smooth curve; a route wants one cost. Every one of those is a scalar an assessed source never gave us.</p>
+
+  <h2>The rules, decided before the pixels</h2>
+  <p>Research note <code>10-spatial-temporal.md</code> (the DEC-11 gate for this slice) decides two rendering rules against the uncertainty-visualisation literature — most of which, it turns out, assumes a probability distribution ASSAY refuses to invent. Hypothetical outcome plots, quantile dotplots, gradient fades: all encode a density <em>inside</em> the interval, and an ASSAY band has no inside — just <code>[lo, hi]</code> from an assessed source (DEC-15 forbids the midpoint). What survives is the interval-honest subset:</p>
+  <ol>
+    <li><strong>A banded surface renders as a split fill</strong> — the band's lo stop and hi stop as hard halves, never one interpolated colour — with hatch density carrying the band's width and the exact <code>[lo, hi] unit</code> on hover, with its named source. Only an observed fact (<code>lo = hi</code>) earns a single stop.</li>
+    <li><strong>Time renders validity, never interpolation.</strong> Knowledge validity windows and route task windows are discrete extents on one clock; a lapsed channel is marked lapsed, never silently carried forward; and a stated peak — K9's "surge peaking D+5–D+7" — renders as a <em>quoted, attributed annotation</em>, never a synthesised curve, because the compiled band is flat and nothing honest can bend it.</li>
+  </ol>
+
+  <h2>Play with it</h2>
+  <div class="embed">
+    <div class="cap">SPEC-19 mockup, for review — real fixture geometry, the real compiled world, and a drag that re-scores through the real in-browser pipeline. Meridian is engineered fiction (ASSAY-DEC-8).</div>
+    <iframe src="../../assets/coa-viz/index.html" title="ASSAY spatial &amp; temporal COA visualisation — SPEC-19 mockup" loading="lazy"></iframe>
+  </div>
+
+  <h2>Try this</h2>
+  <ol>
+    <li><strong>Find the gap without being told.</strong> On the timeline, P1's exposure staircase rises exactly once — <code>+[12, 36]</code> band-hours where ANVIL dwells in <code>fac_waters</code> at steps 8–9 — and that riser is the whole substance of C4's <em>tight</em> verdict (threshold 12: the band straddles it). Now look at <code>air_defence</code> on the map: K7's band is compiled, banded, drawn — and the staircase never rises there, because no route enters it. That is the K6/K7 asymmetry as geometry.</li>
+    <li><strong>Drag the route and watch the verdict move.</strong> Grab ANVIL's waypoint at (32,22) and pull it west, out of <code>fac_waters</code>. That authors a <em>new plan version</em> (plans are immutable) and re-scores it through the same <code>ScoreService</code> the batch pipeline uses — C4 flips tight → robust, the margin band re-renders, and exactly the things whose value moved glow for ten seconds (G6). Nothing is tweened; the stamp on the panel is the recompute's receipt.</li>
+    <li><strong>Scrub the clock.</strong> The slider is <em>selection, not simulation</em>: it shows the compiled world at step <em>n</em> — which windows are live, which legs are active. Scrub past step 36 and the storm surface doesn't fade; it <em>lapses</em>, marked, back to the channel default. Notice nothing glows on a scrub: nothing changed, and the glow refuses to say otherwise.</li>
+    <li><strong>Try to lie to it.</strong> Set K6's band inverted (<code>lo &gt; hi</code>), or assert K8's single-source repair assessment as a hard fact without its waiver. Both come back as refusals, in place, with nothing saved — the same encoding firewall that guards the batch pipeline guards the drag-and-edit surface.</li>
+  </ol>
+
+  <div class="aside">
+    <strong>Why "mockup, for review"?</strong> The research note ends with an invitation, not a verdict: <em>is the spatial treatment honest and legible? is the temporal treatment honest and legible?</em> Those two questions are printed on the page itself, and SME reactions (comms §12) decide whether this surface hardens into a standing home — a fifth tab or an S2/S4 mode — or gets reworked. The interaction model ships now so reviewers can <em>feel</em> the input; the promotion decision is deliberately held open (concept §6 item 21(d)).
+  </div>
+
+  <p>One more honesty note, because it is the quiet heart of the slice: <strong>nothing on the map is drawn</strong>. Regions are the fixture bounding boxes; routes are the stated <code>plans.json</code> legs; every channel value is the compiled world materialised at a cell and step by the same function the scorer uses. The map is a projection of the store — the gallery's honesty class, with geometry.</p>
+
+  <p class="meta" style="margin-top:32px">This article's embed is the SPEC-19 mockup as shipped on 2026-07-15; like every ASSAY article it is a dated claim, and its evidence stays as dated as the claim. Identifiers (K*, C*, R*, FE-*, P*) are frozen per the Meridian vignette. Evidence captures: <code>docs/blog/evidence/spec-19/</code>.</p>
+</div>
+</body>
+</html>
