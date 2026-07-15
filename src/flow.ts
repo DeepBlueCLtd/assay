@@ -231,7 +231,7 @@ function knowledgeNode(
   gates: string[],
 ): string {
   const band = ko.answer ? bandPill(ko.answer, niceTrack(ko.answer)) : '';
-  const prov = ko.provenance ? provenanceChip(ko.provenance) : '';
+  const prov = ko.provenance ? provenanceChip(ko.provenance, ko.jipoe_step) : '';
   const chips = gates.length
     ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${gates.join('')}</div>`
     : '';

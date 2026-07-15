@@ -28,7 +28,7 @@ export interface Refusal {
 
 /** A warning is not a refusal — the write still succeeds (research note 01). */
 export interface LintWarning {
-  code: 'confidence_width_floor';
+  code: 'confidence_width_floor' | 'missing_jipoe_step';
   offending: Ref;
   message: string;
 }
@@ -47,6 +47,7 @@ export interface Delta {
   op: 'create' | 'supersede' | 'contest' | 'resolve';
   refs: Ref[];
   stamp?: string;
+  warnings?: LintWarning[]; // lint warnings the write drew (SPEC-21); envelope, outside content addressing
   at: string; // display-only envelope; never participates in content addressing (DEC-17)
 }
 

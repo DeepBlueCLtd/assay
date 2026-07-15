@@ -144,3 +144,47 @@ describe('deltas — exactly one per act, idempotent create', () => {
     expect(svc.deltas.size).toBe(1);
   });
 });
+
+describe('SPEC-21 — a step-less knowledge write warns at write, never refuses', () => {
+  it('a step-less create succeeds with the warning in the response AND on the delta', async () => {
+    const k = K('K2');
+    delete k.jipoe_step;
+    const result = await svc.create(k);
+    expect(isRefusal(result)).toBe(false);
+    if (!isRefusal(result)) {
+      expect(result.warnings?.some((w) => w.code === 'missing_jipoe_step')).toBe(true);
+      expect(result.warnings?.[0]?.offending.logical_id).toBe('K2');
+    }
+    expect(svc.store.size).toBe(1); // the write landed — a warning is not a refusal
+    const delta = svc.deltas.all[0]!;
+    expect(delta.op).toBe('create');
+    expect(delta.warnings?.some((w) => w.code === 'missing_jipoe_step')).toBe(true);
+  });
+
+  it('a step-less observed object warns too — origin applies to facts (no DEC-14 exemption)', async () => {
+    const k1 = K('K1'); // observed
+    delete k1.jipoe_step;
+    const result = await svc.create(k1);
+    expect(isRefusal(result)).toBe(false);
+    if (!isRefusal(result)) {
+      expect(result.warnings?.map((w) => w.code)).toContain('missing_jipoe_step');
+    }
+  });
+
+  it('a step-carrying create is silent; a step-less supersede carries the warning on its delta', async () => {
+    const clean = await svc.create(K('K2'));
+    if (!isRefusal(clean)) expect(clean.warnings).toBeUndefined();
+
+    await svc.create(K('K5'));
+    const k9 = answered('K9');
+    delete k9.jipoe_step;
+    const superseded = await svc.supersede(k9, 'K5');
+    expect(isRefusal(superseded)).toBe(false);
+    if (!isRefusal(superseded)) {
+      expect(superseded.warnings?.some((w) => w.code === 'missing_jipoe_step')).toBe(true);
+    }
+    const delta = svc.deltas.all[svc.deltas.size - 1]!;
+    expect(delta.op).toBe('supersede');
+    expect(delta.warnings?.some((w) => w.code === 'missing_jipoe_step')).toBe(true);
+  });
+});

@@ -38,7 +38,7 @@ export function channelTrace(
       const backing = src
         ? `<span data-logical-id="${esc(src)}" style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;cursor:pointer;text-decoration:underline dotted">${esc(src)}</span>`
         : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced — trace dead end (G3)</span>`;
-      const prov = ko?.provenance ? provenanceChip(ko.provenance) : '';
+      const prov = ko?.provenance ? provenanceChip(ko.provenance, ko.jipoe_step) : '';
       // Glow signature: the region row glows iff its displayed value or backing
       // source changed — not on every world re-stamp.
       const sig = `${region.value.lo}-${region.value.hi} ${region.value.unit}|${src ?? 'unsourced'}|${region.from_step ?? ''}-${region.until_step ?? ''}`;

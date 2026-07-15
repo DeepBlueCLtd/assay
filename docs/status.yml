@@ -99,6 +99,21 @@ theses:                      # state vocabulary is the register's own
 updates:
   - date: 2026-07-15
     note: >-
+      SPEC-21 built (JIPOE anchoring — knowledge names its doctrinal origin; review §4.1/A7,
+      addendum slice S-A): the note-01 amendment (DEC-11 gate) fixes the JipoeStep vocabulary
+      (JP 2-01.3's four steps verbatim), the per-object assignments for all seventeen Meridian
+      K objects (resolving K10 → step 3 — retirement does not erase origin), and the lint
+      posture. The schema gains a JipoeStep enum and an optional jipoe_step slot on
+      KnowledgeObject (register candidate, concept §6.22 — flagged, awaiting the next batch);
+      fixtures are annotated and pinned by an oracle-style test; the provenance chip renders
+      the step in words wherever provenance renders, with legends updated; a step-less
+      knowledge write draws a warning-level missing_jipoe_step lint on the response and the
+      delta — never a refusal, and observed is NOT exempt (origin applies to facts too).
+      "Doctrinally shaped, not invented conveniences" is now machine-auditable, the first
+      concrete step of the forward-derivation programme (issue #43). No banded/scalar
+      semantics change; no oracle, verdict, or coverage-row change.
+  - date: 2026-07-15
+    note: >-
       Register batch 6 ratified (ASSAY-DEC-36): the SME checkpoint endorsed the SPEC-19
       spatial/temporal UI model (findings ledger ASSAY-FIND-7), closing concept §6 item 21 —
       the banded-surface convention, the temporal convention, drag-to-recompute, and

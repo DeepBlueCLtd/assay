@@ -29,6 +29,11 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'Where the value came from and how strongly it is held, welded on and never optional (DEC-9). "assessment, not fact" is forced on anything not directly observed; a red "single-source" marks an uncorroborated value; the owner is named.',
   },
+  jipoe: {
+    term: 'JIPOE step chip (JIPOE n · step name)',
+    gloss:
+      'The JIPOE step this question originated from — define the OE / describe OE effects / evaluate the adversary / determine adversary COAs (JP 2-01.3). Singular by design: it names the origin; downstream usage lives in the trace graph. Makes "doctrinally shaped, not invented" auditable rather than asserted (SPEC-21).',
+  },
   verdict: {
     term: 'four-stop verdict (robust / marginal / tight / violated)',
     gloss:
@@ -127,8 +132,8 @@ export function legend(pillIds: string[], opts: { title?: string } = {}): string
 
 /** The pill sets each named component renders — the source for its legend. */
 export const COMPONENT_PILLS: Record<string, string[]> = {
-  s1Table: ['band', 'provenance', 'waiver', 'blocks', 'refusal'],
-  channelTrace: ['band', 'provenance'],
+  s1Table: ['band', 'provenance', 'jipoe', 'waiver', 'blocks', 'refusal'],
+  channelTrace: ['band', 'provenance', 'jipoe'],
   s2Matrix: ['verdict'],
   handfulStrip: ['distinct'],
   s3Cards: ['sacrifice', 'tier'],

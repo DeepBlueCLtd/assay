@@ -66,6 +66,7 @@ The central type: one quantified JIPOE Q&A, whole-life.
 | `waiver` | Waiver, optional | Required for an assessed/reported source claiming `hard_constraint` (§9); `{granted_by, justification, granted_at}` |
 | `expected_answers` | ExpectedAnswer[], optional | The miniature event matrix (DEC-18): per ScenarioCOA, the band the answer is expected to fall in if that COA is the truth. Meaningful for `open` questions; retained after answering for audit |
 | `collection` | CollectionOption[], optional | For open questions: `{method, cost: Band, earliest_result: timestep}` — cost is an estimate, therefore banded |
+| `jipoe_step` | JipoeStep, optional | The *originating* JIPOE step (singular by design — usage lives in the trace graph). Assignments decided in research note `01-knowledge.md` (amendment); a step-less write draws a warning-level lint (`observed` not exempt). SPEC-21; register candidate concept §6.22 |
 
 **Lifecycle (normative).** `open`: posed, unanswered — ranked by discrimination (from `expected_answers` separation) and carried in S1's collect queue. `answered`: answer + provenance present. `superseded`: a `supersedes` edge points at this version; the superseding object identifies exactly the verdicts this version fed (thesis F is a trace walk from here). `stale`: validity window expired on the scenario clock, or superseded. `contested`: a `contests` edge links two live objects answering the same question — **neither may compile** (G5) until a `resolves` edge lands. `resolved`: contest closed with a surviving answer. `retired`: withdrawn from use by owner decision, without replacement.
 
@@ -180,6 +181,14 @@ enums:
   EncodingClass:
     description: ASSAY-DEC-6; compile firewall rules in knowledge-model §9.
     permissible_values: {hard_constraint: {}, banded_soft_cost: {}, scenario_weight: {}}
+  JipoeStep:
+    description: >-
+      Originating JIPOE step, singular by design (SPEC-21; assignments and lint posture decided in
+      research note 01-knowledge.md amendment). JP 2-01.3 ch. II names the four steps verbatim:
+      Step 1 — Define the Operational Environment; Step 2 — Describe the Impact of the Operational
+      Environment; Step 3 — Evaluate the Adversary; Step 4 — Determine Adversary Courses of Action.
+      Downstream usage lives in the trace graph, never in this slot.
+    permissible_values: {step1_define_oe: {}, step2_describe_effects: {}, step3_evaluate_adversary: {}, step4_determine_adversary_coas: {}}
   LifecycleStatus:
     description: ASSAY-DEC-17.
     permissible_values: {open: {}, answered: {}, superseded: {}, stale: {}, contested: {}, resolved: {}, retired: {}}
@@ -269,6 +278,7 @@ classes:
       waiver: {range: Waiver}
       expected_answers: {range: ExpectedAnswer, multivalued: true, inlined_as_list: true}
       collection: {range: CollectionOption, multivalued: true, inlined_as_list: true}
+      jipoe_step: {range: JipoeStep, description: Originating JIPOE step (research note 01-knowledge.md amendment; warning-linted when absent — observed not exempt).}
 
   Commitment:
     is_a: StoredObject

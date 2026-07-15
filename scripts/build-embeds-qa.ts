@@ -118,7 +118,7 @@ const p2FiresWithK3 = firesBand('P2', world);
 const p2FiresNoK3 = firesBand('P2', worldNoK3);
 const panel1 = {
   answer: bandPill({ lo: 35000, hi: 55000, unit: 'persons' }, { label: 'K3 civil population' }),
-  prov: provenanceChip(K('K3').provenance!),
+  prov: provenanceChip(K('K3').provenance!, K('K3').jipoe_step),
   trace: channelTrace(oneChannel(world, 'civil_density'), koById),
   p1Fires: firesBand('P1', world),
   p2Fires: p2FiresWithK3,
@@ -166,7 +166,7 @@ for (let half = 0; half <= 4; half++) {
 }
 const panel2 = {
   answer: bandPill({ lo: 2, hi: 6, unit: 'sorties/day' }, { label: 'K6 FAC sortie rate' }),
-  prov: provenanceChip(K('K6').provenance!),
+  prov: provenanceChip(K('K6').provenance!, K('K6').jipoe_step),
   trace: channelTrace(oneChannel(world, 'threat'), koById),
   exposure: { lo: p1ExposureRes.band.lo, hi: p1ExposureRes.band.hi, unit: p1ExposureRes.band.unit },
   frames: sliderFrames,
@@ -182,7 +182,7 @@ const anvilInAD = (planId: string): boolean => {
 };
 const panel3 = {
   answer: bandPill({ lo: 8, hi: 14, unit: 'km' }, { label: 'K7 air-defence envelope' }),
-  prov: provenanceChip(K('K7').provenance!),
+  prov: provenanceChip(K('K7').provenance!, K('K7').jipoe_step),
   p1InAD: anvilInAD('P1'),
   p2InAD: anvilInAD('P2'),
 };

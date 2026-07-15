@@ -27,6 +27,29 @@ export function relativeWidth(lo: number, hi: number): number {
   return denom === 0 ? 0 : (hi - lo) / denom;
 }
 
+/**
+ * SPEC-21 — missing-JIPOE-step lint (research note 01, amendment).
+ *
+ * Every question originates somewhere in the four-step JIPOE process; a
+ * knowledge object that does not name its step leaves "doctrinally shaped"
+ * asserted rather than auditable. Warning-level like the width lint
+ * (recalibrated after Checkpoint 1, DEC-27) — but unlike it, `observed` is
+ * NOT exempt: the width exemption protects fact from a precision test that
+ * only bites assessments; origin applies to every source class, open
+ * questions included.
+ */
+export function jipoeStepLint(ko: KnowledgeObject): LintWarning[] {
+  if (ko.jipoe_step !== undefined) return [];
+  const offending: Ref = { logical_id: ko.logical_id, content_hash: '' };
+  return [
+    {
+      code: 'missing_jipoe_step',
+      offending,
+      message: `${ko.logical_id}: no originating JIPOE step named — the doctrinal-shape claim stays asserted, not auditable (research note 01, amendment).`,
+    },
+  ];
+}
+
 export function confidenceLint(ko: KnowledgeObject): LintWarning[] {
   const prov = ko.provenance;
   if (!ko.answer || !prov) return []; // open questions and un-provenanced objects are exempt

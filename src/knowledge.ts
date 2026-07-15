@@ -19,13 +19,14 @@ import { TraceStore, type TraceChain } from './trace.js';
 import { DeltaLog } from './deltas.js';
 import { validateInstance } from './validate.js';
 import { checkEncoding } from './encoding.js';
-import { confidenceLint } from './lint.js';
+import { confidenceLint, jipoeStepLint } from './lint.js';
 import { contentHash } from './canonical.js';
-import type { Refusal, WriteResult } from './seam.js';
+import type { LintWarning, Refusal, WriteResult } from './seam.js';
 
 export interface SupersedeResult {
   ref: Ref;
   stale: Ref[]; // exactly the versions the supersedes edge staled (seam §3)
+  warnings?: LintWarning[];
 }
 
 export interface ContestResult {
@@ -81,12 +82,19 @@ export class KnowledgeService {
     const isNew = !this.#store.exists(hash);
     const ref = await this.#store.put(ko as unknown as Record<string, unknown>);
 
+    const warnings = this.#lints(ko);
     if (isNew) {
       // Exactly one delta per act; a byte-identical re-create publishes none (FR-010).
-      this.#deltas.publish({ op: 'create', refs: [ref], actor: this.#actor, role: this.#role });
+      // The delta records the warnings the write drew (SPEC-21).
+      this.#deltas.publish({
+        op: 'create',
+        refs: [ref],
+        actor: this.#actor,
+        role: this.#role,
+        ...(warnings.length > 0 ? { warnings } : {}),
+      });
     }
 
-    const warnings = confidenceLint(ko);
     return warnings.length > 0 ? { ref, warnings } : { ref };
   }
 
@@ -105,6 +113,7 @@ export class KnowledgeService {
     const ref = await this.#store.put(next as unknown as Record<string, unknown>);
     const priorRef: Ref = { logical_id: priorId, content_hash: priorHash };
 
+    const warnings = this.#lints(next);
     // Supersession is an edge, cross-lineage where needed (K9 supersedes K5) — DEC-21.
     this.#trace.add(this.#edge(ref.content_hash, priorHash, 'supersedes'));
     this.#deltas.publish({
@@ -112,9 +121,10 @@ export class KnowledgeService {
       refs: [ref, priorRef],
       actor: this.#actor,
       role: this.#role,
+      ...(warnings.length > 0 ? { warnings } : {}),
     });
 
-    return { ref, stale: [priorRef] };
+    return warnings.length > 0 ? { ref, stale: [priorRef], warnings } : { ref, stale: [priorRef] };
   }
 
   /** POST /knowledge/{id}/contest — marks both contested; blocks compile (G5). */
@@ -192,6 +202,11 @@ export class KnowledgeService {
   /** The single G5 truth: contested knowledge reaches no compiled world. */
   isCompilable(id: string): boolean {
     return this.effectiveStatus(id) !== 'contested';
+  }
+
+  /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
+  #lints(ko: KnowledgeObject): LintWarning[] {
+    return [...confidenceLint(ko), ...jipoeStepLint(ko)];
   }
 
   #latestHash(id: string): string | undefined {

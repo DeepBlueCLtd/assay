@@ -1,7 +1,7 @@
 # ASSAY — Seam Contract
 
 **Founding doc 3** · REST shapes and semantics
-Status: draft for review · v0.4 · 2026-07-12 · v0.2 closed four gaps surfaced by the end-to-end walkthrough (`assay-walkthrough.md` §9): object listing (§2), delta publication on knowledge writes (§3), the select service (§11), and the `?since=seq` delta parameter harmonised with `assay-ui-design.md`. v0.3 added the propagation-honesty candidate invariant (§G, G6) and reclassified channel payload size as a mock-relevant risk (open item 2). v0.4 ratifies the v0.2 additions as ASSAY-DEC-24 and G6 as ASSAY-DEC-25 (register batch 3); §G is now six standing invariants.
+Status: draft for review · v0.5 · 2026-07-15 · v0.2 closed four gaps surfaced by the end-to-end walkthrough (`assay-walkthrough.md` §9): object listing (§2), delta publication on knowledge writes (§3), the select service (§11), and the `?since=seq` delta parameter harmonised with `assay-ui-design.md`. v0.3 added the propagation-honesty candidate invariant (§G, G6) and reclassified channel payload size as a mock-relevant risk (open item 2). v0.4 ratifies the v0.2 additions as ASSAY-DEC-24 and G6 as ASSAY-DEC-25 (register batch 3); §G is now six standing invariants. v0.5 (SPEC-21) documents the warning-level lints on knowledge writes (§3) and records `warnings?` on the write response and the delta envelope (§10) — warnings are never refusals.
 Authority: ASSAY-DEC-4 (mock behind seam; scorer honestly real), DEC-5 (store, services, trace graph, stamped deltas), DEC-10 (scorer independently callable), DEC-13 (invariants live here in §G while `assay-architecture.md` is deferred), DEC-24 (object listing §2, delta-on-every-knowledge-write §3, select service §11), DEC-25 (G6 propagation honesty), DEC-15/17/19/21 via the shapes they constrain.
 Companions: `assay-knowledge-model.md` (every payload shape named here is defined there), `assay-vignette.md` (the fixture instances), `assay-ui-design.md` §3 (which surface calls what), `assay-walkthrough.md` (the contract played end-to-end; its §9 logs changes it forces here).
 
@@ -47,14 +47,16 @@ GET  /objects?class={ClassName}                            → {refs: Ref[]}    
 
 ```
 GET  /knowledge?status=open|answered|stale|contested|…     → {objects: KnowledgeObject[]}
-POST /knowledge                    {object}                → {ref} | Refusal        // encoding discipline enforced here
-POST /knowledge/{id}/supersede     {object}                → {ref, stale: Ref[]}    // writes supersedes edge; returns what it staled
+POST /knowledge                    {object}                → {ref, warnings?} | Refusal        // encoding discipline enforced here
+POST /knowledge/{id}/supersede     {object}                → {ref, stale: Ref[], warnings?}    // writes supersedes edge; returns what it staled
 POST /knowledge/{id}/contest       {object}                → {refs: Ref[2]}         // writes contests edge; both → contested
 POST /knowledge/{id}/resolve       {surviving: Ref, note}  → {ref}                  // writes resolves edge
 GET  /knowledge/{id}/exposure                              → {chains: TraceChain[]} // forward walk: what does this drive?
 ```
 
 Create/supersede enforce the encoding-discipline table (knowledge model §9) at write time: an `assumption` claiming `hard_constraint` is refused `encoding_violation`; `reported`/`assessed` claiming `hard_constraint` without a `waiver` is refused `waiver_required`. Supersession may cross lineages (K9 supersedes K5); the response's `stale` list is exactly the versions the edge staled.
+
+Create/supersede also run the warning-level lints (never refusals; research note 01 + amendment): `confidence_width_floor` (a suspiciously tight band for the stated confidence; `observed` exempt) and `missing_jipoe_step` (no originating JIPOE step named; `observed` **not** exempt — origin applies to facts too; SPEC-21). `warnings?: LintWarning[]` rides the write response and is recorded on the published delta (§10).
 
 Create, supersede, contest, and resolve each publish exactly one delta (§10). They are cross-surface writes in effect, not just in name: a contest blocks the planner's next compile (G5), a supersession stales verdicts on the planner's matrix — so each lands on the feed like any other seam-crossing act (clarified v0.2; walkthrough §9.4).
 
@@ -127,7 +129,9 @@ TraceChain = {nodes: Ref[], edges: TraceEdge[], complete: boolean}
 GET /deltas?since=seq          → {deltas: Delta[]}
 
 Delta = {seq: integer, actor: string, role: string, op: string,
-         refs: Ref[], stamp?: string, at: iso-datetime}   // 'at' is display-only envelope,
+         refs: Ref[], stamp?: string,
+         warnings?: LintWarning[],                        // lint warnings the write drew (SPEC-21)
+         at: iso-datetime}                                // 'at' is display-only envelope,
                                                           // outside content addressing (DEC-17)
 ```
 

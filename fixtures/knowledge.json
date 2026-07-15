@@ -2,6 +2,7 @@
   {
     "logical_id": "K1",
     "version": 1,
+    "jipoe_step": "step1_define_oe",
     "question": "What depths and beach gradients constrain approach to Anchor Island?",
     "subject": "mobility.approach",
     "encoding_class": "hard_constraint",
@@ -20,6 +21,7 @@
   {
     "logical_id": "K2",
     "version": 1,
+    "jipoe_step": "step2_describe_effects",
     "question": "What load will the Ledger–Anchor causeway bear?",
     "subject": "mobility.causeway",
     "encoding_class": "banded_soft_cost",
@@ -38,6 +40,7 @@
   {
     "logical_id": "K3",
     "version": 1,
+    "jipoe_step": "step1_define_oe",
     "question": "What is the civil population in the Port Halcyon district?",
     "subject": "civil_density.port_district",
     "encoding_class": "banded_soft_cost",
@@ -56,6 +59,7 @@
   {
     "logical_id": "K4",
     "version": 1,
+    "jipoe_step": "step3_evaluate_adversary",
     "question": "What is garrison strength and posture?",
     "subject": "threat.garrison",
     "encoding_class": "banded_soft_cost",
@@ -74,6 +78,7 @@
   {
     "logical_id": "K5",
     "version": 1,
+    "jipoe_step": "step2_describe_effects",
     "question": "What are tide and storm conditions D+0–D+4?",
     "subject": "weather.tide_storm",
     "encoding_class": "banded_soft_cost",
@@ -93,6 +98,7 @@
   {
     "logical_id": "K6",
     "version": 1,
+    "jipoe_step": "step3_evaluate_adversary",
     "question": "What sortie rate can the FAC squadron sustain?",
     "subject": "threat.fac_sorties",
     "encoding_class": "banded_soft_cost",
@@ -111,6 +117,7 @@
   {
     "logical_id": "K7",
     "version": 1,
+    "jipoe_step": "step2_describe_effects",
     "question": "What is the air-defence engagement envelope at Carrick strip?",
     "subject": "threat.air_defence",
     "encoding_class": "banded_soft_cost",
@@ -129,6 +136,7 @@
   {
     "logical_id": "K8",
     "version": 1,
+    "jipoe_step": "step3_evaluate_adversary",
     "question": "Is the Carrick Head battery's fire-control radar operational?",
     "subject": "threat.battery",
     "encoding_class": "hard_constraint",
@@ -152,6 +160,7 @@
   {
     "logical_id": "K9",
     "version": 1,
+    "jipoe_step": "step2_describe_effects",
     "question": "What are tide and storm conditions D+2–D+9?",
     "subject": "weather.tide_storm",
     "encoding_class": "banded_soft_cost",
@@ -171,6 +180,7 @@
   {
     "logical_id": "K10",
     "version": 1,
+    "jipoe_step": "step3_evaluate_adversary",
     "question": "Will the garrison capitulate by D+5?",
     "subject": "threat.will_to_fight",
     "encoding_class": "hard_constraint",
@@ -188,6 +198,7 @@
   {
     "logical_id": "K11",
     "version": 1,
+    "jipoe_step": "step4_determine_adversary_coas",
     "question": "Are mines loaded on the minelayers at Ledger quay?",
     "subject": "threat.mine_loading",
     "encoding_class": "banded_soft_cost",
@@ -209,6 +220,7 @@
   {
     "logical_id": "K12a",
     "version": 1,
+    "jipoe_step": "step3_evaluate_adversary",
     "question": "How many sea mines does the garrison hold?",
     "subject": "threat.mine_stock",
     "encoding_class": "banded_soft_cost",
@@ -227,6 +239,7 @@
   {
     "logical_id": "K12b",
     "version": 1,
+    "jipoe_step": "step3_evaluate_adversary",
     "question": "How many sea mines does the garrison hold?",
     "subject": "threat.mine_stock",
     "encoding_class": "banded_soft_cost",
@@ -245,6 +258,7 @@
   {
     "logical_id": "K13",
     "version": 1,
+    "jipoe_step": "step4_determine_adversary_coas",
     "question": "What is the daily radio-traffic volume from garrison HQ?",
     "subject": "threat.hq_radio",
     "encoding_class": "banded_soft_cost",
@@ -266,6 +280,7 @@
   {
     "logical_id": "K14a",
     "version": 1,
+    "jipoe_step": "step4_determine_adversary_coas",
     "question": "How likely is red COA R1 (Fortress Halcyon)?",
     "subject": "scenario.likelihood",
     "encoding_class": "scenario_weight",
@@ -284,6 +299,7 @@
   {
     "logical_id": "K14b",
     "version": 1,
+    "jipoe_step": "step4_determine_adversary_coas",
     "question": "How likely is red COA R2 (Strait Denial)?",
     "subject": "scenario.likelihood",
     "encoding_class": "scenario_weight",
@@ -302,6 +318,7 @@
   {
     "logical_id": "K14c",
     "version": 1,
+    "jipoe_step": "step4_determine_adversary_coas",
     "question": "How likely is red COA R3 (Spoiling Withdrawal)?",
     "subject": "scenario.likelihood",
     "encoding_class": "scenario_weight",
