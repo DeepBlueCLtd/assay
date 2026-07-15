@@ -13,7 +13,7 @@
 #     the site polices its own optimism rather than trusting a human to.
 #   - Nothing here may show a capability the repository does not contain.
 
-updated: 2026-07-14
+updated: 2026-07-15
 current_stage: 7            # 0..7, the stage in flight
 current_stage_label: "Stage 6 built · Stage 7 next"
 gate_passed: false          # the spine-complete gate (SPEC-15)
@@ -97,6 +97,19 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-15
+    note: >-
+      SPEC-19 built (spatial & temporal COA visualisation, review-first): research note
+      10-spatial-temporal.md decides the banded-surface rule (split fill + hatch, never a
+      single stop for an assessed channel — G2) and the temporal rule (discrete validity/
+      task windows, lapse marked, stated peaks quoted never curved — thesis F); a reviewable
+      map + timeline mockup renders the real fixture geometry and compiled bands, with the
+      C4 exposure staircase making the SPEC-18 honest gap visible as geometry (K6 propagates,
+      K7's region is never entered, K3 is never read); dragging a waypoint authors a new plan
+      version and re-scores through the real in-browser pipeline with value-keyed glow (G6),
+      byte-identical to a from-scratch run (G1). Thesis states unchanged (A/B already
+      explored; this is a presentation-lane slice). SME review invited (comms §12) before
+      the surface promotes (concept §6 item 21(d)).
   - date: 2026-07-14
     note: >-
       Register batch 5 ratified (ASSAY-DEC-35): civil harm stays a geometric red line,

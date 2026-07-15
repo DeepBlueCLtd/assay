@@ -12,8 +12,9 @@
     "gallery": "tsx scripts/build-gallery.ts",
     "embeds": "tsx scripts/build-embeds.ts && tsx scripts/build-embeds-qa.ts",
     "flow": "tsx scripts/build-flow.ts",
+    "coa-viz": "tsx scripts/build-coa-viz.ts",
     "build:app": "tsx scripts/build-app.ts",
-    "build:site": "npm run gallery && npm run embeds && npm run flow && npm run build:app && tsx scripts/build-site.ts",
+    "build:site": "npm run gallery && npm run embeds && npm run flow && npm run coa-viz && npm run build:app && tsx scripts/build-site.ts",
     "bench": "tsx scripts/bench-canonical.ts"
   },
   "dependencies": {

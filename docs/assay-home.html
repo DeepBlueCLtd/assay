@@ -11,7 +11,7 @@
 
   DEPLOYMENT: the publish pipeline (scripts/build-site.ts, `npm run build:site`)
   copies this file to the site root as index.html; its relative links `gallery/`,
-  `wireframes.html`, `flow.html`, and `blog/` then resolve to the
+  `wireframes.html`, `flow.html`, `coa-viz.html`, and `blog/` then resolve to the
   published surfaces. Every shippable UI artefact is BOTH copied by build-site.ts
   AND linked from a card here, so a reviewer reaches it from the preview by
   clicking, never by typing a URL (comms plan §1.6). The
@@ -367,6 +367,15 @@
            with a guided tour and a bounded sandbox driving the <b>real seam</b> (compile, score,
            relax). One canvas, three zoom layers; auto-recompute is stamped and attributed, never
            silent. Behaviours land under a flagged register candidate (ratify-after).</p>
+      </a>
+      <a class="card" href="coa-viz.html">
+        <div class="eyebrow">Mockup · for review · SPEC-19</div>
+        <h3>Where the plan meets the water <span class="arw">&rarr;</span></h3>
+        <p>The COA made spatial and temporal: routes over banded channel surfaces (split fills,
+           never a heat stop), validity and task windows on one clock, and the C4 exposure
+           staircase that shows <b>where and when</b> the dwell was banked. Drag a waypoint and the
+           verdict re-scores through the <b>real in-browser pipeline</b>, glowing what moved (G6).
+           Reviewers: the research note's two questions are on the page.</p>
       </a>
       <a class="card" href="flow-schematic.html">
         <div class="eyebrow">Proposal · interactive walkthrough</div>
