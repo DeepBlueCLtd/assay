@@ -242,7 +242,7 @@ Triggers follow the queue conventions. **[RC]** = requires a register candidate 
 
 **Also overtaken by events:** SPEC-19 (spatial & temporal COA visualisation) has since been implemented and promoted (ASSAY-DEC-36). That **delivers mockup M6** (spatial bands on the map) and establishes the interaction substrate (drag-to-rescore, scenario-clock scrub) that M3 extends. The groupings below account for it.
 
-The surviving recommendations group into **six proposed build slices** plus a small set of non-spec companions. Numbering is indicative (next free is 020); the delivery plan assigns final numbers and lanes. Every slice follows house discipline: research note first (DEC-11), register candidates flagged before build (DEC-2), no new engine where a scorer-in-a-loop or a projection suffices (DEC-10, DEC-5).
+The surviving recommendations group into **seven proposed build slices** plus a small set of non-spec companions. Each slice is now fully specified in `specs/` (wave-order numbering): S-B → `specs/020-compile-precedence/`, S-A → `specs/021-jipoe-anchoring/`, S-C → `specs/022-attention-ordering/`, S-E → `specs/023-discrimination-v2/`, S-D → `specs/024-decision-support-matrix/`, S-F → `specs/025-verdict-legibility/`, S-G → `specs/026-history-replay/`. The delivery plan adopts numbers and lanes at ratification. Every slice follows house discipline: research note first (DEC-11), register candidates flagged before build (DEC-2), no new engine where a scorer-in-a-loop or a projection suffices (DEC-10, DEC-5).
 
 ### S-A · "JIPOE anchoring" — the knowledge model names its doctrinal origin *(information model)*
 Folds in: **A7** (annotate K1–K14 with originating JIPOE step) and the §4.1 crosswalk made auditable.
