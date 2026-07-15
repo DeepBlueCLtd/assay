@@ -11,6 +11,7 @@ import { CompileService, type CompileResult } from '../src/compile.js';
 import { canonicalJson } from '../src/canonical.js';
 import { isRefusal } from '../src/seam.js';
 import type { Ref } from '../src/store.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -28,7 +29,7 @@ const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 
 /** The Meridian base compilable set: answered, spatial, non-weight, non-stale. */
 const BASE = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 
 async function setup(): Promise<{ svc: KnowledgeService; compiler: CompileService }> {
   const svc = new KnowledgeService();
@@ -92,6 +93,14 @@ describe('US2 — the same knowledge compiles to a byte-identical stamp (G1)', (
     const b = ok(await compiler.compile({ knowledge: [...BASE].reverse().map(ref), config, engine_version: ENGINE }));
     expect(a.stamp).toBe(b.stamp);
     expect(a.world.content_hash).toBe(b.world.content_hash);
+  });
+
+  it('the engine bump moves the stamp: same inputs at 0.1.0 vs the current engine differ (SPEC-20 FR-005)', async () => {
+    const { compiler } = await setup();
+    const old_ = ok(await compiler.compile({ knowledge: BASE.map(ref), config, engine_version: '0.1.0' }));
+    const cur = ok(await compiler.compile({ knowledge: BASE.map(ref), config, engine_version: ENGINE }));
+    expect(ENGINE).not.toBe('0.1.0'); // the SPEC-20 precedence fix bumped the engine
+    expect(old_.stamp).not.toBe(cur.stamp); // old stamps stay honest about what computed them (G1)
   });
 
   it('a COA excursion (R2) yields a different but reproducible stamp', async () => {

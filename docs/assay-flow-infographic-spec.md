@@ -169,7 +169,7 @@ Sandbox actions are seam writes against a store seeded to the frozen tableau; **
 | 2 | §3 beat 2 (contest) | contest K12 → planner compile **blocked**, refusal `contested_knowledge` |
 | 3 | §3 beat 2 (resolve) | resolve K12→K12b → `resolves` edge |
 | 4 | §4 beat 3 | recompile → world `9b2e…44a`; handful re-scored, stamped |
-| 5 | §5 beat 4 | relax under R3m → 3 least-worst cards, sacrifice **C4 · C3 · C2** |
+| 5 | §5 beat 4 | relax under R3m → 3 least-worst cards, sacrifice **{C4,C5} · {C3,C5} · {C2,C5}** *(C5 foreclosed by the dropped causeway — SPEC-20)* |
 | 6 | §6–7 beats 5–6 | select P2 → `SelectionRationale`; exposure raises **K8**'s verification priority |
 
 ## 9. Acceptance intent (feeds the spec-kit acceptance scenarios)

@@ -85,7 +85,7 @@ The comparability guard earns its keep here: any artefact still carrying `7f3a�
 
 Against the R3m excursion (both approaches mined, causeway dropped), no plan satisfies C2–C4 together — by construction (vignette §6).
 
-- Planner · S2: `POST /relax {world: W2-R3m, commitments: [C1…C6], seed}` → a **RelaxationReport, never empty, never a silent drop (G4)**: three candidates sacrificing **C4** (parallel sweep — ANVIL/BROOM inside the arc), **C3** (berths first — fires into the harbourfront), **C2** (sequential sweep — "opens the strait D+9, two days late"), each `sacrificed` non-empty, each narrative in command language, same-tier tie-breaks stated in `tie_break` (DEC-19).
+- Planner · S2: `POST /relax {world: W2-R3m, commitments: [C1…C6], seed}` → a **RelaxationReport, never empty, never a silent drop (G4)**: three candidates sacrificing **{C4,C5}** (parallel sweep — ANVIL/BROOM inside the arc), **{C3,C5}** (berths first — fires into the harbourfront), **{C2,C5}** (sequential sweep — "opens the strait D+9, two days late"), each `sacrificed` non-empty, each narrative in command language, same-tier tie-breaks stated in `tie_break` (DEC-19). C5 rides in every set because R3m's dropped causeway forecloses "taken intact" for all plans — a computed, scenario-imposed sacrifice, corrected 2026-07-15 by SPEC-20 (excursion-beats-base precedence, note 02 §6): before the fix the compiled world kept K2's base estimate and C5 scored satisfied against this walkthrough's own story — exactly the §0 defect class.
 - `cited_in` edges connect the verdicts/scores each candidate rests on to the report.
 - **S3** renders the report as the three least-worst cards; every element opens the trace drawer backward to named knowledge with named owners (G3).
 
@@ -108,7 +108,7 @@ sequenceDiagram
   participant S as /select
   participant J2 as J-2 (S1)
   PL->>R: POST {world W2-R3m, C1..C6, seed}
-  R-->>PL: RelaxationReport — sacrifice C4 | C3 | C2
+  R-->>PL: RelaxationReport — sacrifice C4+C5 | C3+C5 | C2+C5
   Note over R: G4 — never empty, never silent,<br/>tie-breaks stated
   C->>S: POST /select {P2, report, statement}
   S-->>C: {rationale}
