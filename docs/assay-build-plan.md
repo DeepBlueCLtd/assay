@@ -51,7 +51,7 @@ The plan is a **lap then depth**: seven stages thread the spine end-to-end again
 
 **Build**: `/relax`; `sacrificed` populated on infeasible-set planning (contract invariant G4); S3 least-worst cards.
 
-**Exit**: the R3 mining branch yields three candidates sacrificing C4, C3, C2 respectively; the cards state each sacrifice in command language; no silent constraint drops anywhere.
+**Exit**: the R3 mining branch yields three candidates sacrificing C4, C3, C2 respectively; the cards state each sacrifice in command language; no silent constraint drops anywhere. *(Exit met at Stage 4 as written; corrected 2026-07-15 by SPEC-20 — excursion-beats-base compile precedence, note 02 §6 — the sets are {C4,C5}, {C3,C5}, {C2,C5}: R3m's dropped causeway forecloses C5 for every plan, so it joins each set as a computed, scenario-imposed sacrifice. Vignette §6/§7 carry the canonical statement.)*
 **User-observable**: S3 shows the three least-worst cards, each naming its sacrifice in command language ("opens the strait D+9, two days late"); the why-chain answers "why can't I keep both C2 and C4?" on demand. *Demo moment: "least-worst, never silence" — toggle R3m, watch infeasibility become an argument instead of an error.*
 
 ## Stage 5 — Scenario robustness (thesis C live)

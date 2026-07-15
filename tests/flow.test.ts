@@ -130,7 +130,9 @@ describe('AS-6 · least-worst (G4)', () => {
     const report = await relaxR3m();
     expect(report.candidates).toHaveLength(3);
     for (const c of report.candidates) expect(c.sacrificed.length).toBeGreaterThan(0);
-    expect(report.candidates.flatMap((c) => c.sacrificed).sort()).toEqual(['C2', 'C3', 'C4']);
+    // C5 rides in every set: the excursion layer beats the base causeway estimate
+    // (SPEC-20, note 02 §6), so the demolished causeway is a computed sacrifice.
+    expect(report.candidates.flatMap((c) => c.sacrificed).sort()).toEqual(['C2', 'C3', 'C4', 'C5', 'C5', 'C5']);
   });
 });
 

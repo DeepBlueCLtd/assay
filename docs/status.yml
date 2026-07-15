@@ -119,7 +119,7 @@ updates:
       (JP 2-01.3's four steps verbatim), the per-object assignments for all seventeen Meridian
       K objects (resolving K10 → step 3 — retirement does not erase origin), and the lint
       posture. The schema gains a JipoeStep enum and an optional jipoe_step slot on
-      KnowledgeObject (register candidate, concept §6.22 — flagged, awaiting the next batch);
+      KnowledgeObject (register candidate, concept §6.23 — flagged, awaiting the next batch);
       fixtures are annotated and pinned by an oracle-style test; the provenance chip renders
       the step in words wherever provenance renders, with legends updated; a step-less
       knowledge write draws a warning-level missing_jipoe_step lint on the response and the
@@ -127,6 +127,21 @@ updates:
       "Doctrinally shaped, not invented conveniences" is now machine-auditable, the first
       concrete step of the forward-derivation programme (issue #43). No banded/scalar
       semantics change; no oracle, verdict, or coverage-row change.
+  - date: 2026-07-15
+    note: >-
+      SPEC-20 built (compile-overlay precedence, fix-class — review 2026-07-14 §3.6 / slice
+      S-B): channel materialisation now resolves overlapping region overrides by LAYER
+      before geometry — a scenario excursion's override beats a base-knowledge override on
+      the cells it re-describes (research note 02-compile.md §6 amendment, the DEC-11 gate;
+      register candidate concept §6.22). This removes the one place the computed world
+      contradicted the vignette narrative: under R3/R3m the causeway demolition now wins
+      over K2's base engineering estimate, C5 "taken intact" scores violated, and the
+      Stage-4 least-worst exhibit's sacrifice sets become {C4,C5}, {C3,C5}, {C2,C5} —
+      the exhibit changed because the world got more honest, and the coverage row,
+      walkthrough beat 4, and gallery captions moved with it in the same change (never a
+      silent test edit). engine_version bumps to 0.2.0; old stamps stay honest about what
+      computed them (G1); mixed-engine worlds now grey the scenario strip. BASE worlds,
+      oracles O-1…O-4, and every other frozen-tableau verdict are unchanged.
   - date: 2026-07-15
     note: >-
       Register batch 6 ratified (ASSAY-DEC-36): the SME checkpoint endorsed the SPEC-19

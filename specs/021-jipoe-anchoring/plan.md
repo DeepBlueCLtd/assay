@@ -1,11 +1,11 @@
 # Implementation Plan: JIPOE anchoring — knowledge names its doctrinal origin (SPEC-21)
 
-**Spec**: `specs/021-jipoe-anchoring/spec.md` · **Research note**: amendment to `docs/research/01-knowledge.md` (**DEC-11 gate — authored first**; fixes the step vocabulary, the K1–K14 assignments, the singular-origin rule, and the lint posture) · **Register**: concept §6 item 22 (flagged, not asserted; schema change touches DEC-6)
+**Spec**: `specs/021-jipoe-anchoring/spec.md` · **Research note**: amendment to `docs/research/01-knowledge.md` (**DEC-11 gate — authored first**; fixes the step vocabulary, the K1–K14 assignments, the singular-origin rule, and the lint posture) · **Register**: concept §6 item 23 (flagged, not asserted; schema change touches DEC-6)
 
 ## Shape — the note decides, the code carries
 
 ```
-Phase A  note-01 amendment + concept §6.22        ── vocabulary, assignments, K10 resolution, lint posture
+Phase A  note-01 amendment + concept §6.23        ── vocabulary, assignments, K10 resolution, lint posture
    ▼
 Phase B  schema (doc §11 → yaml → regen)          ── JipoeStep enum + optional jipoe_step slot (DEC-21 regen)
    ▼
@@ -16,7 +16,7 @@ Phase D  lint + surfaces                          ── missing_jipoe_step warn
 Phase E  batch propagation + regen assets + verify
 ```
 
-Nothing in B–E starts before the amendment lands (DEC-11). No register decision is asserted — the slot is a **flagged candidate** (concept §6.22) awaiting the next batch (DEC-2).
+Nothing in B–E starts before the amendment lands (DEC-11). No register decision is asserted — the slot is a **flagged candidate** (concept §6.23) awaiting the next batch (DEC-2).
 
 ## The load-bearing facts
 
@@ -47,6 +47,6 @@ Nothing in B–E starts before the amendment lands (DEC-11). No register decisio
 
 ## Out of scope / deferred (tracked)
 
-- **Companion comms artefacts** (crosswalk page, divergence register, citation-hardening, README status fix) — DEC-30 category, authored alongside but **reviewed separately** (spec Assumptions); not in this change.
-- **Register ratification** of the slot — next batch; until then it is concept §6.22, flagged.
+- **Companion comms artefacts** (crosswalk page, divergence register, citation-hardening, README status fix) — DEC-30 category, not spec features; shipped alongside in the same PR at owner direction (they remain comms artefacts, never cited as authority).
+- **Register ratification** of the slot — next batch; until then it is concept §6.23, flagged.
 - **Forward derivation** (issue #43) — this slice is its first concrete step, nothing more.

@@ -129,15 +129,18 @@ export class RobustnessService {
   }
 
   #stampsCompatible(worlds: Map<string, CompiledWorld>): boolean {
-    const consumedSets: string[] = [];
+    // Lineage = consumed knowledge set + engine version (note 02 §6, SPEC-20):
+    // worlds computed by different engines are no more comparable than worlds
+    // computed from different knowledge — mixed lineage greys, never blends.
+    const lineages: string[] = [];
     for (const w of worlds.values()) {
       const key = w.consumed
         .map((c) => `${c.logical_id}:${c.content_hash}`)
         .sort()
         .join('|');
-      consumedSets.push(key);
+      lineages.push(`${w.engine_version}#${key}`);
     }
-    return consumedSets.every((s) => s === consumedSets[0]);
+    return lineages.every((s) => s === lineages[0]);
   }
 }
 

@@ -98,7 +98,7 @@ Commander CTF-M's conditions, ordinal tiers per DEC-19 (no numeric weights); thr
 | `C5` | prefer | The Ledger causeway is taken intact | `causeway_intact at_least 1` |
 | `C6` | prefer | DET KINGFISHER extracted by D+12 | `extraction_step(FE-KINGFISHER) at_most 48` |
 
-**The engineered conflict (thesis B).** Under `R3m`, both approaches are mined and the causeway is dropped: no plan satisfies all of C2–C4. Sweeping both approaches in parallel puts BROOM and ANVIL inside the battery/FAC arc (breaks **C4**); clearing the FAC berths quickly means fires into the harbourfront where the craft berth among the fishing fleet (breaks **C3**); sweeping sequentially and safely opens the strait at D+9 (breaks **C2**, "two days late"). `/relax` must therefore return **three least-worst candidates sacrificing C4, C3, C2 respectively** — the Stage-4 exit criterion, each stated in command language.
+**The engineered conflict (thesis B).** Under `R3m`, both approaches are mined and the causeway is dropped: no plan satisfies all of C2–C4, and the dropped causeway forecloses **C5** ("taken intact") for *every* plan — a scenario-imposed loss, not a trade. Sweeping both approaches in parallel puts BROOM and ANVIL inside the battery/FAC arc (breaks **C4**); clearing the FAC berths quickly means fires into the harbourfront where the craft berth among the fishing fleet (breaks **C3**); sweeping sequentially and safely opens the strait at D+9 (breaks **C2**, "two days late"). `/relax` must therefore return **three least-worst candidates sacrificing {C4,C5}, {C3,C5}, {C2,C5} respectively** (C5 common to all three, so the candidates are still distinguished by the C2/C3/C4 trade) — the Stage-4 exit criterion, each stated in command language. *(Sets corrected 2026-07-15 by SPEC-20/register candidate concept §6.22: the compiled world previously kept the base causeway estimate over the excursion's demolition, so C5 scored satisfied against the narrative above; excursion-beats-base precedence — research note 02 §6 — makes the computed world agree with this section.)*
 
 **The robustness trap (thesis C).** The R1-optimal plan sends PACKHORSE through the strait early (R1 doesn't mine); under R2 that plan's C1/C2 verdicts collapse to `violated`. The robust alternative sweeps first and enters later — slightly worse against R1, surviving against all three (Stage-5 exit).
 
@@ -109,7 +109,7 @@ Every engineered feature exists to exercise a named claim. **A change to the vig
 | Thesis / criterion | Exercised by | Demonstrated when |
 |---|---|---|
 | A · Pipeline | K1–K14 typed, compiled into channels with `compiled_into` edges | Stage-2 exit: every channel traces backward to named knowledge |
-| B · Least-worst | C2×C3×C4 unsatisfiable under R3m | Stage-4 exit: three candidates sacrificing C4, C3, C2, in command language |
+| B · Least-worst | C2×C3×C4 unsatisfiable under R3m (C5 foreclosed by the dropped causeway) | Stage-4 exit: three candidates sacrificing {C4,C5}, {C3,C5}, {C2,C5}, in command language *(row updated by SPEC-20 — see §6)* |
 | C · Robustness | R1-optimal plan vs R2 mining | Stage-5 exit: visible collapse; robust alternative survives R1–R3 |
 | D · Collection | K11 (strong, dear) vs K13 (weak, cheap) expected-answer separation | Stage-6 exit: K11 ranks above K13 on discrimination despite higher cost |
 | E · Sensitivity/deception | K8 single-source, waiver-carrying, load-bearing on the north approach | Stage-6 exit: K8 tops sensitivity ranking, single-source flag shown |

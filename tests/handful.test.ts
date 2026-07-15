@@ -15,6 +15,7 @@ import { HandfulService } from '../src/handful.js';
 import { isRefusal, type HandfulResult } from '../src/seam.js';
 import { type Criterion, type CriteriaVector, distinct } from '../src/dominance.js';
 import type { Ref } from '../src/store.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -31,7 +32,7 @@ const K = (id: string): KnowledgeObject => structuredClone(byId.get(id)!);
 const answered = (id: string): KnowledgeObject => ({ ...K(id), status: 'answered' });
 const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const BASE = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 const cids = commitments.map((c) => c.logical_id).sort();
 
 interface Rig {

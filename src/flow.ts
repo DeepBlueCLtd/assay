@@ -53,6 +53,7 @@ import { channelTrace } from './components/channelTrace.js';
 import { s2Matrix, type S2Cell } from './components/s2Matrix.js';
 import { s3Cards, type S3Card } from './components/s3Cards.js';
 import { handfulStrip, type HandfulStripRow } from './components/handfulStrip.js';
+import { ENGINE_VERSION } from './engine.js';
 
 // ————— inputs —————
 
@@ -188,7 +189,7 @@ const GATES: [string, string][] = [
 const WEATHER_LIVE = 'K9';
 const WEATHER_PRIOR = 'K5';
 const BASE_STATIC = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 
 // ————— helpers —————
 
@@ -564,7 +565,7 @@ const TOUR: { step: number; title: string; beat: string; narrative: string; key:
     beat: 'walkthrough §5 · beat 4',
     stage: 'relax',
     narrative:
-      'Against R3m (both approaches mined, causeway dropped) no plan satisfies C2–C4 together. /relax returns three inclusion-minimal least-worst candidates — sacrificing C4, C3, C2 — each in command language, the must-sacrifice ranked last but present. Never empty, never a silent drop (G4).',
+      'Against R3m (both approaches mined, causeway dropped) no plan satisfies C2–C4 together, and the dropped causeway forecloses C5 for every plan. /relax returns three inclusion-minimal least-worst candidates — sacrificing {C4,C5}, {C3,C5}, {C2,C5} — each in command language, the must-sacrifice ranked last but present. Never empty, never a silent drop (G4).',
     key: { coa: 'R3m', contest: 'resolved', superseded: true, waiver: 'granted' },
     gatePulse: 'least-worst · G4',
   },

@@ -1,10 +1,10 @@
 # Feature Specification: Compile-overlay precedence — excursions beat base (SPEC-20)
 
-**Feature Branch**: TBD at pickup (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `020-compile-precedence`)
+**Feature Branch**: `claude/keen-newton-zqlh56` (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `020-compile-precedence`)
 
 **Created**: 2026-07-15
 
-**Status**: Draft — queued (fix-class; implementation gates on the research-note amendment below)
+**Status**: **Built** (2026-07-15 — research-note amendment `02-compile.md` §6 landed first per the gate below; register candidate concept §6.22 flagged; all three user stories demonstrated, 396 tests green)
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §3.6, addendum §10 slice S-B), originating from the admission in `docs/research/04-relaxation.md` §3: under R3m the causeway-demolition excursion override coincides with the base engineering estimate's region, innermost-wins keeps the base value, and **C5 ("Ledger causeway taken intact") scores satisfied in a world whose story says the causeway is down**. This is the one place the computed world and the canonical vignette narrative disagree — exactly the defect class the walkthrough's §0 rule exists to catch.
 

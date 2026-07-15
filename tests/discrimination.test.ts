@@ -4,13 +4,14 @@ import type { KnowledgeObject } from '../src/generated/types.js';
 import { ObjectStore, type Ref } from '../src/store.js';
 import { DiscriminationService } from '../src/discrimination.js';
 import { isRefusal, type DiscriminationResult } from '../src/seam.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
 
 const knowledge = load<KnowledgeObject>('knowledge');
 const byId = new Map(knowledge.map((k) => [k.logical_id, k]));
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 
 interface Rig {
   store: ObjectStore;

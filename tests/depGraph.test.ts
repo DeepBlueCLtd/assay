@@ -14,6 +14,7 @@ import type { Ref } from '../src/store.js';
 import { buildDepGraph, nodeDetail } from '../src/depGraph.js';
 import { depGraphRiver } from '../src/components/depGraphRiver.js';
 import { depGraphSidebar } from '../src/components/depGraphSidebar.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -30,7 +31,7 @@ const K = (id: string): KnowledgeObject => structuredClone(byId.get(id)!);
 const answered = (id: string): KnowledgeObject => ({ ...K(id), status: 'answered' });
 const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const BASE_K = ['K1', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7', 'K8'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 
 interface Rig {
   svc: KnowledgeService;

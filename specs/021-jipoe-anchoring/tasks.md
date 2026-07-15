@@ -1,11 +1,11 @@
 # Tasks: JIPOE anchoring — knowledge names its doctrinal origin (SPEC-21)
 
-Dependency-ordered. `[P]` = parallelisable. **Gate**: the note-01 amendment present (DEC-11) and concept §6 item 22 flagged — Phase A produces both; Phases B–E do not start until Phase A lands.
+Dependency-ordered. `[P]` = parallelisable. **Gate**: the note-01 amendment present (DEC-11) and concept §6 item 23 flagged — Phase A produces both; Phases B–E do not start until Phase A lands.
 
 ## Phase A — research amendment & register candidate (the DEC-11 gate)
 
 - [X] **T01** Amend `docs/research/01-knowledge.md`: the `JipoeStep` vocabulary (JP 2-01.3's four steps verbatim), the per-object assignment table for all seventeen fixture objects (resolving K10 → step 3), the singular *originating*-step rule, and the `missing_jipoe_step` lint posture (warning-level, `observed` **not** exempt, recalibrated after Checkpoint 1 / DEC-27).
-- [X] **T02** Flag concept §6 item 22 (the `jipoe_step` slot as a register candidate — schema change touching DEC-6); **do not assert** the decision (DEC-2).
+- [X] **T02** Flag concept §6 item 23 (the `jipoe_step` slot as a register candidate — schema change touching DEC-6); **do not assert** the decision (DEC-2).
 
 ## Phase B — schema (after Phase A)
 

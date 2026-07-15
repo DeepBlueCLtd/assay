@@ -42,6 +42,7 @@ import { bandPill } from '../src/components/bandPill.js';
 import { provenanceChip } from '../src/components/provenanceChip.js';
 import { channelTrace } from '../src/components/channelTrace.js';
 import { s2Matrix } from '../src/components/s2Matrix.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const root = new URL('../', import.meta.url);
 const load = <T>(name: string): T[] =>
@@ -60,7 +61,7 @@ const K = (id: string): KnowledgeObject => structuredClone(byId.get(id)!);
 const answered = (id: string): KnowledgeObject => ({ ...K(id), status: 'answered' as const });
 const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const BASE_IDS = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 
 /** A KnowledgeService seeded exactly as tests/k3-trace.test.ts does. */
 async function makeRig(includeK3 = true) {

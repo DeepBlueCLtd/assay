@@ -57,6 +57,7 @@ import { sensitivityTable } from '../components/sensitivityTable.js';
 import { discriminationTable } from '../components/discriminationTable.js';
 import { stalenessFlags } from '../components/stalenessFlags.js';
 import { componentLegend } from '../components/legends.js';
+import { ENGINE_VERSION } from '../engine.js';
 
 export type TabId = 'j2' | 'planner' | 'commander' | 'observer' | 'coa';
 
@@ -372,7 +373,7 @@ export class AppState {
     const compiled = await this.#compiler.compile({
       knowledge: liveIds.map(refFor),
       config: this.#fx.config,
-      engine_version: '0.1.0',
+      engine_version: ENGINE_VERSION,
     });
     if (isRefusal(compiled)) {
       panels.push({
@@ -426,7 +427,7 @@ export class AppState {
             plan: ref,
             world: compiled.world,
             scenario: 'BASE',
-            engine_version: '0.1.0',
+            engine_version: ENGINE_VERSION,
           });
           if (isRefusal(scored)) {
             coaMatrix.push({ plan: `${plan.logical_id} · ${plan.name}`, verdicts: [] });
@@ -495,7 +496,7 @@ export class AppState {
       const h = await this.#handfulSvc.handful({
         world: compiled.world,
         seed: 1,
-        engine_version: '0.1.0',
+        engine_version: ENGINE_VERSION,
       });
       if (!isRefusal(h)) {
         stamps.handful = h.stamp;
@@ -512,7 +513,7 @@ export class AppState {
             plan: planRef,
             world: compiled.world,
             scenario: 'BASE',
-            engine_version: '0.1.0',
+            engine_version: ENGINE_VERSION,
           });
           const plan = this.#svc.store.get(planRef.content_hash) as Plan;
           if (!isRefusal(scored)) {
@@ -542,7 +543,7 @@ export class AppState {
             knowledge: liveIds.map(refFor),
             config: this.#fx.config,
             scenario: sid,
-            engine_version: '0.1.0',
+            engine_version: ENGINE_VERSION,
           });
           if (!isRefusal(sw)) scenarioWorlds[sid] = sw.world;
         }
@@ -550,7 +551,7 @@ export class AppState {
           const rr = await this.#robustnessSvc.robustness({
             plans: h.plans,
             worlds: scenarioWorlds,
-            engine_version: '0.1.0',
+            engine_version: ENGINE_VERSION,
           });
           if (!isRefusal(rr)) {
             stamps.robustness = rr.stamp;
@@ -576,7 +577,7 @@ export class AppState {
       knowledge: liveIds.map(refFor),
       config: this.#fx.config,
       scenario: 'R3m',
-      engine_version: '0.1.0',
+      engine_version: ENGINE_VERSION,
     });
     if (isRefusal(r3m)) {
       panels.push({
@@ -592,7 +593,7 @@ export class AppState {
         world: r3m.world,
         commitments: this.#fx.commitments.map((c) => refFor(c.logical_id)),
         seed: 1,
-        engine_version: '0.1.0',
+        engine_version: ENGINE_VERSION,
       });
       if (!isRefusal(rr)) {
         stamps.relax = rr.stamp;
@@ -623,7 +624,7 @@ export class AppState {
         plan: firstPlanRef,
         world: compiled.world,
         scenario: 'BASE',
-        engine_version: '0.1.0',
+        engine_version: ENGINE_VERSION,
       });
       if (!isRefusal(sensResult)) {
         stamps.sensitivity = sensResult.stamp;
@@ -645,7 +646,7 @@ export class AppState {
         const discResult = await this.#discriminationSvc.analyse({
           questions: [k11Ref, k13Ref],
           coas: ['R1', 'R2', 'R3'],
-          engine_version: '0.1.0',
+          engine_version: ENGINE_VERSION,
         });
         if (!isRefusal(discResult)) {
           stamps.discrimination = discResult.stamp;
@@ -666,7 +667,7 @@ export class AppState {
       if (k9Ref) {
         const staleResult = await this.#stalenessSvc.analyse({
           changed: k9Ref,
-          engine_version: '0.1.0',
+          engine_version: ENGINE_VERSION,
         });
         if (!isRefusal(staleResult)) {
           stamps.staleness = staleResult.stamp;

@@ -1379,13 +1379,16 @@
     return x >= g.x0 && x <= g.x1 && y >= g.y0 && y <= g.y1;
   };
   var activeAt = (o, t) => (o.from_step === void 0 || t >= o.from_step) && (o.until_step === void 0 || t <= o.until_step);
+  var isExcursion = (world, o) => world.scenario !== void 0 && o.source === world.scenario;
   function channelAt(world, config, kind, x, y, t) {
     const channel = world.channels.find((c) => c.kind === kind);
     if (!channel) throw new Error(`materialise: world has no '${kind}' channel`);
-    const candidates = (channel.regions ?? []).filter(
+    const active = (channel.regions ?? []).filter(
       (o) => activeAt(o, t) && containsCell(config, o.region, x, y)
     );
-    if (candidates.length === 0) return channel.default;
+    if (active.length === 0) return channel.default;
+    const excursion = active.filter((o) => isExcursion(world, o));
+    const candidates = excursion.length > 0 ? excursion : active;
     candidates.sort(
       (a, b) => (b.from_step ?? 0) - (a.from_step ?? 0) || area(config, a.region) - area(config, b.region)
     );
@@ -1920,31 +1923,31 @@
     {
       id: "RX-parallel",
       name: "parallel sweep",
-      narrative: "Parallel sweep \u2014 both approaches cleared at once, fastest to open the strait, but the amphibious group crosses the mined strait before the battery and FACs are suppressed.",
+      narrative: "Parallel sweep \u2014 both approaches cleared at once, fastest to open the strait, but the amphibious group crosses the mined strait before the battery and FACs are suppressed. The Ledger causeway is already dropped in this branch; taking it intact is off the table.",
       elements: [broomFast, anvilExposed, falconStandoff, packFast, kingPull]
     },
     {
       id: "RX-fires",
       name: "fires forward",
-      narrative: "Fires forward \u2014 suppress the FAC berths so the group crosses clean and on time, but the fires fall into the populated harbourfront where the craft berth among the fishing fleet.",
+      narrative: "Fires forward \u2014 suppress the FAC berths so the group crosses clean and on time, but the fires fall into the populated harbourfront where the craft berth among the fishing fleet. The Ledger causeway is already dropped in this branch; taking it intact is off the table.",
       elements: [broomFast, anvilClean, falconFires, packFast, kingPull]
     },
     {
       id: "RX-sequential",
       name: "sequential sweep",
-      narrative: "Sequential sweep \u2014 clear one approach then the other, keeping the group clear and the harbourfront quiet, but the strait opens at D+9, two days late.",
+      narrative: "Sequential sweep \u2014 clear one approach then the other, keeping the group clear and the harbourfront quiet, but the strait opens at D+9, two days late. The Ledger causeway is already dropped in this branch; taking it intact is off the table.",
       elements: [broomSlow, anvilClean, falconStandoff, packFast, kingPull]
     },
     {
       id: "RX-parallel-fires",
       name: "parallel sweep with fires forward",
-      narrative: "Parallel sweep with fires forward \u2014 fast and clean-crossing, but it both fires into the district and, on the parallel pass, still exposes the group.",
+      narrative: "Parallel sweep with fires forward \u2014 fast and clean-crossing, but it both fires into the district and, on the parallel pass, still exposes the group. The causeway is already down.",
       elements: [broomFast, anvilExposed, falconFires, packFast, kingPull]
     },
     {
       id: "RX-sequential-exposed",
       name: "sequential sweep, group exposed",
-      narrative: "Sequential sweep with the group pressed forward \u2014 the strait still opens two days late and the amphibious group is exposed in the mined water.",
+      narrative: "Sequential sweep with the group pressed forward \u2014 the strait still opens two days late and the amphibious group is exposed in the mined water. The causeway is already down.",
       elements: [broomSlow, anvilExposed, falconStandoff, packFast, kingPull]
     }
   ];
@@ -2217,12 +2220,12 @@
       return hash ? this.#store.get(hash) : void 0;
     }
     #stampsCompatible(worlds) {
-      const consumedSets = [];
+      const lineages = [];
       for (const w of worlds.values()) {
         const key = w.consumed.map((c) => `${c.logical_id}:${c.content_hash}`).sort().join("|");
-        consumedSets.push(key);
+        lineages.push(`${w.engine_version}#${key}`);
       }
-      return consumedSets.every((s) => s === consumedSets[0]);
+      return lineages.every((s) => s === lineages[0]);
     }
   };
   var cmp5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
@@ -3679,6 +3682,9 @@ ${items}
     return pills.length > 0 ? legend(pills, title ? { title } : {}) : "";
   }
 
+  // src/engine.ts
+  var ENGINE_VERSION = "0.2.0";
+
   // src/app/state.ts
   var BASE = ["K1", "K2", "K3", "K4", "K6", "K7", "K8", "K9"];
   var COMMITMENT_IDS = ["C1", "C2", "C3", "C4", "C5", "C6"];
@@ -3927,7 +3933,7 @@ ${items}
       const compiled = await this.#compiler.compile({
         knowledge: liveIds.map(refFor),
         config: this.#fx.config,
-        engine_version: "0.1.0"
+        engine_version: ENGINE_VERSION
       });
       if (isRefusal(compiled)) {
         panels.push({
@@ -3975,7 +3981,7 @@ ${items}
               plan: ref,
               world: compiled.world,
               scenario: "BASE",
-              engine_version: "0.1.0"
+              engine_version: ENGINE_VERSION
             });
             if (isRefusal(scored)) {
               coaMatrix.push({ plan: `${plan2.logical_id} \xB7 ${plan2.name}`, verdicts: [] });
@@ -4042,7 +4048,7 @@ ${items}
         const h = await this.#handfulSvc.handful({
           world: compiled.world,
           seed: 1,
-          engine_version: "0.1.0"
+          engine_version: ENGINE_VERSION
         });
         if (!isRefusal(h)) {
           stamps.handful = h.stamp;
@@ -4059,7 +4065,7 @@ ${items}
               plan: planRef,
               world: compiled.world,
               scenario: "BASE",
-              engine_version: "0.1.0"
+              engine_version: ENGINE_VERSION
             });
             const plan2 = this.#svc.store.get(planRef.content_hash);
             if (!isRefusal(scored)) {
@@ -4087,7 +4093,7 @@ ${items}
               knowledge: liveIds.map(refFor),
               config: this.#fx.config,
               scenario: sid,
-              engine_version: "0.1.0"
+              engine_version: ENGINE_VERSION
             });
             if (!isRefusal(sw)) scenarioWorlds[sid] = sw.world;
           }
@@ -4095,7 +4101,7 @@ ${items}
             const rr = await this.#robustnessSvc.robustness({
               plans: h.plans,
               worlds: scenarioWorlds,
-              engine_version: "0.1.0"
+              engine_version: ENGINE_VERSION
             });
             if (!isRefusal(rr)) {
               stamps.robustness = rr.stamp;
@@ -4119,7 +4125,7 @@ ${items}
         knowledge: liveIds.map(refFor),
         config: this.#fx.config,
         scenario: "R3m",
-        engine_version: "0.1.0"
+        engine_version: ENGINE_VERSION
       });
       if (isRefusal(r3m)) {
         panels.push({
@@ -4135,7 +4141,7 @@ ${items}
           world: r3m.world,
           commitments: this.#fx.commitments.map((c) => refFor(c.logical_id)),
           seed: 1,
-          engine_version: "0.1.0"
+          engine_version: ENGINE_VERSION
         });
         if (!isRefusal(rr)) {
           stamps.relax = rr.stamp;
@@ -4164,7 +4170,7 @@ ${items}
           plan: firstPlanRef,
           world: compiled.world,
           scenario: "BASE",
-          engine_version: "0.1.0"
+          engine_version: ENGINE_VERSION
         });
         if (!isRefusal(sensResult)) {
           stamps.sensitivity = sensResult.stamp;
@@ -4184,7 +4190,7 @@ ${items}
           const discResult = await this.#discriminationSvc.analyse({
             questions: [k11Ref, k13Ref],
             coas: ["R1", "R2", "R3"],
-            engine_version: "0.1.0"
+            engine_version: ENGINE_VERSION
           });
           if (!isRefusal(discResult)) {
             stamps.discrimination = discResult.stamp;
@@ -4203,7 +4209,7 @@ ${items}
         if (k9Ref) {
           const staleResult = await this.#stalenessSvc.analyse({
             changed: k9Ref,
-            engine_version: "0.1.0"
+            engine_version: ENGINE_VERSION
           });
           if (!isRefusal(staleResult)) {
             stamps.staleness = staleResult.stamp;
@@ -4495,7 +4501,7 @@ ${items}
         {
           tab: "commander",
           title: "Least-worst under R3m \u2014 the relaxation cards (thesis B)",
-          presenterNote: `The "Commander \xB7 least-worst" panel shows what happens when no plan satisfies all commitments. Under R3m "Spoiling Withdrawal \u2014 mining branch" (both approaches mined, causeway dropped), three least-worst cards appear \u2014 each names the sacrifice in command language: "Maintain the causeway, violated under R3m." The sacrifice is stated in the commander's words, not in system terms. C3 "no fires into the port district" is sacrificed before C4 "amphibious group not exposed" because of the stated tie-break \u2014 these are least-worst options, never optimal ones.`
+          presenterNote: `The "Commander \xB7 least-worst" panel shows what happens when no plan satisfies all commitments. Under R3m "Spoiling Withdrawal \u2014 mining branch" (both approaches mined, causeway dropped), three least-worst cards appear \u2014 each names its sacrifice in command language, and every card carries the scenario-imposed loss: the causeway is already down, so "taken intact" (C5) is off the table for all of them. The sacrifice is stated in the commander's words, not in system terms. C3 "no fires into the port district" is sacrificed before C4 "amphibious group not exposed" because of the stated tie-break \u2014 these are least-worst options, never optimal ones.`
         },
         {
           tab: "planner",

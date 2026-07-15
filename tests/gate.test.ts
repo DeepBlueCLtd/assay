@@ -39,6 +39,7 @@ import {
   type StalenessResult,
 } from '../src/seam.js';
 import type { Ref } from '../src/store.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 // ── fixture loading ────────────────────────────────────────────────────
 
@@ -59,7 +60,7 @@ const answered = (id: string): KnowledgeObject => ({ ...K(id), status: 'answered
 const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const BASE_K = ['K1', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7', 'K8', 'K9'];
 const SENS_K = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 const cRefs = commitments.map((c) => ref(c.logical_id));
 
 function ok<T>(r: T): Exclude<T, { refused: true }> {
@@ -521,17 +522,21 @@ describe('Thesis A — pipeline (every channel traces to named knowledge)', () =
 describe('Thesis B — least-worst (three candidates under R3m)', () => {
   const setOf = (c: { sacrificed: string[] }): string => [...c.sacrificed].sort().join('+');
 
-  it('three inclusion-minimal candidates sacrificing C4, C3, C2', () => {
+  // C5 joins every set: the R3m excursion drops the causeway and the excursion
+  // layer beats the base estimate (SPEC-20, note 02-compile.md §6), so
+  // `causeway_intact` is `violated` for every candidate — common to all three
+  // sets, so relative inclusion-minimality between candidates is preserved.
+  it('three inclusion-minimal candidates sacrificing {C4,C5}, {C3,C5}, {C2,C5}', () => {
     expect(rig.relaxResult.report.candidates).toHaveLength(3);
     const sets = rig.relaxResult.report.candidates.map(setOf).sort();
-    expect(sets).toEqual(['C2', 'C3', 'C4']);
+    expect(sets).toEqual(['C2+C5', 'C3+C5', 'C4+C5']);
   });
 
-  it('ranked least-worst first: C2 must-sacrifice last', () => {
+  it('ranked least-worst first: the C2 must-sacrifice last', () => {
     const order = rig.relaxResult.report.candidates.map(setOf);
-    expect(order.indexOf('C2')).toBe(order.length - 1);
-    expect(order.indexOf('C3')).toBeLessThan(order.indexOf('C2'));
-    expect(order.indexOf('C4')).toBeLessThan(order.indexOf('C2'));
+    expect(order.indexOf('C2+C5')).toBe(order.length - 1);
+    expect(order.indexOf('C3+C5')).toBeLessThan(order.indexOf('C2+C5'));
+    expect(order.indexOf('C4+C5')).toBeLessThan(order.indexOf('C2+C5'));
   });
 
   it('re-scoring each candidate yields exactly its sacrificed set as violated', async () => {
