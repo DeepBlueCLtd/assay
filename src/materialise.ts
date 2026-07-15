@@ -3,9 +3,13 @@
  *
  * The compile stores channels SPARSE — a default plus named, optionally
  * time-boxed region overrides (research note `02-compile.md`). When the scorer
- * needs `channel(x, y, t)` it resolves, for that cell and timestep, the innermost
- * active `RegionOverride` (later `from_step` wins on overlap — note 02 §3's
- * documented tie order), else the channel default. This is a pure function of
+ * needs `channel(x, y, t)` it resolves, for that cell and timestep, the active
+ * overrides in LAYERED precedence (note 02 §6, SPEC-20): an excursion-layer
+ * override — one the compile applied from the ScenarioCOA's `excursion`
+ * (DEC-8), recognisable because its `source` names the world's `scenario` —
+ * beats any base-knowledge-derived override; within a layer the documented tie
+ * order holds (later `from_step` wins, then the innermost region — note 02 §3);
+ * absent any active override, the channel default. This is a pure function of
  * `(sparse channels, config geometry)`: it produces no stored object, writes no
  * edge, and participates in no content addressing. Nothing dense is ever
  * persisted or hashed — the 60×60×56 world note 02 retired is never built.
@@ -28,10 +32,20 @@ const activeAt = (o: RegionOverride, t: number): boolean =>
   (o.from_step === undefined || t >= o.from_step) && (o.until_step === undefined || t <= o.until_step);
 
 /**
- * The banded value of `kind` at cell (x,y) and timestep t. Overlap resolves
- * innermost-wins with a documented tie order: later `from_step` first, then the
- * geometrically smaller (innermost) region. Absent any active override, the
- * channel's quiet default (itself banded — the source is assessed).
+ * An override belongs to the excursion layer iff its `source` names the world's
+ * scenario — the compile writes excursion overrides with `source = scenario`
+ * (DEC-8) and base overrides with `source = <knowledge id>` (G3), so the layer
+ * is derived from data the world already carries, never stored (note 02 §6).
+ */
+const isExcursion = (world: CompiledWorld, o: RegionOverride): boolean =>
+  world.scenario !== undefined && o.source === world.scenario;
+
+/**
+ * The banded value of `kind` at cell (x,y) and timestep t. Overlap resolves in
+ * layered precedence (note 02 §6): excursion-layer overrides beat base-layer
+ * ones; within a layer, later `from_step` first, then the geometrically smaller
+ * (innermost) region. Absent any active override, the channel's quiet default
+ * (itself banded — the source is assessed).
  */
 export function channelAt(
   world: CompiledWorld,
@@ -43,10 +57,12 @@ export function channelAt(
 ): Band {
   const channel = world.channels.find((c) => c.kind === kind);
   if (!channel) throw new Error(`materialise: world has no '${kind}' channel`);
-  const candidates = (channel.regions ?? []).filter(
+  const active = (channel.regions ?? []).filter(
     (o) => activeAt(o, t) && containsCell(config, o.region, x, y),
   );
-  if (candidates.length === 0) return channel.default;
+  if (active.length === 0) return channel.default;
+  const excursion = active.filter((o) => isExcursion(world, o));
+  const candidates = excursion.length > 0 ? excursion : active;
   candidates.sort(
     (a, b) => (b.from_step ?? 0) - (a.from_step ?? 0) || area(config, a.region) - area(config, b.region),
   );

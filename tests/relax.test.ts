@@ -15,6 +15,7 @@ import { relaxCandidates } from '../src/relaxCandidates.js';
 import { validateInstance } from '../src/validate.js';
 import { isRefusal, type RelaxResult } from '../src/seam.js';
 import type { Ref } from '../src/store.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -31,7 +32,7 @@ const K = (id: string): KnowledgeObject => structuredClone(byId.get(id)!);
 const answered = (id: string): KnowledgeObject => ({ ...K(id), status: 'answered' });
 const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const BASE = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 const cRefs = commitments.map((c) => ref(c.logical_id));
 
 interface Rig {
@@ -99,11 +100,15 @@ describe('SPEC-09 — /relax over the Meridian R3m world', () => {
     expect(r.report.scenario).toBe('R3m');
   });
 
-  it('yields three candidates sacrificing {C4}, {C3}, {C2} (US1-2, SC-001) 🎯 exit', async () => {
+  // C5 joins every set (SPEC-20, note 02-compile.md §6): the R3m excursion drops
+  // the causeway, the excursion layer beats K2's base estimate, `causeway_intact`
+  // scores `violated` for every candidate — a computed sacrifice, common to all
+  // three sets, so relative inclusion-minimality between candidates is unchanged.
+  it('yields three candidates sacrificing {C4,C5}, {C3,C5}, {C2,C5} (US1-2, SC-001) 🎯 exit', async () => {
     const r = ok(await rig.relax.relax({ world: rig.worldRef, commitments: cRefs, seed: 1, engine_version: ENGINE }));
     expect(r.report.candidates).toHaveLength(3);
     const sets = r.report.candidates.map(setOf).sort();
-    expect(sets).toEqual(['C2', 'C3', 'C4']);
+    expect(sets).toEqual(['C2+C5', 'C3+C5', 'C4+C5']);
   });
 
   it('each candidate has non-empty sacrificed, computed by the scorer (US1-3, SC-004)', async () => {
@@ -119,21 +124,29 @@ describe('SPEC-09 — /relax over the Meridian R3m world', () => {
     }
   });
 
-  it('excludes strict-superset sacrifices — {C2,C4} and {C3,C4} never appear (US2, SC-002)', async () => {
+  it('excludes strict-superset sacrifices — {C2,C4,C5} and {C3,C4,C5} never appear (US2, SC-002)', async () => {
     const r = ok(await rig.relax.relax({ world: rig.worldRef, commitments: cRefs, seed: 1, engine_version: ENGINE }));
     const sets = r.report.candidates.map(setOf);
-    expect(sets).not.toContain('C2+C4');
-    expect(sets).not.toContain('C3+C4');
+    expect(sets).not.toContain('C2+C4+C5');
+    expect(sets).not.toContain('C3+C4+C5');
   });
 
   it('ranks least-worst first: the C2 must-sacrifice is last, but present (US3, SC-003)', async () => {
     const r = ok(await rig.relax.relax({ world: rig.worldRef, commitments: cRefs, seed: 1, engine_version: ENGINE }));
     const order = r.report.candidates.map(setOf);
-    expect(order).toContain('C2'); // the must-sacrifice is returned (never dropped)
-    expect(order.indexOf('C2')).toBe(order.length - 1); // …ranked last (least-worst first)
+    expect(order).toContain('C2+C5'); // the must-sacrifice is returned (never dropped)
+    expect(order.indexOf('C2+C5')).toBe(order.length - 1); // …ranked last (least-worst first)
     // The two should-sacrifices (C3, C4) precede it.
-    expect(order.indexOf('C3')).toBeLessThan(order.indexOf('C2'));
-    expect(order.indexOf('C4')).toBeLessThan(order.indexOf('C2'));
+    expect(order.indexOf('C3+C5')).toBeLessThan(order.indexOf('C2+C5'));
+    expect(order.indexOf('C4+C5')).toBeLessThan(order.indexOf('C2+C5'));
+  });
+
+  it('every candidate narrative states the causeway state in command language (SPEC-20 US3)', async () => {
+    const r = ok(await rig.relax.relax({ world: rig.worldRef, commitments: cRefs, seed: 1, engine_version: ENGINE }));
+    for (const cand of r.report.candidates) {
+      expect(cand.sacrificed).toContain('C5'); // computed, never authored
+      expect(cand.narrative.toLowerCase()).toContain('causeway');
+    }
   });
 
   it('states the same-tier tie-break (C3/C4), never silently (US3, SC-003)', async () => {

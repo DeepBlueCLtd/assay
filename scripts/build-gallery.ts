@@ -35,6 +35,7 @@ import { ScoreService } from '../src/score.js';
 import { HandfulService } from '../src/handful.js';
 import { RelaxService } from '../src/relax.js';
 import { isRefusal } from '../src/seam.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 import type {
   Commitment,
   CompiledWorld,
@@ -105,7 +106,7 @@ const refFor = (id: string) => ({ logical_id: id, content_hash: '' });
 const contested = await compiler.compile({
   knowledge: [...BASE, 'K12a', 'K12b'].map(refFor),
   config: vignetteConfig,
-  engine_version: '0.1.0',
+  engine_version: ENGINE_VERSION,
 });
 const compileRefusalHtml = isRefusal(contested) ? refusalBanner(contested) : '';
 
@@ -114,7 +115,7 @@ svc.resolve('K12a', 'defector debrief corroborated; manifests predate the drawdo
 const compiled = await compiler.compile({
   knowledge: [...BASE, 'K12a'].map(refFor),
   config: vignetteConfig,
-  engine_version: '0.1.0',
+  engine_version: ENGINE_VERSION,
 });
 const world = isRefusal(compiled)
   ? undefined
@@ -142,7 +143,7 @@ const matrixRows: S2Cell[] = [];
 const stripRows: HandfulStripRow[] = [];
 let handfulStamp = '';
 if (!isRefusal(compiled)) {
-  const h = await handfulSvc.handful({ world: compiled.world, seed: 1, engine_version: '0.1.0' });
+  const h = await handfulSvc.handful({ world: compiled.world, seed: 1, engine_version: ENGINE_VERSION });
   if (!isRefusal(h)) {
     handfulStamp = h.stamp;
     h.plans.forEach((planRef, i) => {
@@ -150,7 +151,7 @@ if (!isRefusal(compiled)) {
       stripRows.push({ plan: planRef, name: plan.name, distinct_because: h.organisation.distinct_because[i]! });
     });
     for (const planRef of h.plans) {
-      const scored = await scorer.score({ plan: planRef, world: compiled.world, scenario: 'BASE', engine_version: '0.1.0' });
+      const scored = await scorer.score({ plan: planRef, world: compiled.world, scenario: 'BASE', engine_version: ENGINE_VERSION });
       const plan = svc.store.get(planRef.content_hash) as Plan;
       if (!isRefusal(scored)) matrixRows.push({ plan: `${plan.logical_id} · ${plan.name}`, verdicts: scored.verdicts });
     }
@@ -168,7 +169,7 @@ if (!isRefusal(compiled) && stripRows.length > 0) {
     plan: stripRows[0]!.plan,
     world: compiled.world,
     scenario: 'BASE',
-    engine_version: '0.1.0',
+    engine_version: ENGINE_VERSION,
   });
   if (!isRefusal(sensResult)) {
     sensitivityHtml = sensitivityTable(sensResult.ranking);
@@ -192,7 +193,7 @@ let discriminationStampLine = '';
   const discResult = await discriminationSvc.analyse({
     questions: [k11Ref, k13Ref],
     coas: ['R1', 'R2', 'R3'],
-    engine_version: '0.1.0',
+    engine_version: ENGINE_VERSION,
   });
   if (!isRefusal(discResult)) {
     discriminationHtml = discriminationTable(discResult.ranking);
@@ -209,7 +210,7 @@ const k9Ref = svc.store.versions('K9').at(-1);
 let stalenessHtml = '';
 let stalenessStampLine = '';
 if (k9Ref) {
-  const staleResult = await stalenessSvc.analyse({ changed: k9Ref, engine_version: '0.1.0' });
+  const staleResult = await stalenessSvc.analyse({ changed: k9Ref, engine_version: ENGINE_VERSION });
   if (!isRefusal(staleResult)) {
     stalenessHtml = stalenessFlags(staleResult.invalidated, staleResult.chains);
     stalenessStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">staleness stamp ${staleResult.stamp.slice(0, 16)}… · ${staleResult.invalidated.verdicts.length} verdicts + ${staleResult.invalidated.worlds.length} worlds invalidated · transitive walk from K9 · flags only, no recompute (constitution)</span>`;
@@ -224,21 +225,22 @@ const scoreStampLine = handfulStamp
 // by the actual machinery: compile the R3m world (both approaches mined), then
 // `/relax` the commitment set against it. No plan satisfies C2–C4 together, so the
 // service returns the three inclusion-minimal least-worst candidates — sacrificing
-// C4, C3, C2 — each stated in command language, the must-sacrifice ranked last but
-// present, the same-tier tie-break stated. No author picked the sacrifices: the
-// reused SPEC-07 scorer computed each candidate's `violated` set.
+// {C4,C5}, {C3,C5}, {C2,C5}: the dropped causeway forecloses C5 for every plan
+// (SPEC-20, note 02 §6) — each stated in command language, the must-sacrifice
+// ranked last but present, the same-tier tie-break stated. No author picked the
+// sacrifices: the reused SPEC-07 scorer computed each candidate's `violated` set.
 const commitmentById = new Map(commitments.map((c) => [c.logical_id, c]));
 const r3m = await compiler.compile({
   knowledge: [...BASE, 'K12a'].map(refFor),
   config: vignetteConfig,
   scenario: 'R3m',
-  engine_version: '0.1.0',
+  engine_version: ENGINE_VERSION,
 });
 const relaxSvc = new RelaxService({ store: svc.store, trace: svc.trace, scorer, commitments });
 let s3 = '';
 let relaxStampLine = '';
 if (!isRefusal(r3m)) {
-  const rr = await relaxSvc.relax({ world: r3m.world, commitments: commitments.map((c) => refFor(c.logical_id)), seed: 1, engine_version: '0.1.0' });
+  const rr = await relaxSvc.relax({ world: r3m.world, commitments: commitments.map((c) => refFor(c.logical_id)), seed: 1, engine_version: ENGINE_VERSION });
   if (!isRefusal(rr)) {
     const cards: S3Card[] = rr.report.candidates.map((candidate) => ({
       candidate,
@@ -266,13 +268,13 @@ if (!isRefusal(compiled)) {
       knowledge: [...BASE, 'K12a'].map(refFor),
       config: vignetteConfig,
       scenario: sid,
-      engine_version: '0.1.0',
+      engine_version: ENGINE_VERSION,
     });
     if (!isRefusal(sw)) scenarioWorlds[sid] = sw.world;
   }
   if (Object.keys(scenarioWorlds).length > 1 && stripRows.length > 0) {
     const planRefs = stripRows.map((r) => r.plan);
-    const rr = await robustnessSvc.robustness({ plans: planRefs, worlds: scenarioWorlds, engine_version: '0.1.0' });
+    const rr = await robustnessSvc.robustness({ plans: planRefs, worlds: scenarioWorlds, engine_version: ENGINE_VERSION });
     if (!isRefusal(rr)) {
       const planNames: Record<string, string> = {};
       for (const row of stripRows) {
@@ -312,7 +314,7 @@ ${rows}
 <p style="font-size:12.5px;color:#5B6B77">The same handful, as the S2 planner matrix. Verdicts are a <b>four-stop scale</b> — robust / marginal / tight / violated, one colour language, <b>no decimals</b> anywhere; the banded <code>margin</code> rides on hover, never a headline number (G2). Each verdict propagates its metric by interval arithmetic — worst-and-best-case on pure bands, no midpoint (DEC-15) — validated by the vignette §9 oracle cases (O-1–O-3 exact, O-4 containment). <i>Pick a verdict, walk it to the assessment and owner it rests on:</i> every cell was written with a <code>scored_from</code> edge back to the world, whose channels trace to named knowledge above. ${scoreStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${s2}</div>
 <h2 style="font-size:16px;margin-top:32px">Relax — least-worst, never silence (SPEC-09)</h2>
-<p style="font-size:12.5px;color:#5B6B77">The Stage-4 demo moment, run end-to-end by the actual machinery. Against the <b>R3m</b> world (both approaches mined, the causeway dropped) no plan satisfies C2, C3 and C4 together — by construction (vignette §6). <code>/relax</code> does not pick one compromise and hide the trade: it returns every <b>inclusion-minimal</b> way forward, each naming what it gives up in <b>command language</b>. The sacrifices are <b>computed</b> — a commitment is sacrificed only when the SPEC-07 scorer returns <code>violated</code> for it — not authored. Ranked <b>least-worst first</b> by the commander's ordinal tiers (<code>must / should / prefer</code>, <b>no numeric weight</b> — DEC-19): the two <code>should</code>-sacrifices lead, the <code>must</code>-sacrifice (C2, "the strait opens two days late") is <b>ranked last but present</b> — never dropped, never silent (G4). Plans that give up <i>more</i> — <code>{C2,C4}</code>, <code>{C3,C4}</code> — are inclusion-dominated and never shown as separate options. ${relaxStampLine}</p>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-4 demo moment, run end-to-end by the actual machinery. Against the <b>R3m</b> world (both approaches mined, the causeway dropped) no plan satisfies C2, C3 and C4 together — by construction (vignette §6) — and the dropped causeway forecloses <b>C5</b> ("taken intact") for every plan, so C5 rides in every sacrifice set as a scenario-imposed, computed loss (SPEC-20). <code>/relax</code> does not pick one compromise and hide the trade: it returns every <b>inclusion-minimal</b> way forward, each naming what it gives up in <b>command language</b>. The sacrifices are <b>computed</b> — a commitment is sacrificed only when the SPEC-07 scorer returns <code>violated</code> for it — not authored. Ranked <b>least-worst first</b> by the commander's ordinal tiers (<code>must / should / prefer</code>, <b>no numeric weight</b> — DEC-19): the two <code>should</code>-sacrifices lead, the <code>must</code>-sacrifice (C2, "the strait opens two days late") is <b>ranked last but present</b> — never dropped, never silent (G4). Plans that give up <i>more</i> — <code>{C2,C4,C5}</code>, <code>{C3,C4,C5}</code> — are inclusion-dominated and never shown as separate options. ${relaxStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${s3}</div>
 <h2 style="font-size:16px;margin-top:32px">Scenario robustness — don't plan on most-likely (SPEC-10)</h2>
 <p style="font-size:12.5px;color:#5B6B77">The Stage-5 demo moment (thesis C; JP 2-01.3: "don't plan on most-likely"). The generated handful scored across <b>BASE, R1, R2, R3</b> — the adversary COA set from the vignette. Each cell is a four-stop verdict chip; a <b>▼</b> marks a verdict that dropped from its BASE value under that scenario ("collapse"). The <b>worst</b> column is the minimax: the plan's worst verdict for that commitment across all scenarios — a real verdict on a real scenario, not a weighted blend (DEC-15/19). <i>Toggle R2 (Strait Denial) and watch the strait-early plan die on C1/C2 while robust alternatives hold.</i> ${robustnessStampLine}</p>

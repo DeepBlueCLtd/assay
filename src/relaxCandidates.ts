@@ -27,6 +27,10 @@
  *     (one leg inside ⇒ count 1 > 0 ⇒ C3 violated).
  *   - PACKHORSE (C1) and KINGFISHER (C6) are CONSTANT across candidates and kept
  *     comfortably satisfied — they are not the R3m trade, so they never distinguish.
+ *   - C5 (causeway intact) is `violated` for EVERY candidate: the R3m excursion
+ *     drops the causeway and the excursion layer beats the base estimate (note
+ *     02-compile.md §6, SPEC-20). It joins every sacrifice set without ever
+ *     distinguishing; the narratives state the causeway's fate in command language.
  *
  * The five candidates are the three minimal postures (parallel/fires/sequential)
  * plus two that give up MORE (parallel+fires, sequential+exposed) so the service's
@@ -75,7 +79,8 @@ const POSTURES: Posture[] = [
     name: 'parallel sweep',
     narrative:
       'Parallel sweep — both approaches cleared at once, fastest to open the strait, ' +
-      'but the amphibious group crosses the mined strait before the battery and FACs are suppressed.',
+      'but the amphibious group crosses the mined strait before the battery and FACs are suppressed. ' +
+      'The Ledger causeway is already dropped in this branch; taking it intact is off the table.',
     elements: [broomFast, anvilExposed, falconStandoff, packFast, kingPull],
   },
   {
@@ -83,7 +88,8 @@ const POSTURES: Posture[] = [
     name: 'fires forward',
     narrative:
       'Fires forward — suppress the FAC berths so the group crosses clean and on time, ' +
-      'but the fires fall into the populated harbourfront where the craft berth among the fishing fleet.',
+      'but the fires fall into the populated harbourfront where the craft berth among the fishing fleet. ' +
+      'The Ledger causeway is already dropped in this branch; taking it intact is off the table.',
     elements: [broomFast, anvilClean, falconFires, packFast, kingPull],
   },
   {
@@ -91,7 +97,8 @@ const POSTURES: Posture[] = [
     name: 'sequential sweep',
     narrative:
       'Sequential sweep — clear one approach then the other, keeping the group clear and the ' +
-      'harbourfront quiet, but the strait opens at D+9, two days late.',
+      'harbourfront quiet, but the strait opens at D+9, two days late. The Ledger causeway is ' +
+      'already dropped in this branch; taking it intact is off the table.',
     elements: [broomSlow, anvilClean, falconStandoff, packFast, kingPull],
   },
   {
@@ -99,7 +106,7 @@ const POSTURES: Posture[] = [
     name: 'parallel sweep with fires forward',
     narrative:
       'Parallel sweep with fires forward — fast and clean-crossing, but it both fires into the ' +
-      'district and, on the parallel pass, still exposes the group.',
+      'district and, on the parallel pass, still exposes the group. The causeway is already down.',
     elements: [broomFast, anvilExposed, falconFires, packFast, kingPull],
   },
   {
@@ -107,7 +114,7 @@ const POSTURES: Posture[] = [
     name: 'sequential sweep, group exposed',
     narrative:
       'Sequential sweep with the group pressed forward — the strait still opens two days late ' +
-      'and the amphibious group is exposed in the mined water.',
+      'and the amphibious group is exposed in the mined water. The causeway is already down.',
     elements: [broomSlow, anvilExposed, falconStandoff, packFast, kingPull],
   },
 ];

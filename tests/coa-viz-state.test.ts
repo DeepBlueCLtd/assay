@@ -15,6 +15,7 @@ import { isRefusal } from '../src/seam.js';
 import type { Ref } from '../src/store.js';
 import { CoaVizState, type CoaVizSnapshot } from '../src/app/coaViz.js';
 import { changedGlowUnits, type SignatureMap } from '../src/app/glow.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -107,7 +108,7 @@ describe('CoaVizState — input recomputes through the real pipeline (US4)', () 
       await svc.create({ ...ko, status: 'answered' });
     }
     const compiler = new CompileService({ knowledge: svc });
-    const compiled = await compiler.compile({ knowledge: BASE.map(ref), config: fx.config, engine_version: '0.1.0' });
+    const compiled = await compiler.compile({ knowledge: BASE.map(ref), config: fx.config, engine_version: ENGINE_VERSION });
     if (isRefusal(compiled)) throw new Error('from-scratch compile refused');
     const planRef = await svc.store.put(structuredClone(edited) as unknown as Record<string, unknown>);
     const scorer = new ScoreService({
@@ -120,7 +121,7 @@ describe('CoaVizState — input recomputes through the real pipeline (US4)', () 
       plan: planRef,
       world: compiled.world,
       scenario: 'BASE',
-      engine_version: '0.1.0',
+      engine_version: ENGINE_VERSION,
     });
     if (isRefusal(scored)) throw new Error('from-scratch score refused');
 

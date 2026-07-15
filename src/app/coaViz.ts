@@ -40,6 +40,7 @@ import { coaTimeline, type CoaTimelineOptions } from '../components/coaTimeline.
 import { s2Matrix, type S2Cell } from '../components/s2Matrix.js';
 import { bandPill } from '../components/bandPill.js';
 import { refusalBanner } from '../components/refusalBanner.js';
+import { ENGINE_VERSION } from '../engine.js';
 
 export interface CoaVizFixtures {
   knowledge: KnowledgeObject[];
@@ -64,7 +65,7 @@ export interface CoaVizSnapshot {
 
 const BASE = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
 const COMMITMENT_IDS = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 const refFor = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 
 const marginText = (m?: Band): string =>

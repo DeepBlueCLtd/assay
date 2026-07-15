@@ -159,7 +159,11 @@ export class CompileService {
     }
 
     // 5. Apply the scenario excursion as an overlay of RegionOverrides (folded into
-    //    the stamp), keeping the scorer scenario-blind (DEC-10).
+    //    the stamp), keeping the scorer scenario-blind (DEC-10). Each excursion
+    //    override carries `source = <scenario id>` — that source IS the layer key:
+    //    materialisation gives excursion-layer overrides precedence over base ones
+    //    (note 02-compile.md §6, SPEC-20), so the overlay REPLACES the base where
+    //    it speaks, exactly as the MCOO idiom intends.
     let excursionOverrides: { channel: ChannelKind; region: string; override: Band }[] = [];
     if (req.scenario) {
       const coa = this.#loadCoa(req.scenario);

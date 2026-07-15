@@ -17,6 +17,7 @@ import { HandfulService } from '../src/handful.js';
 import { scenarioStrip } from '../src/components/scenarioStrip.js';
 import { isRefusal, type RobustnessResult, type ScenarioVerdictTensor } from '../src/seam.js';
 import type { Ref } from '../src/store.js';
+import { ENGINE_VERSION } from '../src/engine.js';
 
 const load = <T>(name: string): T[] =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
@@ -34,7 +35,7 @@ const K = (id: string): KnowledgeObject => structuredClone(byId.get(id)!);
 const answered = (id: string): KnowledgeObject => ({ ...K(id), status: 'answered' });
 const ref = (id: string): Ref => ({ logical_id: id, content_hash: '' });
 const BASE_K = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
-const ENGINE = '0.1.0';
+const ENGINE = ENGINE_VERSION;
 
 interface Rig {
   svc: KnowledgeService;
@@ -140,6 +141,26 @@ describe('SPEC-10 — scenario robustness (thesis C)', () => {
       engine_version: ENGINE,
     }));
     expect(r.tensor.stamps_compatible).toBe(true);
+  });
+
+  it('stamps_compatible is false when worlds come from different engine versions (SPEC-20 FR-005)', async () => {
+    const world1 = await rig.worldRef();
+
+    // Recompile the R1 world under the retired engine: same knowledge, older
+    // engine — mixed lineage must grey, never blend (note 02 §6).
+    const compiler = new CompileService({ knowledge: rig.svc });
+    const oldEngine = await compiler.compile({
+      knowledge: [...BASE_K, 'K12a'].map(ref), config, engine_version: '0.1.0', scenario: 'R1',
+    });
+    if (isRefusal(oldEngine)) throw new Error(`compile refused: ${oldEngine.reason}`);
+
+    const r = ok(await rig.robustness.robustness({
+      plans: [rig.planRef('P1')],
+      worlds: { BASE: world1, R1: oldEngine.world },
+      engine_version: ENGINE,
+    }));
+    expect(r.tensor.stamps_compatible).toBe(false);
+    expect(scenarioStrip(r.tensor)).toContain('assay-scenario-incompat'); // the strip greys mixed lineage
   });
 
   it('stamps_compatible is false when worlds come from different knowledge sets', async () => {

@@ -113,7 +113,7 @@ export const NARRATIVES: readonly Narrative[] = [
         tab: 'commander',
         title: 'Least-worst under R3m — the relaxation cards (thesis B)',
         presenterNote:
-          'The "Commander · least-worst" panel shows what happens when no plan satisfies all commitments. Under R3m "Spoiling Withdrawal — mining branch" (both approaches mined, causeway dropped), three least-worst cards appear — each names the sacrifice in command language: "Maintain the causeway, violated under R3m." The sacrifice is stated in the commander\'s words, not in system terms. C3 "no fires into the port district" is sacrificed before C4 "amphibious group not exposed" because of the stated tie-break — these are least-worst options, never optimal ones.',
+          'The "Commander · least-worst" panel shows what happens when no plan satisfies all commitments. Under R3m "Spoiling Withdrawal — mining branch" (both approaches mined, causeway dropped), three least-worst cards appear — each names its sacrifice in command language, and every card carries the scenario-imposed loss: the causeway is already down, so "taken intact" (C5) is off the table for all of them. The sacrifice is stated in the commander\'s words, not in system terms. C3 "no fires into the port district" is sacrificed before C4 "amphibious group not exposed" because of the stated tie-break — these are least-worst options, never optimal ones.',
       },
       {
         tab: 'planner',
