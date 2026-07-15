@@ -105,6 +105,23 @@ copyFileSync(
   fileURLToPath(new URL('docs/assay-flow-schematic-wireframes.html', root)),
   fileURLToPath(new URL('flow-schematic.html', site)),
 );
+// The spatial/temporal COA mockup (SPEC-19, `npm run coa-viz`) — the reviewable
+// artefact research note 10's invitation points at: map + timeline + live
+// drag-to-recompute over the real in-browser pipeline. Linked from a Home-page
+// card (comms plan §1.6).
+copyFileSync(
+  fileURLToPath(new URL('docs/assets/coa-viz/index.html', root)),
+  fileURLToPath(new URL('coa-viz.html', site)),
+);
+// Second home for the same self-contained page, at the assets path the blog
+// article's relative iframe (`../../assets/coa-viz/index.html`) resolves to —
+// the same convention as the live app above.
+const coaVizDir = new URL('assets/coa-viz/', site);
+mkdirSync(fileURLToPath(coaVizDir), { recursive: true });
+copyFileSync(
+  fileURLToPath(new URL('docs/assets/coa-viz/index.html', root)),
+  fileURLToPath(new URL('index.html', coaVizDir)),
+);
 
 // The live interactive app (SPEC-16) — a self-contained bundle. Placed at
 // site/assets/app/ so the blog article's relative embed (../../assets/app/…)
