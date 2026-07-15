@@ -42,6 +42,10 @@ import { confidenceLint } from '../lint.js';
 import { informs, influences, type Neighbour } from '../traceView.js';
 import { buildDepGraph, nodeDetail, type DepGraph, type DepGraphNodeDetail } from '../depGraph.js';
 
+import { dayWindowToSteps, exposureProfile } from '../mapProject.js';
+import { coaMap } from '../components/coaMap.js';
+import { coaTimeline, type CoaTimelineOptions } from '../components/coaTimeline.js';
+import { bandPill } from '../components/bandPill.js';
 import { s1Table, type S1Row } from '../components/s1Table.js';
 import { channelTrace } from '../components/channelTrace.js';
 import { refusalBanner } from '../components/refusalBanner.js';
@@ -54,7 +58,7 @@ import { discriminationTable } from '../components/discriminationTable.js';
 import { stalenessFlags } from '../components/stalenessFlags.js';
 import { componentLegend } from '../components/legends.js';
 
-export type TabId = 'j2' | 'planner' | 'commander' | 'observer';
+export type TabId = 'j2' | 'planner' | 'commander' | 'observer' | 'coa';
 
 export interface Panel {
   id: string;
@@ -80,6 +84,8 @@ export interface Fixtures {
   coas: ScenarioCOA[];
   commitments: Commitment[];
   config: VignetteConfig;
+  /** The canned P1/P2 (SPEC-07 suite). Present ⇒ the Spatial · COA tab renders (DEC-36). */
+  plans?: Plan[];
 }
 
 export interface MenuNeighbour {
@@ -107,6 +113,8 @@ export class AppState {
   #stalenessSvc!: StalenessService;
   #resolved = false;
   #notice?: Snapshot['notice'];
+  /** The Spatial tab's clock — pure selection over the compiled world (DEC-36c). */
+  #step = 8;
 
   constructor(fx: Fixtures) {
     this.#fx = fx;
@@ -124,6 +132,9 @@ export class AppState {
     await svc.create(structuredClone(this.#kById.get('K12a')!));
     await svc.create(structuredClone(this.#kById.get('K12b')!));
     svc.contest('K12a', 'K12b'); // open the dispute — compile refuses until resolved (G5)
+    // The canned P1/P2 plans back the Spatial · COA tab (DEC-36d); drags author
+    // new versions of these lineages, so they live in the same single store.
+    for (const p of this.#fx.plans ?? []) await svc.store.put(p as unknown as Record<string, unknown>);
     // K11 and K13 are open questions with expected_answers — needed for discrimination (thesis D)
     const k11 = this.#kById.get('K11');
     if (k11) await svc.create(structuredClone(k11));
@@ -181,6 +192,26 @@ export class AppState {
   }
   get resolved(): boolean {
     return this.#resolved;
+  }
+  get step(): number {
+    return this.#step;
+  }
+  get grid(): VignetteConfig['grid'] {
+    return this.#fx.config.grid;
+  }
+
+  /** Scrub the Spatial tab's clock — selection over the compiled world; no recompute. */
+  setStep(n: number): void {
+    const max = this.#fx.config.grid.horizon_steps;
+    this.#step = Math.max(0, Math.min(max, Math.round(n)));
+  }
+
+  /** The latest live version of a canned-plan lineage (drags stack v2, v3, …). */
+  latestPlan(planId: string): { plan: Plan; ref: Ref } {
+    const versions = this.#svc.store.versions(planId);
+    if (versions.length === 0) throw new Error(`app: unknown plan ${planId}`);
+    const ref = versions[versions.length - 1]!;
+    return { plan: this.#svc.store.get(ref.content_hash) as Plan, ref };
   }
 
   // ---- edits (the interventions) --------------------------------------------
@@ -240,6 +271,74 @@ export class AppState {
     }
   }
 
+  /**
+   * Input (Spatial tab): drag a waypoint — authors a NEW Plan version
+   * (immutable, DEC-20/21); the next snapshot re-scores it through the real
+   * pipeline. Geometry only — never a verdict, cost, or cell value (DEC-36c).
+   */
+  async moveWaypoint(planId: string, element: string, legIndex: number, x: number, y: number): Promise<void> {
+    this.#notice = undefined;
+    const grid = this.#fx.config.grid;
+    if (x < 0 || x >= grid.cols || y < 0 || y >= grid.rows || !Number.isInteger(x) || !Number.isInteger(y)) {
+      this.#notice = {
+        kind: 'refusal',
+        html: refusalBanner({
+          refused: true,
+          reason: 'encoding_violation',
+          offending: [refFor(planId)],
+          explanation: `waypoint (${x}, ${y}) is off the ${grid.cols}×${grid.rows} grid — no geometry exists there to route through.`,
+        }),
+      };
+      return;
+    }
+    const { plan } = this.latestPlan(planId);
+    const next: Plan = structuredClone(plan);
+    next.version = plan.version + 1;
+    const leg = next.elements.find((e) => e.force_element === element)?.route?.[legIndex];
+    if (!leg) {
+      this.#notice = {
+        kind: 'refusal',
+        html: refusalBanner({
+          refused: true,
+          reason: 'unknown_ref',
+          offending: [refFor(planId)],
+          explanation: `${planId} has no ${element} leg ${legIndex} to move.`,
+        }),
+      };
+      return;
+    }
+    leg.x = x;
+    leg.y = y;
+    await this.#svc.store.put(next as unknown as Record<string, unknown>);
+  }
+
+  /** Input (Spatial tab): shift a leg's task window by `delta` steps, duration preserved. */
+  async shiftWindow(planId: string, element: string, legIndex: number, delta: number): Promise<void> {
+    this.#notice = undefined;
+    const { plan } = this.latestPlan(planId);
+    const next: Plan = structuredClone(plan);
+    next.version = plan.version + 1;
+    const leg = next.elements.find((e) => e.force_element === element)?.route?.[legIndex];
+    if (!leg) {
+      this.#notice = {
+        kind: 'refusal',
+        html: refusalBanner({
+          refused: true,
+          reason: 'unknown_ref',
+          offending: [refFor(planId)],
+          explanation: `${planId} has no ${element} leg ${legIndex} to shift.`,
+        }),
+      };
+      return;
+    }
+    const horizon = this.#fx.config.grid.horizon_steps;
+    const duration = leg.exit_step - leg.enter_step;
+    const enter = Math.max(0, Math.min(horizon - duration, leg.enter_step + delta));
+    leg.enter_step = enter;
+    leg.exit_step = enter + duration;
+    await this.#svc.store.put(next as unknown as Record<string, unknown>);
+  }
+
   // ---- the snapshot (drives the real pipeline) ------------------------------
 
   async snapshot(scenario = 'BASE'): Promise<Snapshot> {
@@ -283,6 +382,16 @@ export class AppState {
         html: `<div data-glow-id="panel:channels" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
         deps: new Set([`refusal:${compiled.reason}`]),
       });
+      if ((this.#fx.plans ?? []).length > 0) {
+        // The map refuses with the compile — no blank, no guessed surface (G5).
+        panels.push({
+          id: 'coamap',
+          tab: 'coa',
+          title: 'Spatial · the map refuses with the compile',
+          html: `<div data-glow-id="panel:coamap" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
+          deps: new Set([`refusal:${compiled.reason}`]),
+        });
+      }
     } else {
       stamps.world = compiled.stamp;
       const world = this.#svc.store.get(compiled.world.content_hash) as CompiledWorld;
@@ -297,6 +406,90 @@ export class AppState {
         html: componentLegend('channelTrace') + channelTrace(world, knowledgeById),
         deps: worldDeps,
       });
+
+      // ---- Spatial · COA tab (SPEC-19 promoted, DEC-36d): the same store,
+      // rendered as geometry. Scoring the LATEST version of each canned-plan
+      // lineage means a drag (a new version) re-scores through the real
+      // pipeline on the next snapshot — same recompute, moved onto the map.
+      if ((this.#fx.plans ?? []).length > 0) {
+        const c4 = this.#commitmentById.get('C4')!;
+        const coaPlans: Plan[] = [];
+        const coaMatrix: S2Cell[] = [];
+        const c4Details: string[] = [];
+        const profiles: NonNullable<CoaTimelineOptions['profiles']> = [];
+        const coaDeps = new Set<string>([compiled.world.content_hash]);
+        for (const p of this.#fx.plans!) {
+          const { plan, ref } = this.latestPlan(p.logical_id);
+          coaPlans.push(plan);
+          coaDeps.add(ref.content_hash);
+          const scored = await this.#scorer.score({
+            plan: ref,
+            world: compiled.world,
+            scenario: 'BASE',
+            engine_version: '0.1.0',
+          });
+          if (isRefusal(scored)) {
+            coaMatrix.push({ plan: `${plan.logical_id} · ${plan.name}`, verdicts: [] });
+            c4Details.push(refusalBanner(scored));
+            continue;
+          }
+          coaMatrix.push({ plan: `${plan.logical_id} · ${plan.name}`, verdicts: scored.verdicts });
+          for (const v of scored.verdicts) coaDeps.add(this.#verdictKey(v));
+          const v4 = scored.verdicts.find((v) => v.commitment === 'C4');
+          if (v4) {
+            const m = v4.margin;
+            const mText = m === undefined ? 'no margin' : m.lo === m.hi ? `${m.lo} ${m.unit}` : `${m.lo}–${m.hi} ${m.unit}`;
+            c4Details.push(
+              `<div data-glow-id="coaviz:c4:${plan.logical_id}" data-glow-sig="${v4.verdict}|${mText}|v${plan.version}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:4px 0"><span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600">${plan.logical_id} v${plan.version} · C4 ${v4.verdict}</span>${m ? bandPill(m, { label: 'margin' }) : ''}</div>`,
+            );
+          }
+          profiles.push({
+            plan: plan.logical_id,
+            element: 'FE-ANVIL',
+            points: exposureProfile(plan, 'FE-ANVIL', world, this.#fx.config, 'threat', c4.unit),
+            unit: c4.unit,
+            threshold: { commitment: 'C4', value: c4.threshold },
+          });
+        }
+        const peak = dayWindowToSteps(5, 7, this.#fx.config.grid.timestep_hours);
+        panels.push(
+          {
+            id: 'coamap',
+            tab: 'coa',
+            title: `Spatial · banded surfaces, stated routes (step ${this.#step} — drag a waypoint to author a new plan version)`,
+            html: coaMap(world, this.#fx.config, coaPlans, { step: this.#step, knowledgeById, width: 640 }),
+            deps: coaDeps,
+          },
+          {
+            id: 'coatimeline',
+            tab: 'coa',
+            title: 'Spatial · validity, task windows, the exposure staircase',
+            html: coaTimeline(world, this.#fx.config, coaPlans, {
+              step: this.#step,
+              knowledge: [this.#kById.get('K5')!, this.#latest('K9') ?? this.#kById.get('K9')!],
+              supersessions: [{ from: 'K5', to: 'K9' }],
+              annotations: [
+                {
+                  label: '“surge peaking D+5–D+7” — stated by METOC (K9)',
+                  from_step: peak.from_step,
+                  until_step: peak.until_step,
+                  source: 'K9',
+                },
+              ],
+              profiles,
+              width: 860,
+            }),
+            deps: coaDeps,
+          },
+          {
+            id: 'coaverdicts',
+            tab: 'coa',
+            title: 'Spatial · the canned P1/P2, re-scored live (the planner matrix scores the generated handful)',
+            html: `${s2Matrix(COMMITMENT_IDS, coaMatrix)}<div style="margin-top:8px">${c4Details.join('')}</div>`,
+            deps: coaDeps,
+          },
+        );
+      }
 
       // handful + matrix
       const h = await this.#handfulSvc.handful({

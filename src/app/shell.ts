@@ -22,6 +22,7 @@
  */
 import type { AppState, TabId } from './state.js';
 import { changedGlowUnits, changedTabs, type SignatureMap } from './glow.js';
+import { cellAtPixel, makeProjection } from '../mapProject.js';
 import { depGraphRiver } from '../components/depGraphRiver.js';
 import { depGraphSidebar } from '../components/depGraphSidebar.js';
 import { NARRATIVES, SCRIPTING_PRINCIPLES, type Narrative, type NarrativeBeat } from '../narratives.js';
@@ -30,6 +31,7 @@ const TABS: { id: TabId; label: string; role: string }[] = [
   { id: 'j2', label: 'J-2 workbench', role: 'ROLE: J-2' },
   { id: 'planner', label: 'Planner', role: 'ROLE: J-3/5' },
   { id: 'commander', label: 'Commander', role: 'ROLE: COMD' },
+  { id: 'coa', label: 'Spatial · COA', role: 'SURFACE: ALL ROLES' },
   { id: 'observer', label: 'Observer / bridge', role: 'ROLE: OBSERVER' },
 ];
 
@@ -115,7 +117,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   root.innerHTML = `
   <div class="assay-app">
     <h1 style="font-size:22px;margin:0">ASSAY — the seam, live</h1>
-    <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Four roles, one in-browser pipeline. Every edit re-runs the <b>real</b> compile → score → relax; a change in one role <b>glows</b> the roles and components it touches (the propagation graph, not an animation — G6). Meridian is engineered fiction (DEC-8); every assessed value is banded (G2).</p>
+    <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Four roles plus a shared <b>Spatial · COA</b> surface (DEC-36), one in-browser pipeline. Every edit re-runs the <b>real</b> compile → score → relax; a change in one role <b>glows</b> the roles and components it touches (the propagation graph, not an animation — G6). Meridian is engineered fiction (DEC-8); every assessed value is banded (G2).</p>
     <div class="assay-narrative-bar" id="assay-narrative-bar"></div>
     <div id="assay-narrator"></div>
     <div class="assay-controls" id="assay-controls"></div>
@@ -257,7 +259,11 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       <div><label>hi</label><input id="assay-edit-hi" type="number" step="any" style="width:70px"></div>
       <div><label>unit</label><input id="assay-edit-unit" style="width:70px" value="tonnes"></div>
       <button class="assay-btn secondary" type="submit">Supersede &amp; recompute</button>
-    </form>`;
+    </form>
+    <div style="flex:1;min-width:220px">
+      <label for="assay-step">Spatial clock — step <b id="assay-step-label">${app.step}</b> (selection, no recompute)</label>
+      <input type="range" id="assay-step" min="0" max="${app.grid.horizon_steps}" step="1" value="${app.step}" style="width:100%">
+    </div>`;
 
   (root.querySelector('#assay-resolve') as HTMLElement).addEventListener('click', () => {
     app.resolveK12();
@@ -266,6 +272,14 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   (root.querySelector('#assay-reopen') as HTMLElement).addEventListener('click', () => {
     app.contestK12();
     void rerender('j2');
+  });
+  const stepInput = root.querySelector('#assay-step') as HTMLInputElement;
+  stepInput.addEventListener('input', () => {
+    app.setStep(Number(stepInput.value));
+    (root.querySelector('#assay-step-label') as HTMLElement).textContent = String(app.step);
+    // A scrub is pure selection over the compiled world — nothing upstream
+    // changed, so glow silence is the honest report (note 10 §5 / DEC-36c).
+    void rerender(undefined, { silent: true });
   });
   (root.querySelector('#assay-edit') as HTMLFormElement).addEventListener('submit', (e) => {
     e.preventDefault();
@@ -289,7 +303,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     }
   }
 
-  async function rerender(sourceTab?: TabId): Promise<void> {
+  async function rerender(sourceTab?: TabId, opts: { silent?: boolean } = {}): Promise<void> {
     const snap = await app.snapshot();
 
     // notice (last edit outcome)
@@ -318,7 +332,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     }
     for (const id of [...pending]) if (!nextSig.has(id)) pending.delete(id);
 
-    if (!firstRender) {
+    if (!firstRender && !opts.silent) {
       const changed = changedGlowUnits(prevSig, nextSig);
       for (const el of units) {
         const id = el.dataset.glowId as string;
@@ -336,6 +350,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     firstRender = false;
 
     wireTraceChips();
+    wireCoaDrag();
     syncTabs();
 
     // wall-projection auto-follow: scroll delta feed to top (newest first)
@@ -362,6 +377,48 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     void el.offsetWidth;
     el.classList.add('assay-glow');
     doc.defaultView?.setTimeout(() => el.classList.remove('assay-glow'), GLOW_MS);
+  }
+
+  // ---- Spatial tab: drag a waypoint → new Plan version → real re-score ----
+  // (DEC-36c/d; the projection params must match state.ts's coaMap options.)
+  const coaProjection = makeProjection(app.grid, { width: 640, pad: 10 });
+  function wireCoaDrag(): void {
+    const svg = panelsRoot.querySelector('[data-panel="coamap"] svg[role="img"]') as SVGSVGElement | null;
+    if (!svg) return;
+    let drag: { el: SVGCircleElement; plan: string; element: string; leg: number } | null = null;
+    const toViewBox = (ev: PointerEvent): { x: number; y: number } => {
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return { x: 0, y: 0 };
+      const pt = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(ctm.inverse());
+      return { x: pt.x, y: pt.y };
+    };
+    for (const c of Array.from(svg.querySelectorAll('.coa-wp')) as SVGCircleElement[]) {
+      c.style.cursor = 'grab';
+      c.addEventListener('pointerdown', (ev) => {
+        ev.preventDefault();
+        drag = {
+          el: c,
+          plan: c.dataset.plan as string,
+          element: c.dataset.element as string,
+          leg: Number(c.dataset.leg),
+        };
+        c.setPointerCapture(ev.pointerId);
+      });
+      c.addEventListener('pointermove', (ev) => {
+        if (!drag || drag.el !== c) return;
+        const p = toViewBox(ev);
+        c.setAttribute('cx', String(p.x));
+        c.setAttribute('cy', String(p.y));
+      });
+      c.addEventListener('pointerup', (ev) => {
+        if (!drag || drag.el !== c) return;
+        const p = toViewBox(ev);
+        const cell = cellAtPixel(app.grid, coaProjection, p.x, p.y);
+        const d = drag;
+        drag = null;
+        void app.moveWaypoint(d.plan, d.element, d.leg, cell.x, cell.y).then(() => rerender('coa'));
+      });
+    }
   }
 
   // ---- the one-hop trace menu on item chips ----

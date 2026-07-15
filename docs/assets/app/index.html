@@ -530,6 +530,99 @@
     ]
   };
 
+  // fixtures/plans.json
+  var plans_default = [
+    {
+      logical_id: "P1",
+      version: 1,
+      name: "Strait-early / battery-suppression",
+      seed: 1,
+      generator: "canned-handful (delivery plan \xA73 fallback; SPEC-08 replaces)",
+      elements: [
+        {
+          force_element: "FE-BROOM",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 4 },
+            { x: 26, y: 25, enter_step: 4, exit_step: 22 }
+          ]
+        },
+        {
+          force_element: "FE-PACKHORSE",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 4 },
+            { x: 26, y: 25, enter_step: 4, exit_step: 24 },
+            { x: 32, y: 38, enter_step: 24, exit_step: 32 }
+          ]
+        },
+        {
+          force_element: "FE-ANVIL",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 8 },
+            { x: 32, y: 22, enter_step: 8, exit_step: 9 }
+          ]
+        },
+        {
+          force_element: "FE-FALCON",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 6 },
+            { x: 48, y: 15, enter_step: 6, exit_step: 10 }
+          ]
+        },
+        {
+          force_element: "FE-KINGFISHER",
+          route: [
+            { x: 48, y: 15, enter_step: 0, exit_step: 4 },
+            { x: 30, y: 50, enter_step: 4, exit_step: 40 }
+          ]
+        }
+      ]
+    },
+    {
+      logical_id: "P2",
+      version: 1,
+      name: "Sweep-first / fires-forward",
+      seed: 1,
+      generator: "canned-handful (delivery plan \xA73 fallback; SPEC-08 replaces)",
+      elements: [
+        {
+          force_element: "FE-BROOM",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 2 },
+            { x: 26, y: 25, enter_step: 2, exit_step: 24 }
+          ]
+        },
+        {
+          force_element: "FE-PACKHORSE",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 10 },
+            { x: 26, y: 25, enter_step: 10, exit_step: 30 },
+            { x: 32, y: 38, enter_step: 30, exit_step: 36 }
+          ]
+        },
+        {
+          force_element: "FE-ANVIL",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 12 }
+          ]
+        },
+        {
+          force_element: "FE-FALCON",
+          route: [
+            { x: 30, y: 50, enter_step: 0, exit_step: 4 },
+            { x: 32, y: 38, enter_step: 4, exit_step: 8 }
+          ]
+        },
+        {
+          force_element: "FE-KINGFISHER",
+          route: [
+            { x: 48, y: 15, enter_step: 0, exit_step: 4 },
+            { x: 30, y: 50, enter_step: 4, exit_step: 42 }
+          ]
+        }
+      ]
+    }
+  ];
+
   // src/seam.ts
   function isRefusal(r) {
     return typeof r === "object" && r !== null && r.refused === true;
@@ -2625,8 +2718,392 @@
     };
   }
 
-  // src/components/bandPill.ts
+  // src/mapProject.ts
+  function makeProjection(grid, vp) {
+    const pad = vp.pad ?? 0;
+    const cell2 = (vp.width - 2 * pad) / grid.cols;
+    return {
+      cell: cell2,
+      pad,
+      width: vp.width,
+      height: grid.rows * cell2 + 2 * pad,
+      px: (x) => pad + x * cell2,
+      py: (y) => pad + y * cell2,
+      cx: (x) => pad + (x + 0.5) * cell2,
+      cy: (y) => pad + (y + 0.5) * cell2
+    };
+  }
+  function regionRect(g, p) {
+    return {
+      x: p.px(g.x0),
+      y: p.py(g.y0),
+      w: (g.x1 - g.x0 + 1) * p.cell,
+      h: (g.y1 - g.y0 + 1) * p.cell
+    };
+  }
+  function cellAtPixel(grid, p, pixelX, pixelY) {
+    const clamp2 = (v, max) => Math.max(0, Math.min(max, Math.floor(v)));
+    return {
+      x: clamp2((pixelX - p.pad) / p.cell, grid.cols - 1),
+      y: clamp2((pixelY - p.pad) / p.cell, grid.rows - 1)
+    };
+  }
+  function cellInRegion(g, x, y) {
+    return x >= g.x0 && x <= g.x1 && y >= g.y0 && y <= g.y1;
+  }
+  function regionByName(config, name) {
+    const g = config.regions.find((r) => r.name === name);
+    if (!g) throw new Error(`mapProject: region '${name}' has no geometry in the config (fixture defect)`);
+    return g;
+  }
+  function regionsContaining(config, x, y) {
+    return config.regions.filter((g) => cellInRegion(g, x, y));
+  }
+  function legRegions(config, leg3) {
+    return regionsContaining(config, leg3.x, leg3.y).map((g) => g.name);
+  }
+  function legActiveAt(leg3, t) {
+    return t >= leg3.enter_step && t < leg3.exit_step;
+  }
+  function overrideActiveAt(o, t) {
+    return (o.from_step === void 0 || t >= o.from_step) && (o.until_step === void 0 || t <= o.until_step);
+  }
+  function dayWindowToSteps(fromDay, toDay, timestepHours) {
+    const perDay = 24 / timestepHours;
+    return { from_step: fromDay * perDay, until_step: toDay * perDay };
+  }
+  function exposureProfile(plan2, element, world, config, channel, unit) {
+    const ep = plan2.elements.find((e) => e.force_element === element);
+    const legs = ep?.route ?? [];
+    const dwellHours = config.grid.timestep_hours;
+    const points = [];
+    let acc = { lo: 0, hi: 0, unit };
+    legs.forEach((leg3, i) => {
+      const dwell = (leg3.exit_step - leg3.enter_step) * dwellHours;
+      const val = channelAt(world, config, channel, leg3.x, leg3.y, leg3.enter_step);
+      const banked = { lo: val.lo * dwell, hi: val.hi * dwell, unit };
+      acc = { lo: acc.lo + banked.lo, hi: acc.hi + banked.hi, unit };
+      points.push({
+        legIndex: i,
+        x: leg3.x,
+        y: leg3.y,
+        enter_step: leg3.enter_step,
+        exit_step: leg3.exit_step,
+        regions: legRegions(config, leg3),
+        leg: banked,
+        cum: { ...acc }
+      });
+    });
+    return points;
+  }
+
+  // src/components/coaMap.ts
   var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var CHANNEL_COLOUR = {
+    threat: "#A33131",
+    storm: "#2F5D8A",
+    tide: "#14655F",
+    civil_density: "#7A4E8A",
+    mobility: "#3E7C46",
+    sensor: "#6B6B6B"
+  };
+  var ELEMENT_COLOUR = {
+    "FE-ANVIL": "#9A6A14",
+    "FE-BROOM": "#14655F",
+    "FE-PACKHORSE": "#3E5D8A",
+    "FE-FALCON": "#A33131",
+    "FE-KINGFISHER": "#7A4E8A"
+  };
+  var elementColour = (id) => ELEMENT_COLOUR[id] ?? "#1B2732";
+  var relWidth = (b) => {
+    const denom = Math.max(Math.abs(b.lo), Math.abs(b.hi));
+    return denom === 0 ? 0 : (b.hi - b.lo) / denom;
+  };
+  function coaMap(world, config, plans, opts = {}) {
+    const step = opts.step ?? 0;
+    const prefix = opts.idPrefix ?? "coamap";
+    const p = makeProjection(config.grid, { width: opts.width ?? 640, pad: 10 });
+    const wanted = opts.channels ?? world.channels.filter((c) => (c.regions ?? []).length > 0).map((c) => c.kind);
+    const defs = [];
+    const surfaces = [];
+    for (const kind of wanted) {
+      const ch = world.channels.find((c) => c.kind === kind);
+      if (!ch) continue;
+      const colour = CHANNEL_COLOUR[kind];
+      const max = Math.max(ch.default.hi, ...(ch.regions ?? []).map((o) => o.value.hi), 1);
+      const alpha = (v) => 0.1 + 0.45 * (v / max);
+      (ch.regions ?? []).forEach((o, i) => {
+        if (!overrideActiveAt(o, step)) return;
+        const g = regionByName(config, o.region);
+        const r = regionRect(g, p);
+        const gid = `${prefix}-g-${kind}-${o.region}-${i}`;
+        const degenerate = o.value.lo === o.value.hi;
+        if (degenerate) {
+          defs.push(
+            `<linearGradient id="${gid}"><stop offset="0" stop-color="${colour}" stop-opacity="${alpha(o.value.hi).toFixed(3)}"/></linearGradient>`
+          );
+        } else {
+          const aLo = alpha(o.value.lo).toFixed(3);
+          const aHi = alpha(o.value.hi).toFixed(3);
+          defs.push(
+            `<linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${colour}" stop-opacity="${aLo}"/><stop offset="0.5" stop-color="${colour}" stop-opacity="${aLo}"/><stop offset="0.5" stop-color="${colour}" stop-opacity="${aHi}"/><stop offset="1" stop-color="${colour}" stop-opacity="${aHi}"/></linearGradient>`
+          );
+        }
+        const rw = relWidth(o.value);
+        const hatch = rw === 0 ? "" : rw < 0.5 ? `${prefix}-hatch-light` : `${prefix}-hatch-dense`;
+        const src = o.source ?? "unsourced";
+        const ko = o.source ? opts.knowledgeById?.[o.source] : void 0;
+        const owner = ko?.provenance?.owner;
+        const window = o.from_step !== void 0 || o.until_step !== void 0 ? ` \xB7 steps ${o.from_step ?? 0}\u2013${o.until_step ?? "\u221E"}` : "";
+        const title = `${kind} over ${o.region}: [${o.value.lo}, ${o.value.hi}] ${o.value.unit} \u2014 ${src}${owner ? ` \xB7 ${owner}` : ""}${window} (assessment, not fact)`;
+        const sig = `${o.value.lo}-${o.value.hi} ${o.value.unit}|${src}|${o.from_step ?? ""}-${o.until_step ?? ""}`;
+        surfaces.push(
+          `<g class="coa-surface" data-glow-id="coa:cell:${esc(kind)}:${esc(o.region)}" data-glow-sig="${esc(sig)}" data-kind="${esc(kind)}" data-region="${esc(o.region)}" data-band-lo="${o.value.lo}" data-band-hi="${o.value.hi}" data-band-unit="${esc(o.value.unit)}" data-source="${esc(src)}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#${gid})"/>${hatch ? `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#${hatch})"/>` : ""}<title>${esc(title)}</title></g>`
+        );
+      });
+    }
+    defs.push(
+      `<pattern id="${prefix}-hatch-light" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#1B2732" stroke-opacity="0.12" stroke-width="1"/></pattern>`,
+      `<pattern id="${prefix}-hatch-dense" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="#1B2732" stroke-opacity="0.18" stroke-width="1"/></pattern>`
+    );
+    const regions = config.regions.map((g) => {
+      const r = regionRect(g, p);
+      return `<g class="coa-region" data-region="${esc(g.name)}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="#5B6B77" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="3 2"/><text x="${r.x + 3}" y="${r.y + 11}" font-family="ui-monospace,monospace" font-size="8.5" fill="#5B6B77">${esc(g.name)}</text><title>${esc(g.name)}: cells (${g.x0},${g.y0})\u2013(${g.x1},${g.y1})</title></g>`;
+    }).join("");
+    const routes = [];
+    plans.forEach((plan2, pi) => {
+      const dash = pi === 0 ? "" : ' stroke-dasharray="6 4"';
+      for (const ep of plan2.elements) {
+        const legs = ep.route ?? [];
+        if (legs.length === 0) continue;
+        const colour = elementColour(ep.force_element);
+        const pts = legs.map((l) => `${p.cx(l.x).toFixed(1)},${p.cy(l.y).toFixed(1)}`).join(" ");
+        const wps = legs.map((l, i) => {
+          const active = legActiveAt(l, step);
+          const inRegions = legRegions(config, l);
+          const title = `${plan2.logical_id} \xB7 ${ep.force_element} leg ${i}: (${l.x},${l.y}) steps ${l.enter_step}\u2013${l.exit_step}${inRegions.length ? ` \xB7 in: ${inRegions.join(", ")}` : " \xB7 open water (no named region)"}`;
+          return `<circle class="coa-wp" data-plan="${esc(plan2.logical_id)}" data-element="${esc(ep.force_element)}" data-leg="${i}" data-glow-id="coa:wp:${esc(plan2.logical_id)}:${esc(ep.force_element)}:${i}" data-glow-sig="${l.x},${l.y}@${l.enter_step}-${l.exit_step}" cx="${p.cx(l.x).toFixed(1)}" cy="${p.cy(l.y).toFixed(1)}" r="${active ? 6 : 4}" fill="${colour}" fill-opacity="${active ? 1 : 0.75}" stroke="#FFFFFF" stroke-width="1.2"><title>${esc(title)}</title></circle>`;
+        }).join("");
+        routes.push(
+          `<g class="coa-route" data-plan="${esc(plan2.logical_id)}" data-element="${esc(ep.force_element)}"><polyline points="${pts}" fill="none" stroke="${colour}" stroke-width="2" stroke-opacity="0.85"${dash}/>${wps}</g>`
+        );
+      }
+    });
+    const chanKeys = wanted.map((kind) => {
+      const colour = CHANNEL_COLOUR[kind];
+      return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><svg width="26" height="12" aria-hidden="true"><rect x="0" y="0" width="13" height="12" fill="${colour}" fill-opacity="0.18"/><rect x="13" y="0" width="13" height="12" fill="${colour}" fill-opacity="0.5"/></svg><span>${esc(kind)}</span></span>`;
+    }).join("");
+    const elemKeys = Object.entries(ELEMENT_COLOUR).filter(([id]) => plans.some((pl) => pl.elements.some((e) => e.force_element === id))).map(
+      ([id, colour]) => `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><span style="width:14px;height:2px;background:${colour};display:inline-block"></span><span>${esc(id)}</span></span>`
+    ).join("");
+    const planKeys = plans.map(
+      (pl, pi) => `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><svg width="22" height="6" aria-hidden="true"><line x1="0" y1="3" x2="22" y2="3" stroke="#1B2732" stroke-width="2"${pi === 0 ? "" : ' stroke-dasharray="6 4"'}/></svg><span>${esc(pl.logical_id)} \xB7 ${esc(pl.name)}</span></span>`
+    ).join("");
+    const legend2 = `<div class="coa-map-legend" style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;margin-top:6px;line-height:1.9">
+  <div>${chanKeys}<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><svg width="26" height="12" aria-hidden="true"><rect width="26" height="12" fill="#EDF0F2"/><line x1="0" y1="12" x2="12" y2="0" stroke="#1B2732" stroke-opacity="0.3"/><line x1="8" y1="12" x2="20" y2="0" stroke="#1B2732" stroke-opacity="0.3"/><line x1="16" y1="12" x2="26" y2="2" stroke="#1B2732" stroke-opacity="0.3"/></svg><span>hatch density = band width</span></span></div>
+  <div>${elemKeys}</div>
+  <div>${planKeys}</div>
+  <div>A split fill is the band's two bounds \u2014 there is no single value; hover any surface for its exact [lo, hi] unit and named source. Fill intensity is normalised per channel (presentation scale, not data).</div>
+</div>`;
+    return `<div class="assay-coa-map" data-step="${step}">
+<svg viewBox="0 0 ${p.width} ${p.height}" width="${p.width}" height="${p.height}" role="img" aria-label="Meridian grid ${config.grid.cols}\xD7${config.grid.rows}, step ${step}" style="background:#F6F8F9;border:1px solid #D8DFE4;border-radius:6px;max-width:100%;height:auto">
+<defs>${defs.join("")}</defs>
+<g class="coa-surfaces">${surfaces.join("")}</g>
+<g class="coa-regions">${regions}</g>
+<g class="coa-routes">${routes.join("")}</g>
+</svg>
+${legend2}
+</div>`;
+  }
+
+  // src/components/coaTimeline.ts
+  var esc2 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var MONO = "ui-monospace,monospace";
+  var bandText = (b) => b.lo === b.hi ? `${b.lo} ${b.unit}` : `${b.lo}\u2013${b.hi} ${b.unit}`;
+  function coaTimeline(world, config, plans, opts = {}) {
+    const prefix = opts.idPrefix ?? "coatl";
+    const width = opts.width ?? 720;
+    const horizon = config.grid.horizon_steps;
+    const labelW = 170;
+    const pad = 10;
+    const plotW = width - labelW - 2 * pad;
+    const sx = (t) => labelW + pad + t / horizon * plotW;
+    const rows = [];
+    let y = 26;
+    const rowLabel = (text, yy, colour = "#5B6B77") => `<text x="${labelW - 4}" y="${yy}" text-anchor="end" font-family="${MONO}" font-size="9.5" fill="${colour}">${esc2(text)}</text>`;
+    const compiledSources = new Set(
+      world.channels.flatMap((c) => (c.regions ?? []).map((o) => o.source).filter(Boolean))
+    );
+    const koY = /* @__PURE__ */ new Map();
+    for (const ko of opts.knowledge ?? []) {
+      if (!ko.validity || !ko.answer) continue;
+      const from = ko.validity.valid_from;
+      const until = ko.validity.valid_until;
+      const compiled = compiledSources.has(ko.logical_id);
+      const colour = compiled ? "#2F5D8A" : "#8B959C";
+      const label = `${ko.logical_id} \xB7 ${bandText(ko.answer)}`;
+      const title = `${ko.logical_id}: ${bandText(ko.answer)}, valid steps ${from}\u2013${until}${compiled ? " (compiled)" : " (superseded \u2014 not compiled)"} \u2014 ${ko.provenance?.owner ?? "unowned"} (assessment, not fact)`;
+      koY.set(ko.logical_id, y);
+      rows.push(
+        rowLabel(label, y + 9, compiled ? "#1B2732" : "#8B959C"),
+        `<g data-glow-id="coa:win:${esc2(ko.logical_id)}" data-glow-sig="${from}-${until}|${ko.answer.lo}-${ko.answer.hi}"><rect x="${sx(from).toFixed(1)}" y="${y}" width="${(sx(until) - sx(from)).toFixed(1)}" height="12" fill="${colour}" fill-opacity="${compiled ? 0.5 : 0.25}" stroke="${colour}" stroke-width="1"${compiled ? "" : ' stroke-dasharray="3 2"'} rx="2"/><title>${esc2(title)}</title></g>`
+      );
+      if (!compiled) {
+        rows.push(
+          `<text x="${sx(until) + 6}" y="${y + 9}" font-family="${MONO}" font-size="8.5" fill="#8B959C">superseded \u2014 not compiled</text>`
+        );
+      }
+      y += 20;
+    }
+    for (const s of opts.supersessions ?? []) {
+      const toKo = (opts.knowledge ?? []).find((k) => k.logical_id === s.to);
+      const yFrom = koY.get(s.from);
+      const yTo = koY.get(s.to);
+      if (!toKo?.validity || yFrom === void 0 || yTo === void 0) continue;
+      const xEdge = sx(toKo.validity.valid_from);
+      const y0 = Math.min(yFrom, yTo) + 6;
+      const y1 = Math.max(yFrom, yTo) + 6;
+      rows.push(
+        `<g class="coa-supersession"><line x1="${xEdge.toFixed(1)}" y1="${y0}" x2="${xEdge.toFixed(1)}" y2="${y1}" stroke="#A33131" stroke-width="1.5"/><text x="${xEdge + 4}" y="${y0 + (y1 - y0) / 2 + 3}" font-family="${MONO}" font-size="8.5" fill="#A33131">${esc2(s.to)} supersedes ${esc2(s.from)}</text><title>${esc2(`${s.to} supersedes ${s.from} (cross-lineage, DEC-21): the ${s.from} window is overtaken from step ${toKo.validity.valid_from}`)}</title></g>`
+      );
+    }
+    y += 6;
+    for (const ch of world.channels) {
+      const windowed = (ch.regions ?? []).filter((o) => o.from_step !== void 0 || o.until_step !== void 0);
+      if (windowed.length === 0) continue;
+      for (const o of windowed) {
+        const from = o.from_step ?? 0;
+        const until = o.until_step ?? horizon;
+        const label = `${ch.kind}.${o.region}`;
+        const title = `compiled ${ch.kind} over ${o.region}: [${o.value.lo}, ${o.value.hi}] ${o.value.unit}, active steps ${from}\u2013${until} \u2014 ${o.source ?? "unsourced"}`;
+        rows.push(
+          rowLabel(label, y + 9, "#1B2732"),
+          `<g data-glow-id="coa:chwin:${esc2(ch.kind)}:${esc2(o.region)}" data-glow-sig="${from}-${until}|${o.value.lo}-${o.value.hi}"><rect x="${sx(from).toFixed(1)}" y="${y}" width="${(sx(until) - sx(from)).toFixed(1)}" height="12" fill="#2F5D8A" fill-opacity="0.5" rx="2"/><title>${esc2(title)}</title></g>`
+        );
+        if (until < horizon) {
+          rows.push(
+            `<g class="coa-lapsed"><rect x="${sx(until).toFixed(1)}" y="${y}" width="${(sx(horizon) - sx(until)).toFixed(1)}" height="12" fill="none" stroke="#8B959C" stroke-dasharray="2 3" rx="2"/><text x="${(sx(until) + 5).toFixed(1)}" y="${y + 9}" font-family="${MONO}" font-size="8.5" fill="#8B959C">lapsed \u2192 default ${esc2(bandText(ch.default))}</text></g>`
+          );
+        }
+        y += 20;
+      }
+    }
+    y += 6;
+    const storm = world.channels.find((c) => c.kind === "storm");
+    const stormOv = (storm?.regions ?? []).filter((o) => o.value.hi > 0);
+    if (stormOv.length > 0) {
+      const ridgeH = 44;
+      const vmax = Math.max(...stormOv.map((o) => o.value.hi)) * 1.15;
+      const vy = (v) => y + ridgeH - v / vmax * ridgeH;
+      rows.push(rowLabel("storm surge (banded)", y + ridgeH / 2, "#1B2732"));
+      for (const o of stormOv) {
+        const from = o.from_step ?? 0;
+        const until = o.until_step ?? horizon;
+        const top = vy(o.value.hi);
+        const bot = vy(o.value.lo);
+        const title = `storm surge over ${o.region}: [${o.value.lo}, ${o.value.hi}] ${o.value.unit}, steps ${from}\u2013${until} \u2014 ${o.source ?? "unsourced"} (flat: the compiled band has no per-step variation)`;
+        rows.push(
+          `<g data-glow-id="coa:ridge:${esc2(o.region)}" data-glow-sig="${o.value.lo}-${o.value.hi}|${from}-${until}"><rect x="${sx(from).toFixed(1)}" y="${top.toFixed(1)}" width="${(sx(until) - sx(from)).toFixed(1)}" height="${(bot - top).toFixed(1)}" fill="#2F5D8A" fill-opacity="0.35" stroke="#2F5D8A" stroke-width="1"/><title>${esc2(title)}</title></g>`,
+          `<text x="${sx(from) + 4}" y="${(top + 10).toFixed(1)}" font-family="${MONO}" font-size="8.5" fill="#2F5D8A">${esc2(bandText(o.value))}</text>`
+        );
+      }
+      for (const a of opts.annotations ?? []) {
+        const x0 = sx(a.from_step);
+        const x1 = sx(a.until_step);
+        const yy = y - 2;
+        rows.push(
+          `<g class="coa-annotation"><line x1="${x0.toFixed(1)}" y1="${yy}" x2="${x1.toFixed(1)}" y2="${yy}" stroke="#9A6A14" stroke-width="1.5"/><line x1="${x0.toFixed(1)}" y1="${yy - 3}" x2="${x0.toFixed(1)}" y2="${yy + 3}" stroke="#9A6A14" stroke-width="1.5"/><line x1="${x1.toFixed(1)}" y1="${yy - 3}" x2="${x1.toFixed(1)}" y2="${yy + 3}" stroke="#9A6A14" stroke-width="1.5"/><text x="${((x0 + x1) / 2).toFixed(1)}" y="${yy - 5}" text-anchor="middle" font-family="${MONO}" font-size="8.5" fill="#9A6A14">${esc2(a.label)}</text><title>${esc2(`Quoted statement, steps ${a.from_step}\u2013${a.until_step} \u2014 attributed to ${a.source}; rendered as an annotation, never a curve (note 10 \xA73.3)`)}</title></g>`
+        );
+      }
+      y += ridgeH + 14;
+    }
+    plans.forEach((plan2, pi) => {
+      const dash = pi === 0 ? "" : ' stroke-dasharray="5 3"';
+      for (const ep of plan2.elements) {
+        const legs = ep.route ?? [];
+        if (legs.length === 0) continue;
+        rows.push(rowLabel(`${plan2.logical_id} \xB7 ${ep.force_element}`, y + 8, "#1B2732"));
+        legs.forEach((l, i) => {
+          const title = `${plan2.logical_id} \xB7 ${ep.force_element} leg ${i}: waypoint (${l.x},${l.y}), steps ${l.enter_step}\u2013${l.exit_step}`;
+          rows.push(
+            `<g data-glow-id="coa:task:${esc2(plan2.logical_id)}:${esc2(ep.force_element)}:${i}" data-glow-sig="${l.x},${l.y}@${l.enter_step}-${l.exit_step}"><rect x="${sx(l.enter_step).toFixed(1)}" y="${y}" width="${Math.max(sx(l.exit_step) - sx(l.enter_step), 2).toFixed(1)}" height="10" fill="#3E5D8A" fill-opacity="${0.35 + 0.25 * (i % 2)}" stroke="#3E5D8A" stroke-width="1"${dash} rx="2"/><title>${esc2(title)}</title></g>`
+          );
+        });
+        y += 18;
+      }
+      y += 4;
+    });
+    y += 4;
+    for (const prof of opts.profiles ?? []) {
+      const profH = 56;
+      const finalCum = prof.points.length > 0 ? prof.points[prof.points.length - 1].cum : { lo: 0, hi: 0, unit: prof.unit };
+      const vmax = Math.max(finalCum.hi, prof.threshold?.value ?? 0, 1) * 1.15;
+      const vy = (v) => y + profH - v / vmax * profH;
+      rows.push(rowLabel(`${prof.plan} \xB7 ${prof.element} exposure`, y + profH / 2, "#1B2732"));
+      const stairs = (pick) => {
+        let d = `M ${sx(0).toFixed(1)} ${vy(0).toFixed(1)}`;
+        let cur = 0;
+        for (const pt of prof.points) {
+          d += ` L ${sx(pt.exit_step).toFixed(1)} ${vy(cur).toFixed(1)}`;
+          cur = pick(pt.cum);
+          d += ` L ${sx(pt.exit_step).toFixed(1)} ${vy(cur).toFixed(1)}`;
+        }
+        d += ` L ${sx(horizon).toFixed(1)} ${vy(cur).toFixed(1)}`;
+        return d;
+      };
+      const loPath = stairs((b) => b.lo);
+      const hiPath = stairs((b) => b.hi);
+      const sig = `${finalCum.lo}-${finalCum.hi} ${prof.unit}`;
+      rows.push(
+        `<g data-glow-id="coa:profile:${esc2(prof.plan)}:${esc2(prof.element)}" data-glow-sig="${esc2(sig)}">`,
+        `<path d="${hiPath}" fill="none" stroke="#9A6A14" stroke-width="1.5"/>`,
+        `<path d="${loPath}" fill="none" stroke="#9A6A14" stroke-width="1.5" stroke-dasharray="4 3"/>`,
+        `<title>${esc2(`${prof.plan} \xB7 ${prof.element}: cumulative banded exposure, stepping only at leg boundaries; final [${finalCum.lo}, ${finalCum.hi}] ${prof.unit}`)}</title>`,
+        `</g>`
+      );
+      for (const pt of prof.points) {
+        if (pt.leg.hi === 0) continue;
+        const where = pt.regions.length ? pt.regions.join(", ") : "open water";
+        rows.push(
+          `<g class="coa-riser"><circle cx="${sx(pt.exit_step).toFixed(1)}" cy="${vy(pt.cum.hi).toFixed(1)}" r="3" fill="#9A6A14"/><text x="${(sx(pt.exit_step) + 5).toFixed(1)}" y="${(vy(pt.cum.hi) - 4).toFixed(1)}" font-family="${MONO}" font-size="8.5" fill="#9A6A14">+[${pt.leg.lo}, ${pt.leg.hi}] in ${esc2(where)}</text><title>${esc2(`leg ${pt.legIndex} at (${pt.x},${pt.y}), steps ${pt.enter_step}\u2013${pt.exit_step}: banks [${pt.leg.lo}, ${pt.leg.hi}] ${prof.unit} \u2014 waypoint in ${where}`)}</title></g>`
+        );
+      }
+      if (prof.threshold) {
+        const ty = vy(prof.threshold.value);
+        rows.push(
+          `<line x1="${sx(0).toFixed(1)}" y1="${ty.toFixed(1)}" x2="${sx(horizon).toFixed(1)}" y2="${ty.toFixed(1)}" stroke="#A33131" stroke-width="1" stroke-dasharray="6 3"/><text x="${sx(horizon) - 4}" y="${(ty - 3).toFixed(1)}" text-anchor="end" font-family="${MONO}" font-size="8.5" fill="#A33131">${esc2(`${prof.threshold.commitment} threshold ${prof.threshold.value} ${prof.unit}`)}</text>`
+        );
+      }
+      const endLabel = `[${finalCum.lo}, ${finalCum.hi}] ${prof.unit}`;
+      rows.push(
+        `<text x="${sx(horizon) - 4}" y="${(vy(finalCum.hi) - 12).toFixed(1)}" text-anchor="end" font-family="${MONO}" font-size="9" font-weight="700" fill="#9A6A14">${esc2(endLabel)}</text>`
+      );
+      y += profH + 18;
+    }
+    const height = y + 26;
+    const stepsPerDay = 24 / config.grid.timestep_hours;
+    const axis = [
+      `<line x1="${sx(0)}" y1="${y}" x2="${sx(horizon)}" y2="${y}" stroke="#5B6B77" stroke-width="1"/>`
+    ];
+    for (let t = 0; t <= horizon; t += stepsPerDay) {
+      axis.push(
+        `<line x1="${sx(t).toFixed(1)}" y1="${y}" x2="${sx(t).toFixed(1)}" y2="${y + 4}" stroke="#5B6B77" stroke-width="1"/>`,
+        t % (stepsPerDay * 2) === 0 ? `<text x="${sx(t).toFixed(1)}" y="${y + 15}" text-anchor="middle" font-family="${MONO}" font-size="8.5" fill="#5B6B77">D+${t / stepsPerDay}</text>` : ""
+      );
+    }
+    const cursor = opts.step !== void 0 ? `<g class="coa-cursor"><line x1="${sx(opts.step).toFixed(1)}" y1="18" x2="${sx(opts.step).toFixed(1)}" y2="${y}" stroke="#1B2732" stroke-width="1" stroke-opacity="0.6"/><text x="${(sx(opts.step) + 3).toFixed(1)}" y="16" font-family="${MONO}" font-size="9" fill="#1B2732">step ${opts.step}</text></g>` : "";
+    return `<div class="assay-coa-timeline">
+<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Meridian temporal companion: validity windows, task windows, storm ridge, exposure profile" style="background:#F6F8F9;border:1px solid #D8DFE4;border-radius:6px;max-width:100%;height:auto">
+${rows.join("\n")}
+${axis.join("")}
+${cursor}
+</svg>
+<div class="coa-timeline-legend" style="font-family:${MONO};font-size:10.5px;color:#5B6B77;margin-top:6px;line-height:1.8">Windows are discrete extents \u2014 between and beyond them the state is unknown or lapsed, never interpolated. The storm ridge is flat because the compiled band is flat; the bracketed peak is a quoted statement, not a computed curve. The exposure staircase steps only at leg boundaries; solid = hi bound, dashed = lo bound.</div>
+</div>`;
+  }
+
+  // src/components/bandPill.ts
+  var esc3 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function bandPill(band, opts = {}) {
     const span = band.hi - band.lo;
     const pad = span > 0 ? span / 2 : Math.max(Math.abs(band.hi) / 2, 1);
@@ -2639,7 +3116,7 @@
     const text = isDegenerate ? `${band.lo} ${band.unit}` : `${band.lo}\u2013${band.hi} ${band.unit}`;
     return `<span class="assay-band" style="display:inline-block;min-width:180px;font-family:ui-monospace,monospace;font-size:11px">
   <span style="display:flex;justify-content:space-between;color:#5B6B77">
-    <span>${trackLo}</span><span style="color:#1B2732;font-weight:600">${esc(opts.label ?? "")}${opts.label ? " \xB7 " : ""}${esc(text)}</span><span>${trackHi}</span>
+    <span>${trackLo}</span><span style="color:#1B2732;font-weight:600">${esc3(opts.label ?? "")}${opts.label ? " \xB7 " : ""}${esc3(text)}</span><span>${trackHi}</span>
   </span>
   <span style="position:relative;display:block;height:8px;background:#EDF0F2;border:1px solid #D8DFE4;border-radius:4px;margin-top:2px">
     <span style="position:absolute;top:1px;bottom:1px;border-radius:3px;background:${isDegenerate ? "#14655F" : "#9A6A14"};opacity:.55;left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%"></span>
@@ -2648,8 +3125,8 @@
   }
 
   // src/components/provenanceChip.ts
-  var esc2 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  var chip = (text, fg, bg, border) => `<span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:${bg};color:${fg};border:1px solid ${border};margin-right:5px;white-space:nowrap">${esc2(text)}</span>`;
+  var esc4 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var chip = (text, fg, bg, border) => `<span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:${bg};color:${fg};border:1px solid ${border};margin-right:5px;white-space:nowrap">${esc4(text)}</span>`;
   function provenanceChip(prov) {
     const parts = [];
     if (prov.source_class === "observed") {
@@ -2666,19 +3143,19 @@
   }
 
   // src/components/refusalBanner.ts
-  var esc3 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc5 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function refusalBanner(refusal9) {
-    const refs = refusal9.offending.map((r) => esc3(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
+    const refs = refusal9.offending.map((r) => esc5(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
     return `<div class="assay-refusal" role="alert" style="font-family:ui-monospace,monospace;font-size:11.5px;border:1px solid #EFC6C6;border-left:4px solid #A33131;background:#FBEDED;color:#7A1F1F;padding:8px 11px;border-radius:4px">
-  <span style="font-weight:700">Refused \xB7 ${esc3(refusal9.reason)}</span>
+  <span style="font-weight:700">Refused \xB7 ${esc5(refusal9.reason)}</span>
   <span style="margin-left:8px;color:#9A3B3B">offending: ${refs}</span>
-  <div style="margin-top:3px;color:#5E2020">${esc3(refusal9.explanation)}</div>
+  <div style="margin-top:3px;color:#5E2020">${esc5(refusal9.explanation)}</div>
 </div>`;
   }
 
   // src/components/s1Table.ts
-  var esc4 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  var chip2 = (text, fg, bg, border) => `<span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:${bg};color:${fg};border:1px solid ${border};margin-right:5px;white-space:nowrap">${esc4(text)}</span>`;
+  var esc6 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var chip2 = (text, fg, bg, border) => `<span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:${bg};color:${fg};border:1px solid ${border};margin-right:5px;white-space:nowrap">${esc6(text)}</span>`;
   var waiverChip = () => chip2("waiver W-1", "#5B3B8C", "#EFE8F7", "#D5C6EF");
   var blockingFlag = () => chip2("blocks compile", "#A33131", "#F8E2E2", "#EFC6C6");
   var statusChip = (s) => chip2(s, "#5B6B77", "#F1F3F5", "#D8DFE4");
@@ -2687,7 +3164,7 @@
       return `<span style="color:#9A6A14;font-family:ui-monospace,monospace;font-size:11px">open \u2014 awaiting collection</span>`;
     }
     if (ko.provenance?.source_class === "observed") {
-      return `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#14655F">${esc4(
+      return `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#14655F">${esc6(
         `${ko.answer.lo} ${ko.answer.unit}`
       )}</span>`;
     }
@@ -2696,7 +3173,7 @@
   function warningLine(warnings) {
     if (warnings.length === 0) return "";
     return warnings.map(
-      (w) => `<div class="assay-lint" style="margin-top:3px;font-family:ui-monospace,monospace;font-size:10px;color:#9A6A14">\u26A0 ${esc4(
+      (w) => `<div class="assay-lint" style="margin-top:3px;font-family:ui-monospace,monospace;font-size:10px;color:#9A6A14">\u26A0 ${esc6(
         w.message
       )}</div>`
     ).join("");
@@ -2710,11 +3187,11 @@
     const answerSig = ko.answer ? `${ko.answer.lo}-${ko.answer.hi} ${ko.answer.unit}` : "open";
     const provSig = ko.provenance ? `${ko.provenance.source_class}\xB7${ko.provenance.confidence}` : "";
     const sig = `${answerSig}|${status}|${row.blocked ? "blk" : ""}|${ko.waiver ? "wv" : ""}|${provSig}`;
-    return `<tr data-logical-id="${esc4(ko.logical_id)}" data-glow-id="k:${esc4(ko.logical_id)}" data-glow-sig="${esc4(sig)}" style="border-top:1px solid #E4E9ED">
-    <td style="padding:8px 10px;vertical-align:top;font-family:ui-monospace,monospace;font-size:11px;color:#1B2732">${esc4(
+    return `<tr data-logical-id="${esc6(ko.logical_id)}" data-glow-id="k:${esc6(ko.logical_id)}" data-glow-sig="${esc6(sig)}" style="border-top:1px solid #E4E9ED">
+    <td style="padding:8px 10px;vertical-align:top;font-family:ui-monospace,monospace;font-size:11px;color:#1B2732">${esc6(
       ko.logical_id
     )}</td>
-    <td style="padding:8px 10px;vertical-align:top;font-size:12px;color:#33414D">${esc4(ko.question)}</td>
+    <td style="padding:8px 10px;vertical-align:top;font-size:12px;color:#33414D">${esc6(ko.question)}</td>
     <td style="padding:8px 10px;vertical-align:top">${valueCell(ko)}${warningLine(row.warnings ?? [])}</td>
     <td style="padding:8px 10px;vertical-align:top">${provenance}${waiver}</td>
     <td style="padding:8px 10px;vertical-align:top">${statusChip(status)}${flag}</td>
@@ -2722,7 +3199,7 @@
   }
   function s1Table(rows, opts = {}) {
     const banner = opts.refusal ? `<div style="margin-bottom:10px">${refusalBanner(opts.refusal)}</div>` : "";
-    const caption = opts.caption ? `<caption style="text-align:left;padding:0 0 8px;font-size:12px;color:#5B6B77">${esc4(opts.caption)}</caption>` : "";
+    const caption = opts.caption ? `<caption style="text-align:left;padding:0 0 8px;font-size:12px;color:#5B6B77">${esc6(opts.caption)}</caption>` : "";
     const head = `<thead><tr style="text-align:left;color:#5B6B77;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em">
     <th style="padding:0 10px 6px">Id</th><th style="padding:0 10px 6px">Question</th><th style="padding:0 10px 6px">Answer</th><th style="padding:0 10px 6px">Provenance</th><th style="padding:0 10px 6px">Status</th>
   </tr></thead>`;
@@ -2730,24 +3207,24 @@
   }
 
   // src/components/channelTrace.ts
-  var esc5 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc7 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var cell = (html, extra = "") => `<td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top;${extra}">${html}</td>`;
   function channelTrace(world, knowledgeById = {}) {
     const rows = [];
     for (const ch of world.channels) {
       const regions = ch.regions ?? [];
       rows.push(
-        `<tr style="background:#F1F3F5"><td colspan="4" style="padding:6px 10px;font-weight:700;color:#1B2732;font-family:ui-monospace,monospace;font-size:11px">${esc5(ch.kind)} <span style="color:#5B6B77;font-weight:400">\xB7 default ${bandPill(ch.default)}</span>${regions.length === 0 ? ' <span style="color:#5B6B77;font-weight:400">\u2014 no overrides (channel at default)</span>' : ""}</td></tr>`
+        `<tr style="background:#F1F3F5"><td colspan="4" style="padding:6px 10px;font-weight:700;color:#1B2732;font-family:ui-monospace,monospace;font-size:11px">${esc7(ch.kind)} <span style="color:#5B6B77;font-weight:400">\xB7 default ${bandPill(ch.default)}</span>${regions.length === 0 ? ' <span style="color:#5B6B77;font-weight:400">\u2014 no overrides (channel at default)</span>' : ""}</td></tr>`
       );
       for (const region of regions) {
         const src = region.source;
         const ko = src ? knowledgeById[src] : void 0;
         const window = region.from_step !== void 0 || region.until_step !== void 0 ? `<span style="color:#5B6B77;font-family:ui-monospace,monospace;font-size:10.5px">steps ${region.from_step ?? 0}\u2013${region.until_step ?? "\u221E"}</span>` : "";
-        const backing = src ? `<span data-logical-id="${esc5(src)}" style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;cursor:pointer;text-decoration:underline dotted">${esc5(src)}</span>` : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced \u2014 trace dead end (G3)</span>`;
+        const backing = src ? `<span data-logical-id="${esc7(src)}" style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;cursor:pointer;text-decoration:underline dotted">${esc7(src)}</span>` : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced \u2014 trace dead end (G3)</span>`;
         const prov = ko?.provenance ? provenanceChip(ko.provenance) : "";
         const sig = `${region.value.lo}-${region.value.hi} ${region.value.unit}|${src ?? "unsourced"}|${region.from_step ?? ""}-${region.until_step ?? ""}`;
         rows.push(
-          `<tr data-glow-id="ch:${esc5(ch.kind)}:${esc5(region.region)}" data-glow-sig="${esc5(sig)}">${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc5(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`
+          `<tr data-glow-id="ch:${esc7(ch.kind)}:${esc7(region.region)}" data-glow-sig="${esc7(sig)}">${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc7(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`
         );
       }
     }
@@ -2760,7 +3237,7 @@
   }
 
   // src/components/s2Matrix.ts
-  var esc6 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc8 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var STOP = {
     robust: { bg: "#1E6B3A", fg: "#FFFFFF", label: "robust" },
     marginal: { bg: "#7A6A12", fg: "#FFFFFF", label: "marginal" },
@@ -2770,14 +3247,14 @@
   var marginText = (m) => m === void 0 ? "no margin (objective unreachable)" : m.lo === m.hi ? `margin ${m.lo} ${m.unit}` : `margin ${m.lo}\u2013${m.hi} ${m.unit}`;
   function chip3(v) {
     const s = STOP[v.verdict];
-    return `<td data-glow-id="v:${esc6(v.plan)}:${esc6(v.commitment)}" data-glow-sig="${esc6(v.verdict)}" style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="${esc6(marginText(v.margin))}" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
+    return `<td data-glow-id="v:${esc8(v.plan)}:${esc8(v.commitment)}" data-glow-sig="${esc8(v.verdict)}" style="padding:5px 7px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="${esc8(marginText(v.margin))}" style="display:inline-block;min-width:66px;padding:3px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
   </td>`;
   }
   function s2Matrix(commitmentIds, rows) {
     const head = `<tr style="text-align:center;color:#5B6B77;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em">
     <th style="padding:6px 10px;text-align:left">plan \\ commitment</th>
-    ${commitmentIds.map((c) => `<th data-logical-id="${esc6(c)}" style="padding:6px 8px;cursor:pointer;text-decoration:underline dotted">${esc6(c)}</th>`).join("")}
+    ${commitmentIds.map((c) => `<th data-logical-id="${esc8(c)}" style="padding:6px 8px;cursor:pointer;text-decoration:underline dotted">${esc8(c)}</th>`).join("")}
   </tr>`;
     const body = rows.map((row) => {
       const byCommitment = new Map(row.verdicts.map((v) => [v.commitment, v]));
@@ -2786,7 +3263,7 @@
         return v ? chip3(v) : `<td style="padding:5px 7px;text-align:center;color:#B0BAC2">\u2014</td>`;
       }).join("");
       const planId = row.plan.split(" ")[0] ?? row.plan;
-      return `<tr data-logical-id="${esc6(planId)}"><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc6(row.plan)}</td>${cells}</tr>`;
+      return `<tr data-logical-id="${esc8(planId)}"><td style="padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732">${esc8(row.plan)}</td>${cells}</tr>`;
     }).join("");
     return `<table class="assay-s2-matrix" style="border-collapse:collapse;width:100%">
   <thead>${head}</thead>
@@ -2795,18 +3272,18 @@
   }
 
   // src/components/handfulStrip.ts
-  var esc7 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc9 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function handfulStrip(rows) {
     const items = rows.map((r) => {
-      const id = esc7(r.plan.logical_id);
-      const name = r.name ? `<span style="color:#5B6B77;font-size:11.5px">${esc7(r.name)}</span>` : "";
+      const id = esc9(r.plan.logical_id);
+      const name = r.name ? `<span style="color:#5B6B77;font-size:11.5px">${esc9(r.name)}</span>` : "";
       const sig = `${r.name ?? ""}|${r.distinct_because}`;
-      return `<li data-logical-id="${id}" data-glow-id="plan:${id}" data-glow-sig="${esc7(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      return `<li data-logical-id="${id}" data-glow-id="plan:${id}" data-glow-sig="${esc9(sig)}" style="margin:0;padding:9px 12px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
       <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${id}</span>
       ${name}
     </div>
-    <div style="margin-top:4px;font-size:12px;color:#33424E">${esc7(r.distinct_because)}</div>
+    <div style="margin-top:4px;font-size:12px;color:#33424E">${esc9(r.distinct_because)}</div>
   </li>`;
     }).join("\n");
     return `<ul class="assay-handful-strip" style="display:grid;gap:8px;margin:0;padding:0">
@@ -2815,7 +3292,7 @@ ${items}
   }
 
   // src/components/s3Cards.ts
-  var esc8 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc10 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var TIER_TINT = {
     must: "#B23A48",
     // giving up a must is the gravest
@@ -2825,29 +3302,29 @@ ${items}
   function chip4(c) {
     const tint = TIER_TINT[c.tier] ?? "#5B6B77";
     return `<span style="display:inline-flex;gap:6px;align-items:baseline;border:1px solid ${tint};border-radius:4px;padding:2px 8px;background:#FFF">
-      <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:${tint}">${esc8(c.logical_id)}</span>
-      <span style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${tint}">${esc8(c.tier)}</span>
+      <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:${tint}">${esc10(c.logical_id)}</span>
+      <span style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${tint}">${esc10(c.tier)}</span>
     </span>`;
   }
   function s3Cards(cards, tie_break) {
     const items = cards.map((card, i) => {
       const chips = card.sacrificed.map(chip4).join("\n      ");
-      const statements = card.sacrificed.map((c) => `<li style="margin:0">gives up: <b>${esc8(c.statement)}</b> <span style="color:#8A97A0">(${esc8(c.logical_id)})</span></li>`).join("\n        ");
+      const statements = card.sacrificed.map((c) => `<li style="margin:0">gives up: <b>${esc10(c.statement)}</b> <span style="color:#8A97A0">(${esc10(c.logical_id)})</span></li>`).join("\n        ");
       const glowId = `card:${[...card.candidate.sacrificed].sort().join(",")}`;
       const sig = `${i}|${card.candidate.narrative}|${card.sacrificed.map((c) => `${c.logical_id}:${c.tier}`).join(",")}`;
-      return `<li data-logical-id="${esc8(card.candidate.plan)}" data-glow-id="${esc8(glowId)}" data-glow-sig="${esc8(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
+      return `<li data-logical-id="${esc10(card.candidate.plan)}" data-glow-id="${esc10(glowId)}" data-glow-sig="${esc10(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
       <span style="font-family:ui-monospace,monospace;font-size:11px;color:#8A97A0">least-worst #${i + 1}</span>
-      <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${esc8(card.candidate.plan)}</span>
+      <span style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">${esc10(card.candidate.plan)}</span>
       ${chips}
     </div>
-    <div style="font-size:12.5px;color:#33424E;margin-bottom:6px">${esc8(card.candidate.narrative)}</div>
+    <div style="font-size:12.5px;color:#33424E;margin-bottom:6px">${esc10(card.candidate.narrative)}</div>
     <ul style="margin:0;padding-left:18px;font-size:11.5px;color:#5B6B77">
         ${statements}
     </ul>
   </li>`;
     }).join("\n");
-    const tie = tie_break ? `<p style="margin:8px 2px 0;font-size:11px;color:#8A97A0"><b>Tie-break \u2014</b> ${esc8(tie_break)}</p>` : "";
+    const tie = tie_break ? `<p style="margin:8px 2px 0;font-size:11px;color:#8A97A0"><b>Tie-break \u2014</b> ${esc10(tie_break)}</p>` : "";
     return `<div class="assay-s3-cards">
   <ul style="display:grid;gap:10px;margin:0;padding:0">
 ${items}
@@ -2857,7 +3334,7 @@ ${items}
   }
 
   // src/components/scenarioStrip.ts
-  var esc9 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc11 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var STOP2 = {
     robust: { bg: "#1E6B3A", fg: "#FFFFFF", label: "robust" },
     marginal: { bg: "#7A6A12", fg: "#FFFFFF", label: "marginal" },
@@ -2874,13 +3351,13 @@ ${items}
   function chipCell(v, collapsed) {
     const s = STOP2[v.verdict];
     const arrow2 = collapsed ? " \u25BC" : "";
-    return `<td data-glow-id="vs:${esc9(v.plan)}:${esc9(v.commitment)}:${esc9(v.scenario)}" data-glow-sig="${esc9(v.verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2">
-    <span class="assay-verdict-chip" title="${esc9(v.scenario)}: ${esc9(marginText2(v))}" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}${arrow2}</span>
+    return `<td data-glow-id="vs:${esc11(v.plan)}:${esc11(v.commitment)}:${esc11(v.scenario)}" data-glow-sig="${esc11(v.verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2">
+    <span class="assay-verdict-chip" title="${esc11(v.scenario)}: ${esc11(marginText2(v))}" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}${arrow2}</span>
   </td>`;
   }
   function worstChip(planId, commitmentId, verdict) {
     const s = STOP2[verdict];
-    return `<td data-glow-id="vw:${esc9(planId)}:${esc9(commitmentId)}" data-glow-sig="${esc9(verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2;border-left:2px solid #1B2732">
+    return `<td data-glow-id="vw:${esc11(planId)}:${esc11(commitmentId)}" data-glow-sig="${esc11(verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2;border-left:2px solid #1B2732">
     <span class="assay-verdict-chip" title="worst case across all scenarios" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
   </td>`;
   }
@@ -2889,11 +3366,11 @@ ${items}
     const planName = (id) => opts?.planNames?.[id] ?? id;
     const incompatBanner = stamps_compatible ? "" : `<div class="assay-scenario-incompat" style="background:#FFF3E0;border:1px solid #E6A817;border-radius:5px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#7A5500;font-family:ui-monospace,monospace">\u26A0 stamp lineages differ \u2014 cross-scenario comparison may be misleading (G1 comparability guard)</div>`;
     const scenarioHeaders = commitments.map((cid) => {
-      const group = scenarios.map((sid) => `<th style="padding:4px 5px;font-size:9.5px;font-weight:600;color:#5B6B77;text-transform:uppercase;letter-spacing:.03em">${esc9(sid)}</th>`).join("");
+      const group = scenarios.map((sid) => `<th style="padding:4px 5px;font-size:9.5px;font-weight:600;color:#5B6B77;text-transform:uppercase;letter-spacing:.03em">${esc11(sid)}</th>`).join("");
       const worstCol = `<th style="padding:4px 5px;font-size:9.5px;font-weight:700;color:#1B2732;text-transform:uppercase;letter-spacing:.03em;border-left:2px solid #1B2732">worst</th>`;
       return group + worstCol;
     }).join("");
-    const commitmentHeaders = commitments.map((cid) => `<th colspan="${scenarios.length + 1}" style="padding:5px 8px;text-align:center;font-size:10.5px;color:#1B2732;letter-spacing:.04em;border-bottom:2px solid #D8DFE4">${esc9(cid)}</th>`).join("");
+    const commitmentHeaders = commitments.map((cid) => `<th colspan="${scenarios.length + 1}" style="padding:5px 8px;text-align:center;font-size:10.5px;color:#1B2732;letter-spacing:.04em;border-bottom:2px solid #D8DFE4">${esc11(cid)}</th>`).join("");
     const head = `<tr style="text-align:center">
     <th style="padding:5px 10px;text-align:left"></th>
     ${commitmentHeaders}
@@ -2915,7 +3392,7 @@ ${items}
         const wc = worst_case.get(`${pid}-${cid}`) ?? "robust";
         return scenarioCells.join("") + worstChip(pid, cid, wc);
       }).join("");
-      return `<tr><td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;white-space:nowrap">${esc9(planName(pid))}</td>${cells}</tr>`;
+      return `<tr><td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;white-space:nowrap">${esc11(planName(pid))}</td>${cells}</tr>`;
     }).join("");
     return `${incompatBanner}<div style="overflow-x:auto"><table class="assay-scenario-strip" style="border-collapse:collapse;width:100%">
   <thead>${head}</thead>
@@ -2924,7 +3401,7 @@ ${items}
   }
 
   // src/components/sensitivityTable.ts
-  var esc10 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc12 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var STOP3 = {
     robust: { bg: "#1E6B3A", fg: "#FFFFFF", label: "robust" },
     marginal: { bg: "#7A6A12", fg: "#FFFFFF", label: "marginal" },
@@ -2953,8 +3430,8 @@ ${items}
       const logicalId = entry.knowledge.logical_id;
       const changedStyle = entry.changed_count > 0 ? "font-weight:700;color:#8A2020" : "color:#5B6B77";
       const singleSourceChip = entry.single_source ? '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:#8A2020;color:#FFFFFF">single-source</span>' : '<span style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77">\u2014</span>';
-      return `<tr data-logical-id="${esc10(logicalId)}" data-glow-id="sens:${esc10(logicalId)}" data-glow-sig="${entry.changed_count}">
-        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc10(logicalId)}</td>
+      return `<tr data-logical-id="${esc12(logicalId)}" data-glow-id="sens:${esc12(logicalId)}" data-glow-sig="${entry.changed_count}">
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc12(logicalId)}</td>
         <td style="padding:5px 10px;text-align:center;font-family:ui-monospace,monospace;font-size:11px;${changedStyle};border-bottom:1px solid #EDF0F2">${entry.changed_count}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${singleSourceChip}</td>
         <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${verdictSequence(entry.baseline_verdicts)}</td>
@@ -2968,10 +3445,10 @@ ${items}
   }
 
   // src/components/discriminationTable.ts
-  var esc11 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc13 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function bandPill2(b) {
     const text = b.lo === b.hi ? `${b.lo} ${b.unit}` : `${b.lo}\u2013${b.hi} ${b.unit}`;
-    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:#E0E8ED;color:#1B2732;margin:1px 2px">${esc11(text)}</span>`;
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:#E0E8ED;color:#1B2732;margin:1px 2px">${esc13(text)}</span>`;
   }
   function separationChip(sep) {
     const isPositive = sep.lo > 0;
@@ -2979,10 +3456,10 @@ ${items}
     const bg = isPositive ? "#1E6B3A" : isNegative ? "#8A2020" : "#7A6A12";
     const fg = "#FFFFFF";
     const text = sep.lo === sep.hi ? `${sep.lo} ${sep.unit}` : `${sep.lo}\u2013${sep.hi} ${sep.unit}`;
-    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${bg};color:${fg};margin:1px 2px">${esc11(text)}</span>`;
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${bg};color:${fg};margin:1px 2px">${esc13(text)}</span>`;
   }
   function pairChip(pair) {
-    const label = `${esc11(pair.coa_a)} vs ${esc11(pair.coa_b)}`;
+    const label = `${esc13(pair.coa_a)} vs ${esc13(pair.coa_b)}`;
     return `<span style="display:inline-flex;align-items:center;gap:3px;margin:2px 0"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${label}</span>${separationChip(pair.separation)}</span>`;
   }
   function discriminationTable(ranking) {
@@ -2998,8 +3475,8 @@ ${items}
     const rows = ranking.map((entry) => {
       const logicalId = entry.question.logical_id;
       const pairChips = entry.pairs.map(pairChip).join("<br>");
-      return `<tr data-logical-id="${esc11(logicalId)}" data-glow-id="disc:${esc11(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
-        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc11(logicalId)}</td>
+      return `<tr data-logical-id="${esc13(logicalId)}" data-glow-id="disc:${esc13(logicalId)}" data-glow-sig="${entry.best_separation.lo}">
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc13(logicalId)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${separationChip(entry.best_separation)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${bandPill2(entry.cost)}</td>
         <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${pairChips}</td>
@@ -3012,21 +3489,21 @@ ${items}
   }
 
   // src/components/stalenessFlags.ts
-  var esc12 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc14 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var GROUP_STYLE = {
     worlds: { bg: "#2E5C8A", fg: "#FFFFFF", label: "Worlds" },
     verdicts: { bg: "#7A6A12", fg: "#FFFFFF", label: "Verdicts" },
     scores: { bg: "#6B3A6B", fg: "#FFFFFF", label: "Scores" }
   };
   function refChip(ref, bg, fg) {
-    return `<span data-logical-id="${esc12(ref.logical_id)}" data-glow-id="stale:${esc12(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px;cursor:pointer">${esc12(ref.logical_id)}</span>`;
+    return `<span data-logical-id="${esc14(ref.logical_id)}" data-glow-id="stale:${esc14(ref.logical_id)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${bg};color:${fg};margin:2px 3px;cursor:pointer">${esc14(ref.logical_id)}</span>`;
   }
   function groupSection(groupKey, refs) {
     if (refs.length === 0) return "";
     const style = GROUP_STYLE[groupKey];
     const chips = refs.map((r) => refChip(r, style.bg, style.fg)).join("");
     return `<div style="margin:6px 0">
-    <div style="font-family:ui-monospace,monospace;font-size:10px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc12(style.label)} (${refs.length})</div>
+    <div style="font-family:ui-monospace,monospace;font-size:10px;font-weight:700;color:#5B6B77;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc14(style.label)} (${refs.length})</div>
     <div style="display:flex;flex-wrap:wrap;gap:2px">${chips}</div>
   </div>`;
   }
@@ -3115,16 +3592,16 @@ ${items}
       gloss: "A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes \u2014 flags only, then humans decide (constitution)."
     }
   };
-  var esc13 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc15 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function legend(pillIds, opts = {}) {
     const title = opts.title ?? "What the pills mean";
     const rows = pillIds.map((id) => PILL_LEGEND[id]).filter((e) => e !== void 0).map(
-      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc13(
+      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc15(
         e.term
-      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc13(e.gloss)}</div></div>`
+      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc15(e.gloss)}</div></div>`
     ).join("");
     return `<details class="assay-legend" style="margin:8px 0;border:1px dashed #C8D2DA;border-radius:6px;padding:4px 10px;background:#F7F9FA">
-  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc13(
+  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc15(
       title
     )}</summary>
   <div style="margin-top:6px">${rows}</div>
@@ -3166,6 +3643,8 @@ ${items}
     #stalenessSvc;
     #resolved = false;
     #notice;
+    /** The Spatial tab's clock — pure selection over the compiled world (DEC-36c). */
+    #step = 8;
     constructor(fx) {
       this.#fx = fx;
       this.#kById = new Map(fx.knowledge.map((k) => [k.logical_id, k]));
@@ -3181,6 +3660,7 @@ ${items}
       await svc.create(structuredClone(this.#kById.get("K12a")));
       await svc.create(structuredClone(this.#kById.get("K12b")));
       svc.contest("K12a", "K12b");
+      for (const p of this.#fx.plans ?? []) await svc.store.put(p);
       const k11 = this.#kById.get("K11");
       if (k11) await svc.create(structuredClone(k11));
       const k13 = this.#kById.get("K13");
@@ -3236,6 +3716,24 @@ ${items}
     get resolved() {
       return this.#resolved;
     }
+    get step() {
+      return this.#step;
+    }
+    get grid() {
+      return this.#fx.config.grid;
+    }
+    /** Scrub the Spatial tab's clock — selection over the compiled world; no recompute. */
+    setStep(n) {
+      const max = this.#fx.config.grid.horizon_steps;
+      this.#step = Math.max(0, Math.min(max, Math.round(n)));
+    }
+    /** The latest live version of a canned-plan lineage (drags stack v2, v3, …). */
+    latestPlan(planId) {
+      const versions = this.#svc.store.versions(planId);
+      if (versions.length === 0) throw new Error(`app: unknown plan ${planId}`);
+      const ref = versions[versions.length - 1];
+      return { plan: this.#svc.store.get(ref.content_hash), ref };
+    }
     // ---- edits (the interventions) --------------------------------------------
     /** Resolve the K12 contest — the anchor cascade. */
     resolveK12() {
@@ -3285,6 +3783,72 @@ ${items}
         };
       }
     }
+    /**
+     * Input (Spatial tab): drag a waypoint — authors a NEW Plan version
+     * (immutable, DEC-20/21); the next snapshot re-scores it through the real
+     * pipeline. Geometry only — never a verdict, cost, or cell value (DEC-36c).
+     */
+    async moveWaypoint(planId, element, legIndex, x, y) {
+      this.#notice = void 0;
+      const grid = this.#fx.config.grid;
+      if (x < 0 || x >= grid.cols || y < 0 || y >= grid.rows || !Number.isInteger(x) || !Number.isInteger(y)) {
+        this.#notice = {
+          kind: "refusal",
+          html: refusalBanner({
+            refused: true,
+            reason: "encoding_violation",
+            offending: [refFor(planId)],
+            explanation: `waypoint (${x}, ${y}) is off the ${grid.cols}\xD7${grid.rows} grid \u2014 no geometry exists there to route through.`
+          })
+        };
+        return;
+      }
+      const { plan: plan2 } = this.latestPlan(planId);
+      const next = structuredClone(plan2);
+      next.version = plan2.version + 1;
+      const leg3 = next.elements.find((e) => e.force_element === element)?.route?.[legIndex];
+      if (!leg3) {
+        this.#notice = {
+          kind: "refusal",
+          html: refusalBanner({
+            refused: true,
+            reason: "unknown_ref",
+            offending: [refFor(planId)],
+            explanation: `${planId} has no ${element} leg ${legIndex} to move.`
+          })
+        };
+        return;
+      }
+      leg3.x = x;
+      leg3.y = y;
+      await this.#svc.store.put(next);
+    }
+    /** Input (Spatial tab): shift a leg's task window by `delta` steps, duration preserved. */
+    async shiftWindow(planId, element, legIndex, delta) {
+      this.#notice = void 0;
+      const { plan: plan2 } = this.latestPlan(planId);
+      const next = structuredClone(plan2);
+      next.version = plan2.version + 1;
+      const leg3 = next.elements.find((e) => e.force_element === element)?.route?.[legIndex];
+      if (!leg3) {
+        this.#notice = {
+          kind: "refusal",
+          html: refusalBanner({
+            refused: true,
+            reason: "unknown_ref",
+            offending: [refFor(planId)],
+            explanation: `${planId} has no ${element} leg ${legIndex} to shift.`
+          })
+        };
+        return;
+      }
+      const horizon = this.#fx.config.grid.horizon_steps;
+      const duration = leg3.exit_step - leg3.enter_step;
+      const enter = Math.max(0, Math.min(horizon - duration, leg3.enter_step + delta));
+      leg3.enter_step = enter;
+      leg3.exit_step = enter + duration;
+      await this.#svc.store.put(next);
+    }
     // ---- the snapshot (drives the real pipeline) ------------------------------
     async snapshot(scenario = "BASE") {
       const panels = [];
@@ -3318,6 +3882,15 @@ ${items}
           html: `<div data-glow-id="panel:channels" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
           deps: /* @__PURE__ */ new Set([`refusal:${compiled.reason}`])
         });
+        if ((this.#fx.plans ?? []).length > 0) {
+          panels.push({
+            id: "coamap",
+            tab: "coa",
+            title: "Spatial \xB7 the map refuses with the compile",
+            html: `<div data-glow-id="panel:coamap" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
+            deps: /* @__PURE__ */ new Set([`refusal:${compiled.reason}`])
+          });
+        }
       } else {
         stamps.world = compiled.stamp;
         const world = this.#svc.store.get(compiled.world.content_hash);
@@ -3332,6 +3905,85 @@ ${items}
           html: componentLegend("channelTrace") + channelTrace(world, knowledgeById),
           deps: worldDeps
         });
+        if ((this.#fx.plans ?? []).length > 0) {
+          const c4 = this.#commitmentById.get("C4");
+          const coaPlans = [];
+          const coaMatrix = [];
+          const c4Details = [];
+          const profiles = [];
+          const coaDeps = /* @__PURE__ */ new Set([compiled.world.content_hash]);
+          for (const p of this.#fx.plans) {
+            const { plan: plan2, ref } = this.latestPlan(p.logical_id);
+            coaPlans.push(plan2);
+            coaDeps.add(ref.content_hash);
+            const scored = await this.#scorer.score({
+              plan: ref,
+              world: compiled.world,
+              scenario: "BASE",
+              engine_version: "0.1.0"
+            });
+            if (isRefusal(scored)) {
+              coaMatrix.push({ plan: `${plan2.logical_id} \xB7 ${plan2.name}`, verdicts: [] });
+              c4Details.push(refusalBanner(scored));
+              continue;
+            }
+            coaMatrix.push({ plan: `${plan2.logical_id} \xB7 ${plan2.name}`, verdicts: scored.verdicts });
+            for (const v of scored.verdicts) coaDeps.add(this.#verdictKey(v));
+            const v4 = scored.verdicts.find((v) => v.commitment === "C4");
+            if (v4) {
+              const m = v4.margin;
+              const mText = m === void 0 ? "no margin" : m.lo === m.hi ? `${m.lo} ${m.unit}` : `${m.lo}\u2013${m.hi} ${m.unit}`;
+              c4Details.push(
+                `<div data-glow-id="coaviz:c4:${plan2.logical_id}" data-glow-sig="${v4.verdict}|${mText}|v${plan2.version}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:4px 0"><span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600">${plan2.logical_id} v${plan2.version} \xB7 C4 ${v4.verdict}</span>${m ? bandPill(m, { label: "margin" }) : ""}</div>`
+              );
+            }
+            profiles.push({
+              plan: plan2.logical_id,
+              element: "FE-ANVIL",
+              points: exposureProfile(plan2, "FE-ANVIL", world, this.#fx.config, "threat", c4.unit),
+              unit: c4.unit,
+              threshold: { commitment: "C4", value: c4.threshold }
+            });
+          }
+          const peak = dayWindowToSteps(5, 7, this.#fx.config.grid.timestep_hours);
+          panels.push(
+            {
+              id: "coamap",
+              tab: "coa",
+              title: `Spatial \xB7 banded surfaces, stated routes (step ${this.#step} \u2014 drag a waypoint to author a new plan version)`,
+              html: coaMap(world, this.#fx.config, coaPlans, { step: this.#step, knowledgeById, width: 640 }),
+              deps: coaDeps
+            },
+            {
+              id: "coatimeline",
+              tab: "coa",
+              title: "Spatial \xB7 validity, task windows, the exposure staircase",
+              html: coaTimeline(world, this.#fx.config, coaPlans, {
+                step: this.#step,
+                knowledge: [this.#kById.get("K5"), this.#latest("K9") ?? this.#kById.get("K9")],
+                supersessions: [{ from: "K5", to: "K9" }],
+                annotations: [
+                  {
+                    label: "\u201Csurge peaking D+5\u2013D+7\u201D \u2014 stated by METOC (K9)",
+                    from_step: peak.from_step,
+                    until_step: peak.until_step,
+                    source: "K9"
+                  }
+                ],
+                profiles,
+                width: 860
+              }),
+              deps: coaDeps
+            },
+            {
+              id: "coaverdicts",
+              tab: "coa",
+              title: "Spatial \xB7 the canned P1/P2, re-scored live (the planner matrix scores the generated handful)",
+              html: `${s2Matrix(COMMITMENT_IDS, coaMatrix)}<div style="margin-top:8px">${c4Details.join("")}</div>`,
+              deps: coaDeps
+            }
+          );
+        }
         const h = await this.#handfulSvc.handful({
           world: compiled.world,
           seed: 1,
@@ -3609,7 +4261,7 @@ ${items}
   }
 
   // src/components/depGraphRiver.ts
-  var esc14 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc16 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var NODE_STYLE = {
     knowledge: { bg: "#2E5C8A", fg: "#FFFFFF" },
     world: { bg: "#3B7A57", fg: "#FFFFFF" },
@@ -3623,7 +4275,7 @@ ${items}
     const border = opts.focus ? "border:2px solid #1B2732;" : "border:1px solid transparent;";
     const opacity = node.known ? "" : "opacity:0.6;";
     const deadEnd = node.known ? "" : " (dead end \u2014 G3)";
-    return `<div class="assay-dep-node" data-dep-hash="${esc14(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc14(node.hash)}${esc14(deadEnd)}">${esc14(node.label)}</div>`;
+    return `<div class="assay-dep-node" data-dep-hash="${esc16(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc16(node.hash)}${esc16(deadEnd)}">${esc16(node.label)}</div>`;
   }
   var MAX_VISIBLE_PER_LAYER = 5;
   function typeSummary(nodes) {
@@ -3675,7 +4327,7 @@ ${items}
   }
 
   // src/components/depGraphSidebar.ts
-  var esc15 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc17 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var TYPE_COLOUR = {
     knowledge: "#2E5C8A",
     world: "#3B7A57",
@@ -3687,23 +4339,23 @@ ${items}
   function nodeChip2(node) {
     const colour = TYPE_COLOUR[node.type];
     const opacity = node.known ? "" : "opacity:0.6;";
-    return `<span class="assay-dep-node" data-dep-hash="${esc15(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc15(node.hash)}">${esc15(node.label)}</span>`;
+    return `<span class="assay-dep-node" data-dep-hash="${esc17(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc17(node.hash)}">${esc17(node.label)}</span>`;
   }
   function directionSection(title, groups) {
     if (groups.length === 0) {
       return `<div style="margin:8px 0">
-      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
+      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc17(title)}</div>
       <div style="font-size:11px;color:#5B6B77">\u2014 none \u2014</div>
     </div>`;
     }
     const rows = groups.map(
       (g) => `<div style="margin:4px 0;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">
-          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc15(g.edgeType)}</div>
+          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc17(g.edgeType)}</div>
           <div style="display:flex;flex-wrap:wrap;gap:2px">${g.nodes.map((n) => nodeChip2(n)).join("")}</div>
         </div>`
     ).join("");
     return `<div style="margin:8px 0">
-    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc15(title)}</div>
+    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc17(title)}</div>
     ${rows}
   </div>`;
   }
@@ -3711,10 +4363,10 @@ ${items}
     const typeColour = TYPE_COLOUR[detail.node.type];
     return `<div class="assay-dep-sidebar">
   <div style="margin-bottom:8px">
-    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc15(detail.node.label)}</span>
-    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc15(detail.node.type)}</span>
+    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc17(detail.node.label)}</span>
+    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc17(detail.node.type)}</span>
   </div>
-  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc15(detail.metadata)}</div>
+  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc17(detail.metadata)}</div>
   ${directionSection("Upstream (depends on)", detail.upstream)}
   ${directionSection("Downstream (feeds into)", detail.downstream)}
 </div>`;
@@ -3902,6 +4554,7 @@ ${items}
     { id: "j2", label: "J-2 workbench", role: "ROLE: J-2" },
     { id: "planner", label: "Planner", role: "ROLE: J-3/5" },
     { id: "commander", label: "Commander", role: "ROLE: COMD" },
+    { id: "coa", label: "Spatial \xB7 COA", role: "SURFACE: ALL ROLES" },
     { id: "observer", label: "Observer / bridge", role: "ROLE: OBSERVER" }
   ];
   var GLOW_MS = 1e4;
@@ -3972,7 +4625,7 @@ ${items}
 [data-projection="wall"] .assay-panel{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 [data-projection="wall"] .assay-narrative-bar{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 `;
-  var esc16 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc18 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function mountShell(root, app) {
     const doc = root.ownerDocument;
     const style = doc.createElement("style");
@@ -3981,7 +4634,7 @@ ${items}
     root.innerHTML = `
   <div class="assay-app">
     <h1 style="font-size:22px;margin:0">ASSAY \u2014 the seam, live</h1>
-    <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Four roles, one in-browser pipeline. Every edit re-runs the <b>real</b> compile \u2192 score \u2192 relax; a change in one role <b>glows</b> the roles and components it touches (the propagation graph, not an animation \u2014 G6). Meridian is engineered fiction (DEC-8); every assessed value is banded (G2).</p>
+    <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Four roles plus a shared <b>Spatial \xB7 COA</b> surface (DEC-36), one in-browser pipeline. Every edit re-runs the <b>real</b> compile \u2192 score \u2192 relax; a change in one role <b>glows</b> the roles and components it touches (the propagation graph, not an animation \u2014 G6). Meridian is engineered fiction (DEC-8); every assessed value is banded (G2).</p>
     <div class="assay-narrative-bar" id="assay-narrative-bar"></div>
     <div id="assay-narrator"></div>
     <div class="assay-controls" id="assay-controls"></div>
@@ -4005,7 +4658,7 @@ ${items}
     <span class="label">Narrative:</span>
     <select id="assay-narrative-select">
       <option value="">\u2014 free exploration \u2014</option>
-      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc16(n.name)} (${esc16(n.audience)})</option>`).join("")}
+      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc18(n.name)} (${esc18(n.audience)})</option>`).join("")}
     </select>
     <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:auto">
       <input type="checkbox" id="assay-wall-toggle"> Wall projection
@@ -4055,19 +4708,19 @@ ${items}
       }
       const isCentrepiece = beatIndex === n.beats.length - 1;
       narratorEl.innerHTML = `<div class="assay-narrator">
-      <div class="beat-title">${esc16(beat.title)}</div>
-      <div class="beat-count">${esc16(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc16(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
-      <div class="presenter-note">${esc16(beat.presenterNote)}</div>
-      ${beat.doctrinalQuote ? `<div class="doctrine">${esc16(beat.doctrinalQuote)}</div>` : ""}
-      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc16(n.centrepiece)}</div>` : ""}
-      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc16(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
+      <div class="beat-title">${esc18(beat.title)}</div>
+      <div class="beat-count">${esc18(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc18(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
+      <div class="presenter-note">${esc18(beat.presenterNote)}</div>
+      ${beat.doctrinalQuote ? `<div class="doctrine">${esc18(beat.doctrinalQuote)}</div>` : ""}
+      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc18(n.centrepiece)}</div>` : ""}
+      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc18(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
       <div class="nav">
         <button id="assay-beat-prev" ${beatIndex === 0 ? "disabled" : ""}>\u25C0 Previous</button>
         <button id="assay-beat-next" ${beatIndex >= n.beats.length - 1 ? "disabled" : ""}>Next \u25B6</button>
       </div>
       <details class="principles" style="cursor:pointer">
         <summary>Scripting principles (note 09 \xA74)</summary>
-        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc16(p)}</div>`).join("")}
+        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc18(p)}</div>`).join("")}
       </details>
     </div>`;
       const prevBtn = root.querySelector("#assay-beat-prev");
@@ -4111,7 +4764,11 @@ ${items}
       <div><label>hi</label><input id="assay-edit-hi" type="number" step="any" style="width:70px"></div>
       <div><label>unit</label><input id="assay-edit-unit" style="width:70px" value="tonnes"></div>
       <button class="assay-btn secondary" type="submit">Supersede &amp; recompute</button>
-    </form>`;
+    </form>
+    <div style="flex:1;min-width:220px">
+      <label for="assay-step">Spatial clock \u2014 step <b id="assay-step-label">${app.step}</b> (selection, no recompute)</label>
+      <input type="range" id="assay-step" min="0" max="${app.grid.horizon_steps}" step="1" value="${app.step}" style="width:100%">
+    </div>`;
     root.querySelector("#assay-resolve").addEventListener("click", () => {
       app.resolveK12();
       void rerender("j2");
@@ -4119,6 +4776,12 @@ ${items}
     root.querySelector("#assay-reopen").addEventListener("click", () => {
       app.contestK12();
       void rerender("j2");
+    });
+    const stepInput = root.querySelector("#assay-step");
+    stepInput.addEventListener("input", () => {
+      app.setStep(Number(stepInput.value));
+      root.querySelector("#assay-step-label").textContent = String(app.step);
+      void rerender(void 0, { silent: true });
     });
     root.querySelector("#assay-edit").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -4140,7 +4803,7 @@ ${items}
         el2.style.display = el2.dataset.tab === activeTab ? "" : "none";
       }
     }
-    async function rerender(sourceTab) {
+    async function rerender(sourceTab, opts = {}) {
       const snap = await app.snapshot();
       noticeEl.innerHTML = snap.notice ? snap.notice.html : "";
       panelsRoot.innerHTML = "";
@@ -4162,7 +4825,7 @@ ${items}
         if (tab) unitTab.set(id, tab);
       }
       for (const id of [...pending]) if (!nextSig.has(id)) pending.delete(id);
-      if (!firstRender) {
+      if (!firstRender && !opts.silent) {
         const changed = changedGlowUnits(prevSig, nextSig);
         for (const el2 of units) {
           const id = el2.dataset.glowId;
@@ -4179,6 +4842,7 @@ ${items}
       prevSig = nextSig;
       firstRender = false;
       wireTraceChips();
+      wireCoaDrag();
       syncTabs();
       if (doc.documentElement.getAttribute("data-projection") === "wall") {
         const observerPanel = panelsRoot.querySelector('[data-panel="observer"]');
@@ -4201,6 +4865,45 @@ ${items}
       void el2.offsetWidth;
       el2.classList.add("assay-glow");
       doc.defaultView?.setTimeout(() => el2.classList.remove("assay-glow"), GLOW_MS);
+    }
+    const coaProjection = makeProjection(app.grid, { width: 640, pad: 10 });
+    function wireCoaDrag() {
+      const svg = panelsRoot.querySelector('[data-panel="coamap"] svg[role="img"]');
+      if (!svg) return;
+      let drag = null;
+      const toViewBox = (ev) => {
+        const ctm = svg.getScreenCTM();
+        if (!ctm) return { x: 0, y: 0 };
+        const pt = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(ctm.inverse());
+        return { x: pt.x, y: pt.y };
+      };
+      for (const c of Array.from(svg.querySelectorAll(".coa-wp"))) {
+        c.style.cursor = "grab";
+        c.addEventListener("pointerdown", (ev) => {
+          ev.preventDefault();
+          drag = {
+            el: c,
+            plan: c.dataset.plan,
+            element: c.dataset.element,
+            leg: Number(c.dataset.leg)
+          };
+          c.setPointerCapture(ev.pointerId);
+        });
+        c.addEventListener("pointermove", (ev) => {
+          if (!drag || drag.el !== c) return;
+          const p = toViewBox(ev);
+          c.setAttribute("cx", String(p.x));
+          c.setAttribute("cy", String(p.y));
+        });
+        c.addEventListener("pointerup", (ev) => {
+          if (!drag || drag.el !== c) return;
+          const p = toViewBox(ev);
+          const cell2 = cellAtPixel(app.grid, coaProjection, p.x, p.y);
+          const d = drag;
+          drag = null;
+          void app.moveWaypoint(d.plan, d.element, d.leg, cell2.x, cell2.y).then(() => rerender("coa"));
+        });
+      }
     }
     function wireTraceChips() {
       for (const cell2 of Array.from(panelsRoot.querySelectorAll("[data-logical-id]"))) {
@@ -4305,7 +5008,7 @@ ${items}
 
   // src/app/bootstrap.ts
   async function main() {
-    const fx = { knowledge: knowledge_default, coas: coas_default, commitments: commitments_default, config: vignette_config_default };
+    const fx = { knowledge: knowledge_default, coas: coas_default, commitments: commitments_default, config: vignette_config_default, plans: plans_default };
     const app = new AppState(fx);
     await app.seed();
     const root = document.getElementById("app") ?? document.body;

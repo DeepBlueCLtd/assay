@@ -10,11 +10,12 @@ import knowledge from '../../fixtures/knowledge.json' with { type: 'json' };
 import coas from '../../fixtures/coas.json' with { type: 'json' };
 import commitments from '../../fixtures/commitments.json' with { type: 'json' };
 import config from '../../fixtures/vignette-config.json' with { type: 'json' };
+import plans from '../../fixtures/plans.json' with { type: 'json' };
 import { AppState, type Fixtures } from './state.js';
 import { mountShell } from './shell.js';
 
 async function main(): Promise<void> {
-  const fx = { knowledge, coas, commitments, config } as unknown as Fixtures;
+  const fx = { knowledge, coas, commitments, config, plans } as unknown as Fixtures;
   const app = new AppState(fx);
   await app.seed();
   const root = (document.getElementById('app') ?? document.body) as HTMLElement;
