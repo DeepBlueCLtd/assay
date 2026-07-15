@@ -35,6 +35,11 @@ export const ConfidenceBandValues = ['low', 'moderate', 'high'] as const;
 export type EncodingClass = 'hard_constraint' | 'banded_soft_cost' | 'scenario_weight';
 export const EncodingClassValues = ['hard_constraint', 'banded_soft_cost', 'scenario_weight'] as const;
 
+/** Originating JIPOE step, singular by design (SPEC-21; assignments and lint posture decided in research note 01-knowledge.md amendment). JP 2-01.3 ch. II names the four steps verbatim: Step 1 — Define the Operational Environment; Step 2 — Describe the Impact of the Operational Environment; Step 3 — Evaluate the Adversary; Step 4 — Determine Adversary Courses of Action. Downstream usage lives in the trace graph, never in this slot. */
+
+export type JipoeStep = 'step1_define_oe' | 'step2_describe_effects' | 'step3_evaluate_adversary' | 'step4_determine_adversary_coas';
+export const JipoeStepValues = ['step1_define_oe', 'step2_describe_effects', 'step3_evaluate_adversary', 'step4_determine_adversary_coas'] as const;
+
 /** ASSAY-DEC-17. */
 
 export type LifecycleStatus = 'open' | 'answered' | 'superseded' | 'stale' | 'contested' | 'resolved' | 'retired';
@@ -135,6 +140,8 @@ export interface KnowledgeObject extends StoredObject {
   waiver?: Waiver;
   expected_answers?: ExpectedAnswer[];
   collection?: CollectionOption[];
+  /** Originating JIPOE step (research note 01-knowledge.md amendment; warning-linted when absent — observed not exempt). */
+  jipoe_step?: JipoeStep;
 }
 
 /** ASSAY-DEC-19; threshold is scalar fact-of-intent (ASSAY-DEC-14). */
@@ -364,6 +371,7 @@ export const SCHEMA: {
     SourceClass: ['observed', 'reported', 'assessed', 'assumption'],
     ConfidenceBand: ['low', 'moderate', 'high'],
     EncodingClass: ['hard_constraint', 'banded_soft_cost', 'scenario_weight'],
+    JipoeStep: ['step1_define_oe', 'step2_describe_effects', 'step3_evaluate_adversary', 'step4_determine_adversary_coas'],
     LifecycleStatus: ['open', 'answered', 'superseded', 'stale', 'contested', 'resolved', 'retired'],
     Criticality: ['routine', 'important', 'critical'],
     CommitmentTier: ['must', 'should', 'prefer'],
@@ -380,7 +388,7 @@ export const SCHEMA: {
     ExpectedAnswer: { attributes: { coa: { range: 'LogicalId', required: true, multivalued: false }, band: { range: 'Band', required: true, multivalued: false } } },
     CollectionOption: { attributes: { method: { range: 'string', required: true, multivalued: false }, cost: { range: 'Band', required: true, multivalued: false }, earliest_result: { range: 'Timestep', required: false, multivalued: false } } },
     StoredObject: { abstract: true, attributes: { logical_id: { range: 'LogicalId', required: true, multivalued: false }, version: { range: 'integer', required: true, multivalued: false } } },
-    KnowledgeObject: { parent: 'StoredObject', attributes: { question: { range: 'string', required: true, multivalued: false }, subject: { range: 'string', required: true, multivalued: false }, encoding_class: { range: 'EncodingClass', required: true, multivalued: false }, answer: { range: 'Band', required: false, multivalued: false }, provenance: { range: 'Provenance', required: false, multivalued: false }, criticality: { range: 'Criticality', required: true, multivalued: false }, validity: { range: 'ValidityWindow', required: false, multivalued: false }, status: { range: 'LifecycleStatus', required: true, multivalued: false }, waiver: { range: 'Waiver', required: false, multivalued: false }, expected_answers: { range: 'ExpectedAnswer', required: false, multivalued: true }, collection: { range: 'CollectionOption', required: false, multivalued: true } } },
+    KnowledgeObject: { parent: 'StoredObject', attributes: { question: { range: 'string', required: true, multivalued: false }, subject: { range: 'string', required: true, multivalued: false }, encoding_class: { range: 'EncodingClass', required: true, multivalued: false }, answer: { range: 'Band', required: false, multivalued: false }, provenance: { range: 'Provenance', required: false, multivalued: false }, criticality: { range: 'Criticality', required: true, multivalued: false }, validity: { range: 'ValidityWindow', required: false, multivalued: false }, status: { range: 'LifecycleStatus', required: true, multivalued: false }, waiver: { range: 'Waiver', required: false, multivalued: false }, expected_answers: { range: 'ExpectedAnswer', required: false, multivalued: true }, collection: { range: 'CollectionOption', required: false, multivalued: true }, jipoe_step: { range: 'JipoeStep', required: false, multivalued: false } } },
     Commitment: { parent: 'StoredObject', attributes: { statement: { range: 'string', required: true, multivalued: false }, tier: { range: 'CommitmentTier', required: true, multivalued: false }, metric: { range: 'string', required: true, multivalued: false }, comparator: { range: 'Comparator', required: true, multivalued: false }, threshold: { range: 'float', required: true, multivalued: false }, unit: { range: 'string', required: true, multivalued: false }, owner: { range: 'string', required: true, multivalued: false }, scope: { range: 'string', required: false, multivalued: false } } },
     ChannelOverride: { attributes: { channel: { range: 'ChannelKind', required: true, multivalued: false }, region: { range: 'string', required: false, multivalued: false }, override: { range: 'Band', required: true, multivalued: false } } },
     ScenarioCOA: { parent: 'StoredObject', attributes: { name: { range: 'string', required: true, multivalued: false }, narrative: { range: 'string', required: true, multivalued: false }, excursion: { range: 'ChannelOverride', required: false, multivalued: true }, likelihood: { range: 'LogicalId', required: false, multivalued: false } } },

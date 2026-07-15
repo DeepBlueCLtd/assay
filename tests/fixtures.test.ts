@@ -126,6 +126,49 @@ describe('fixture set is complete against vignette identifiers (§5, §6, §3)',
   });
 });
 
+describe('SPEC-21: every K names its originating JIPOE step (research note 01, amendment §A.2)', () => {
+  // Oracle-style pin of the note-01 §3 audit, machine-carried. A change to any
+  // row is a register/coverage matter, not a casual edit.
+  const PINNED_ASSIGNMENTS: Record<string, string> = {
+    K1: 'step1_define_oe',
+    K2: 'step2_describe_effects',
+    K3: 'step1_define_oe',
+    K4: 'step3_evaluate_adversary',
+    K5: 'step2_describe_effects',
+    K6: 'step3_evaluate_adversary',
+    K7: 'step2_describe_effects',
+    K8: 'step3_evaluate_adversary',
+    K9: 'step2_describe_effects',
+    K10: 'step3_evaluate_adversary',
+    K11: 'step4_determine_adversary_coas',
+    K12a: 'step3_evaluate_adversary',
+    K12b: 'step3_evaluate_adversary',
+    K13: 'step4_determine_adversary_coas',
+    K14a: 'step4_determine_adversary_coas',
+    K14b: 'step4_determine_adversary_coas',
+    K14c: 'step4_determine_adversary_coas',
+  };
+
+  it('every vignette KnowledgeObject carries exactly its pinned step — no drift, no omission', () => {
+    const actual = Object.fromEntries(knowledge.map((k) => [k.logical_id, k.jipoe_step]));
+    expect(actual).toEqual(PINNED_ASSIGNMENTS);
+  });
+
+  it('K14a–c carry step 4 — likelihood judgements about adversary COAs are step-4 products', () => {
+    for (const id of ['K14a', 'K14b', 'K14c']) {
+      expect(knowledge.find((k) => k.logical_id === id)?.jipoe_step).toBe(
+        'step4_determine_adversary_coas',
+      );
+    }
+  });
+
+  it('retired K10 carries its step — retirement does not erase origin', () => {
+    const k10 = knowledge.find((k) => k.logical_id === 'K10')!;
+    expect(k10.status).toBe('retired');
+    expect(k10.jipoe_step).toBe('step3_evaluate_adversary');
+  });
+});
+
 describe('fixtures protect the coverage-matrix rows they exist for (vignette §7)', () => {
   const byId = new Map(knowledge.map((k) => [k.logical_id, k]));
   const bandsOf = (id: string): Map<string, { lo: number; hi: number }> =>

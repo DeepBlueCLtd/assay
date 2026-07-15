@@ -7,7 +7,7 @@
  * clock — there is no ambient entropy behind the seam (G1).
  */
 import type { Ref } from './store.js';
-import type { Delta } from './seam.js';
+import type { Delta, LintWarning } from './seam.js';
 
 export interface PublishInput {
   op: Delta['op'];
@@ -15,6 +15,7 @@ export interface PublishInput {
   actor: string;
   role: string;
   stamp?: string;
+  warnings?: LintWarning[];
 }
 
 const FIXED_EPOCH = '1970-01-01T00:00:00.000Z';
@@ -39,6 +40,7 @@ export class DeltaLog {
       at: this.#clock(),
     };
     if (input.stamp !== undefined) delta.stamp = input.stamp;
+    if (input.warnings !== undefined && input.warnings.length > 0) delta.warnings = input.warnings;
     this.#deltas.push(delta);
     return delta;
   }

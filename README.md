@@ -8,15 +8,16 @@ ASSAY is a deliberate re-derivation of the principles of REMIT (a sibling projec
 
 ## Status
 
-**Documentation phase.** The canonical document set is authored (draft for review); implementation has not started. Per the delivery plan, code begins with the spec-kit workflow (`specs/NNN-name/`) once the document workstream closes. Nothing here should be read as a shipped capability.
+**Built through the spine and beyond.** All seven build stages (0–7) of the build plan are implemented and demonstrated on the Meridian fixtures: the content-addressed store and trace graph, knowledge capture with its honesty lints and refusals, the sparse compile, banded scoring with the four-stop verdict, the generated handful, relaxation, scenario robustness, the analysis loops (sensitivity, discrimination, staleness), and the presentation lane (live SPA, system-flow explainer, spatial/temporal COA surface, narratives). Theses A–F are `explored`; G and H remain horizon. The single source of truth for progress is [`docs/status.yml`](docs/status.yml), projected honestly onto the [published site](https://deepbluecltd.github.io/assay/); the current-phase line in [`CLAUDE.md`](CLAUDE.md) carries the running detail. Development proceeds slice-by-slice through the spec-kit workflow (`specs/NNN-name/`) under register discipline.
 
 ## Where to start
 
-The repository's value at this stage is in how the documents surface the **user interactions**, **data structures**, and **data flows** involved in developing and defending courses of action. The fastest route through them:
+The fastest route in:
 
-1. **[`docs/assay-vignette.md`](docs/assay-vignette.md)** — the Meridian Archipelago: the fictional scenario every fixture, exit criterion, and demo moment is engineered from. Everything else cites its identifiers (K1–K14, C1–C6, R1–R3, FE-*).
-2. **[`docs/assay-walkthrough.md`](docs/assay-walkthrough.md)** — one full heartbeat of the system played end-to-end: who acts, what objects and trace edges each act creates, and what every other role sees. The fastest way to understand what ASSAY *does*.
-3. **[`docs/assay-ui-wireframes.html`](docs/assay-ui-wireframes.html)** — the four role surfaces rendered on Meridian data (open in a browser).
+1. **[The published site](https://deepbluecltd.github.io/assay/)** — the live demonstrator (the real pipeline running in-browser), the component gallery, the system-flow explainer, and the blog with working embeds.
+2. **[`docs/assay-vignette.md`](docs/assay-vignette.md)** — the Meridian Archipelago: the fictional scenario every fixture, exit criterion, and demo moment is engineered from. Everything else cites its identifiers (K1–K14, C1–C6, R1–R3, FE-*).
+3. **[`docs/assay-walkthrough.md`](docs/assay-walkthrough.md)** — one full heartbeat of the system played end-to-end: who acts, what objects and trace edges each act creates, and what every other role sees. The fastest way to understand what ASSAY *does*.
+4. **[`docs/assay-ui-wireframes.html`](docs/assay-ui-wireframes.html)** — the four role surfaces rendered on Meridian data (open in a browser).
 
 For the formal set in authority order, start with the concept document in the map below.
 

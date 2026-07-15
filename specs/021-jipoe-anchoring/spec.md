@@ -1,10 +1,10 @@
 # Feature Specification: JIPOE anchoring — knowledge names its doctrinal origin (SPEC-21)
 
-**Feature Branch**: TBD at pickup (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `021-jipoe-anchoring`)
+**Feature Branch**: `claude/dreamy-thompson-uzjutp` (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `021-jipoe-anchoring`)
 
 **Created**: 2026-07-15
 
-**Status**: Draft — queued (implementation gates on the research-note amendment below)
+**Status**: Implemented 2026-07-15 (research-note amendment authored first — DEC-11 gate honoured; plan.md/tasks.md alongside)
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §4.1, action A7, addendum §10 slice S-A). `docs/research/01-knowledge.md` §3 already audits K1–K14 against the four JIPOE steps and states the discipline gap in its own words: each object *should name its originating JIPOE step, making the claim auditable rather than asserted*. Issue #43 (forward derivation) repeats the demand — step annotation is the first concrete move of the forward-derivation programme. This slice closes that gap.
 

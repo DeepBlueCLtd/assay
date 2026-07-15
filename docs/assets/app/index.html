@@ -16,6 +16,7 @@
     {
       logical_id: "K1",
       version: 1,
+      jipoe_step: "step1_define_oe",
       question: "What depths and beach gradients constrain approach to Anchor Island?",
       subject: "mobility.approach",
       encoding_class: "hard_constraint",
@@ -34,6 +35,7 @@
     {
       logical_id: "K2",
       version: 1,
+      jipoe_step: "step2_describe_effects",
       question: "What load will the Ledger\u2013Anchor causeway bear?",
       subject: "mobility.causeway",
       encoding_class: "banded_soft_cost",
@@ -52,6 +54,7 @@
     {
       logical_id: "K3",
       version: 1,
+      jipoe_step: "step1_define_oe",
       question: "What is the civil population in the Port Halcyon district?",
       subject: "civil_density.port_district",
       encoding_class: "banded_soft_cost",
@@ -70,6 +73,7 @@
     {
       logical_id: "K4",
       version: 1,
+      jipoe_step: "step3_evaluate_adversary",
       question: "What is garrison strength and posture?",
       subject: "threat.garrison",
       encoding_class: "banded_soft_cost",
@@ -88,6 +92,7 @@
     {
       logical_id: "K5",
       version: 1,
+      jipoe_step: "step2_describe_effects",
       question: "What are tide and storm conditions D+0\u2013D+4?",
       subject: "weather.tide_storm",
       encoding_class: "banded_soft_cost",
@@ -107,6 +112,7 @@
     {
       logical_id: "K6",
       version: 1,
+      jipoe_step: "step3_evaluate_adversary",
       question: "What sortie rate can the FAC squadron sustain?",
       subject: "threat.fac_sorties",
       encoding_class: "banded_soft_cost",
@@ -125,6 +131,7 @@
     {
       logical_id: "K7",
       version: 1,
+      jipoe_step: "step2_describe_effects",
       question: "What is the air-defence engagement envelope at Carrick strip?",
       subject: "threat.air_defence",
       encoding_class: "banded_soft_cost",
@@ -143,6 +150,7 @@
     {
       logical_id: "K8",
       version: 1,
+      jipoe_step: "step3_evaluate_adversary",
       question: "Is the Carrick Head battery's fire-control radar operational?",
       subject: "threat.battery",
       encoding_class: "hard_constraint",
@@ -166,6 +174,7 @@
     {
       logical_id: "K9",
       version: 1,
+      jipoe_step: "step2_describe_effects",
       question: "What are tide and storm conditions D+2\u2013D+9?",
       subject: "weather.tide_storm",
       encoding_class: "banded_soft_cost",
@@ -185,6 +194,7 @@
     {
       logical_id: "K10",
       version: 1,
+      jipoe_step: "step3_evaluate_adversary",
       question: "Will the garrison capitulate by D+5?",
       subject: "threat.will_to_fight",
       encoding_class: "hard_constraint",
@@ -202,6 +212,7 @@
     {
       logical_id: "K11",
       version: 1,
+      jipoe_step: "step4_determine_adversary_coas",
       question: "Are mines loaded on the minelayers at Ledger quay?",
       subject: "threat.mine_loading",
       encoding_class: "banded_soft_cost",
@@ -223,6 +234,7 @@
     {
       logical_id: "K12a",
       version: 1,
+      jipoe_step: "step3_evaluate_adversary",
       question: "How many sea mines does the garrison hold?",
       subject: "threat.mine_stock",
       encoding_class: "banded_soft_cost",
@@ -241,6 +253,7 @@
     {
       logical_id: "K12b",
       version: 1,
+      jipoe_step: "step3_evaluate_adversary",
       question: "How many sea mines does the garrison hold?",
       subject: "threat.mine_stock",
       encoding_class: "banded_soft_cost",
@@ -259,6 +272,7 @@
     {
       logical_id: "K13",
       version: 1,
+      jipoe_step: "step4_determine_adversary_coas",
       question: "What is the daily radio-traffic volume from garrison HQ?",
       subject: "threat.hq_radio",
       encoding_class: "banded_soft_cost",
@@ -280,6 +294,7 @@
     {
       logical_id: "K14a",
       version: 1,
+      jipoe_step: "step4_determine_adversary_coas",
       question: "How likely is red COA R1 (Fortress Halcyon)?",
       subject: "scenario.likelihood",
       encoding_class: "scenario_weight",
@@ -298,6 +313,7 @@
     {
       logical_id: "K14b",
       version: 1,
+      jipoe_step: "step4_determine_adversary_coas",
       question: "How likely is red COA R2 (Strait Denial)?",
       subject: "scenario.likelihood",
       encoding_class: "scenario_weight",
@@ -316,6 +332,7 @@
     {
       logical_id: "K14c",
       version: 1,
+      jipoe_step: "step4_determine_adversary_coas",
       question: "How likely is red COA R3 (Spoiling Withdrawal)?",
       subject: "scenario.likelihood",
       encoding_class: "scenario_weight",
@@ -793,6 +810,7 @@
         at: this.#clock()
       };
       if (input.stamp !== void 0) delta.stamp = input.stamp;
+      if (input.warnings !== void 0 && input.warnings.length > 0) delta.warnings = input.warnings;
       this.#deltas.push(delta);
       return delta;
     }
@@ -820,6 +838,7 @@
       SourceClass: ["observed", "reported", "assessed", "assumption"],
       ConfidenceBand: ["low", "moderate", "high"],
       EncodingClass: ["hard_constraint", "banded_soft_cost", "scenario_weight"],
+      JipoeStep: ["step1_define_oe", "step2_describe_effects", "step3_evaluate_adversary", "step4_determine_adversary_coas"],
       LifecycleStatus: ["open", "answered", "superseded", "stale", "contested", "resolved", "retired"],
       Criticality: ["routine", "important", "critical"],
       CommitmentTier: ["must", "should", "prefer"],
@@ -836,7 +855,7 @@
       ExpectedAnswer: { attributes: { coa: { range: "LogicalId", required: true, multivalued: false }, band: { range: "Band", required: true, multivalued: false } } },
       CollectionOption: { attributes: { method: { range: "string", required: true, multivalued: false }, cost: { range: "Band", required: true, multivalued: false }, earliest_result: { range: "Timestep", required: false, multivalued: false } } },
       StoredObject: { abstract: true, attributes: { logical_id: { range: "LogicalId", required: true, multivalued: false }, version: { range: "integer", required: true, multivalued: false } } },
-      KnowledgeObject: { parent: "StoredObject", attributes: { question: { range: "string", required: true, multivalued: false }, subject: { range: "string", required: true, multivalued: false }, encoding_class: { range: "EncodingClass", required: true, multivalued: false }, answer: { range: "Band", required: false, multivalued: false }, provenance: { range: "Provenance", required: false, multivalued: false }, criticality: { range: "Criticality", required: true, multivalued: false }, validity: { range: "ValidityWindow", required: false, multivalued: false }, status: { range: "LifecycleStatus", required: true, multivalued: false }, waiver: { range: "Waiver", required: false, multivalued: false }, expected_answers: { range: "ExpectedAnswer", required: false, multivalued: true }, collection: { range: "CollectionOption", required: false, multivalued: true } } },
+      KnowledgeObject: { parent: "StoredObject", attributes: { question: { range: "string", required: true, multivalued: false }, subject: { range: "string", required: true, multivalued: false }, encoding_class: { range: "EncodingClass", required: true, multivalued: false }, answer: { range: "Band", required: false, multivalued: false }, provenance: { range: "Provenance", required: false, multivalued: false }, criticality: { range: "Criticality", required: true, multivalued: false }, validity: { range: "ValidityWindow", required: false, multivalued: false }, status: { range: "LifecycleStatus", required: true, multivalued: false }, waiver: { range: "Waiver", required: false, multivalued: false }, expected_answers: { range: "ExpectedAnswer", required: false, multivalued: true }, collection: { range: "CollectionOption", required: false, multivalued: true }, jipoe_step: { range: "JipoeStep", required: false, multivalued: false } } },
       Commitment: { parent: "StoredObject", attributes: { statement: { range: "string", required: true, multivalued: false }, tier: { range: "CommitmentTier", required: true, multivalued: false }, metric: { range: "string", required: true, multivalued: false }, comparator: { range: "Comparator", required: true, multivalued: false }, threshold: { range: "float", required: true, multivalued: false }, unit: { range: "string", required: true, multivalued: false }, owner: { range: "string", required: true, multivalued: false }, scope: { range: "string", required: false, multivalued: false } } },
       ChannelOverride: { attributes: { channel: { range: "ChannelKind", required: true, multivalued: false }, region: { range: "string", required: false, multivalued: false }, override: { range: "Band", required: true, multivalued: false } } },
       ScenarioCOA: { parent: "StoredObject", attributes: { name: { range: "string", required: true, multivalued: false }, narrative: { range: "string", required: true, multivalued: false }, excursion: { range: "ChannelOverride", required: false, multivalued: true }, likelihood: { range: "LogicalId", required: false, multivalued: false } } },
@@ -977,6 +996,17 @@
     const denom = Math.max(Math.abs(lo), Math.abs(hi));
     return denom === 0 ? 0 : (hi - lo) / denom;
   }
+  function jipoeStepLint(ko) {
+    if (ko.jipoe_step !== void 0) return [];
+    const offending = { logical_id: ko.logical_id, content_hash: "" };
+    return [
+      {
+        code: "missing_jipoe_step",
+        offending,
+        message: `${ko.logical_id}: no originating JIPOE step named \u2014 the doctrinal-shape claim stays asserted, not auditable (research note 01, amendment).`
+      }
+    ];
+  }
   function confidenceLint(ko) {
     const prov = ko.provenance;
     if (!ko.answer || !prov) return [];
@@ -1035,10 +1065,16 @@
       const hash = await contentHash(ko);
       const isNew = !this.#store.exists(hash);
       const ref = await this.#store.put(ko);
+      const warnings = this.#lints(ko);
       if (isNew) {
-        this.#deltas.publish({ op: "create", refs: [ref], actor: this.#actor, role: this.#role });
+        this.#deltas.publish({
+          op: "create",
+          refs: [ref],
+          actor: this.#actor,
+          role: this.#role,
+          ...warnings.length > 0 ? { warnings } : {}
+        });
       }
-      const warnings = confidenceLint(ko);
       return warnings.length > 0 ? { ref, warnings } : { ref };
     }
     /** POST /knowledge/{id}/supersede — writes a supersedes edge; returns what it staled. */
@@ -1052,14 +1088,16 @@
       }
       const ref = await this.#store.put(next);
       const priorRef = { logical_id: priorId, content_hash: priorHash };
+      const warnings = this.#lints(next);
       this.#trace.add(this.#edge(ref.content_hash, priorHash, "supersedes"));
       this.#deltas.publish({
         op: "supersede",
         refs: [ref, priorRef],
         actor: this.#actor,
-        role: this.#role
+        role: this.#role,
+        ...warnings.length > 0 ? { warnings } : {}
       });
-      return { ref, stale: [priorRef] };
+      return warnings.length > 0 ? { ref, stale: [priorRef], warnings } : { ref, stale: [priorRef] };
     }
     /** POST /knowledge/{id}/contest — marks both contested; blocks compile (G5). */
     contest(aId, bId) {
@@ -1122,6 +1160,10 @@
     /** The single G5 truth: contested knowledge reaches no compiled world. */
     isCompilable(id) {
       return this.effectiveStatus(id) !== "contested";
+    }
+    /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
+    #lints(ko) {
+      return [...confidenceLint(ko), ...jipoeStepLint(ko)];
     }
     #latestHash(id) {
       const versions = this.#store.versions(id);
@@ -3130,7 +3172,13 @@ ${cursor}
   // src/components/provenanceChip.ts
   var esc4 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var chip = (text, fg, bg, border) => `<span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:${bg};color:${fg};border:1px solid ${border};margin-right:5px;white-space:nowrap">${esc4(text)}</span>`;
-  function provenanceChip(prov) {
+  var JIPOE_STEP_LABEL = {
+    step1_define_oe: "JIPOE 1 \xB7 define the OE",
+    step2_describe_effects: "JIPOE 2 \xB7 describe OE effects",
+    step3_evaluate_adversary: "JIPOE 3 \xB7 evaluate the adversary",
+    step4_determine_adversary_coas: "JIPOE 4 \xB7 determine adversary COAs"
+  };
+  function provenanceChip(prov, jipoeStep) {
     const parts = [];
     if (prov.source_class === "observed") {
       parts.push(chip(`observed \xB7 ${prov.confidence}`, "#14655F", "#E2EFEA", "#BFDCD3"));
@@ -3140,6 +3188,9 @@ ${cursor}
     }
     if (prov.single_source) {
       parts.push(chip("single-source", "#A33131", "#F8E2E2", "#EFC6C6"));
+    }
+    if (jipoeStep) {
+      parts.push(chip(JIPOE_STEP_LABEL[jipoeStep], "#3E5D8A", "#EAF0F7", "#C9D7E8"));
     }
     parts.push(chip(`owner: ${prov.owner}`, "#5B6B77", "#F1F3F5", "#D8DFE4"));
     return `<span class="assay-provenance">${parts.join("")}</span>`;
@@ -3184,12 +3235,12 @@ ${cursor}
   function rowHtml(row) {
     const ko = row.object;
     const status = row.effectiveStatus ?? ko.status;
-    const provenance = ko.provenance ? provenanceChip(ko.provenance) : "";
+    const provenance = ko.provenance ? provenanceChip(ko.provenance, ko.jipoe_step) : "";
     const waiver = ko.waiver ? waiverChip() : "";
     const flag = row.blocked ? blockingFlag() : "";
     const answerSig = ko.answer ? `${ko.answer.lo}-${ko.answer.hi} ${ko.answer.unit}` : "open";
     const provSig = ko.provenance ? `${ko.provenance.source_class}\xB7${ko.provenance.confidence}` : "";
-    const sig = `${answerSig}|${status}|${row.blocked ? "blk" : ""}|${ko.waiver ? "wv" : ""}|${provSig}`;
+    const sig = `${answerSig}|${status}|${row.blocked ? "blk" : ""}|${ko.waiver ? "wv" : ""}|${provSig}|${ko.jipoe_step ?? ""}`;
     return `<tr data-logical-id="${esc6(ko.logical_id)}" data-glow-id="k:${esc6(ko.logical_id)}" data-glow-sig="${esc6(sig)}" style="border-top:1px solid #E4E9ED">
     <td style="padding:8px 10px;vertical-align:top;font-family:ui-monospace,monospace;font-size:11px;color:#1B2732">${esc6(
       ko.logical_id
@@ -3224,7 +3275,7 @@ ${cursor}
         const ko = src ? knowledgeById[src] : void 0;
         const window = region.from_step !== void 0 || region.until_step !== void 0 ? `<span style="color:#5B6B77;font-family:ui-monospace,monospace;font-size:10.5px">steps ${region.from_step ?? 0}\u2013${region.until_step ?? "\u221E"}</span>` : "";
         const backing = src ? `<span data-logical-id="${esc7(src)}" style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;cursor:pointer;text-decoration:underline dotted">${esc7(src)}</span>` : `<span style="color:#A33131;font-family:ui-monospace,monospace;font-size:11px">unsourced \u2014 trace dead end (G3)</span>`;
-        const prov = ko?.provenance ? provenanceChip(ko.provenance) : "";
+        const prov = ko?.provenance ? provenanceChip(ko.provenance, ko.jipoe_step) : "";
         const sig = `${region.value.lo}-${region.value.hi} ${region.value.unit}|${src ?? "unsourced"}|${region.from_step ?? ""}-${region.until_step ?? ""}`;
         rows.push(
           `<tr data-glow-id="ch:${esc7(ch.kind)}:${esc7(region.region)}" data-glow-sig="${esc7(sig)}">${cell(`<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${esc7(region.region)}</span>`)}${cell(bandPill(region.value))}${cell(`${backing} ${window}`)}${cell(prov)}</tr>`
@@ -3538,6 +3589,10 @@ ${items}
       term: "provenance chip (source \xB7 confidence)",
       gloss: 'Where the value came from and how strongly it is held, welded on and never optional (DEC-9). "assessment, not fact" is forced on anything not directly observed; a red "single-source" marks an uncorroborated value; the owner is named.'
     },
+    jipoe: {
+      term: "JIPOE step chip (JIPOE n \xB7 step name)",
+      gloss: 'The JIPOE step this question originated from \u2014 define the OE / describe OE effects / evaluate the adversary / determine adversary COAs (JP 2-01.3). Singular by design: it names the origin; downstream usage lives in the trace graph. Makes "doctrinally shaped, not invented" auditable rather than asserted (SPEC-21).'
+    },
     verdict: {
       term: "four-stop verdict (robust / marginal / tight / violated)",
       gloss: "One colour language for how a plan meets a commitment, read off the signed margin band\u2019s sign only. No decimals \u2014 the banded margin rides on hover, never as a headline (G2)."
@@ -3611,8 +3666,8 @@ ${items}
 </details>`;
   }
   var COMPONENT_PILLS = {
-    s1Table: ["band", "provenance", "waiver", "blocks", "refusal"],
-    channelTrace: ["band", "provenance"],
+    s1Table: ["band", "provenance", "jipoe", "waiver", "blocks", "refusal"],
+    channelTrace: ["band", "provenance", "jipoe"],
     s2Matrix: ["verdict"],
     handfulStrip: ["distinct"],
     s3Cards: ["sacrifice", "tier"],

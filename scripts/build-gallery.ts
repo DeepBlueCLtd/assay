@@ -66,7 +66,7 @@ const rows = knowledge
     const answer = k.answer
       ? bandPill(k.answer)
       : `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#3E5D8A;background:#E6ECF6;border:1px solid #C8D5EA;border-radius:3px;padding:2px 7px">open question — ranked for collection</span>`;
-    const prov = k.provenance ? provenanceChip(k.provenance) : '';
+    const prov = k.provenance ? provenanceChip(k.provenance, k.jipoe_step) : '';
     const status = `<span style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77">${k.logical_id} · v${k.version} · ${k.status}</span>`;
     return `<div style="border:1px solid #D8DFE4;border-radius:6px;padding:12px 14px;margin-bottom:10px;background:#FCFDFD">
   ${status}

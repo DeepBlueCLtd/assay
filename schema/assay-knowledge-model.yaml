@@ -38,6 +38,14 @@ enums:
   EncodingClass:
     description: ASSAY-DEC-6; compile firewall rules in knowledge-model §9.
     permissible_values: {hard_constraint: {}, banded_soft_cost: {}, scenario_weight: {}}
+  JipoeStep:
+    description: >-
+      Originating JIPOE step, singular by design (SPEC-21; assignments and lint posture decided in
+      research note 01-knowledge.md amendment). JP 2-01.3 ch. II names the four steps verbatim:
+      Step 1 — Define the Operational Environment; Step 2 — Describe the Impact of the Operational
+      Environment; Step 3 — Evaluate the Adversary; Step 4 — Determine Adversary Courses of Action.
+      Downstream usage lives in the trace graph, never in this slot.
+    permissible_values: {step1_define_oe: {}, step2_describe_effects: {}, step3_evaluate_adversary: {}, step4_determine_adversary_coas: {}}
   LifecycleStatus:
     description: ASSAY-DEC-17.
     permissible_values: {open: {}, answered: {}, superseded: {}, stale: {}, contested: {}, resolved: {}, retired: {}}
@@ -127,6 +135,7 @@ classes:
       waiver: {range: Waiver}
       expected_answers: {range: ExpectedAnswer, multivalued: true, inlined_as_list: true}
       collection: {range: CollectionOption, multivalued: true, inlined_as_list: true}
+      jipoe_step: {range: JipoeStep, description: Originating JIPOE step (research note 01-knowledge.md amendment; warning-linted when absent — observed not exempt).}
 
   Commitment:
     is_a: StoredObject

@@ -74,3 +74,56 @@ REMIT NF10 (its open item K2) requires band widths "derived from channel confide
 4. **Record the REMIT re-derivation as a findings-ledger candidate** (confidence bounds width vs derives it) and route it through the DEC-3 candidate channel — no schema or code coupling.
 
 Sources: ICD 203, *Analytic Standards* (ODNI, 2 Jan 2015) — estimative-language table and the confidence-vs-likelihood non-conflation rule; JP 2-01.3 (2014) ch. II (four-step process, event template/matrix, NAIs); ATP 2-01.3 (2019) for step-1/2 question framing; ASSAY register DEC-14/15/16/18, knowledge model §3, vignette §5/§7.
+
+---
+
+## Amendment (2026-07-15) — the JIPOE step annotation (SPEC-21)
+
+§3 stated the discipline gap in its own words: each KnowledgeObject *should name its originating JIPOE step, making the claim auditable rather than asserted*. The JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §4.1, action A7) and issue #43 both repeat the demand. This amendment closes it — it fixes the vocabulary, the per-object assignments, and the lint posture, per the DEC-11 gate for SPEC-21.
+
+### A.1 Vocabulary
+
+One LinkML enum, `JipoeStep`, whose four values carry JP 2-01.3 (2014) ch. II's step names verbatim:
+
+| Value | JP 2-01.3 step (verbatim) |
+|---|---|
+| `step1_define_oe` | Step 1 — Define the Operational Environment |
+| `step2_describe_effects` | Step 2 — Describe the Impact of the Operational Environment |
+| `step3_evaluate_adversary` | Step 3 — Evaluate the Adversary |
+| `step4_determine_adversary_coas` | Step 4 — Determine Adversary Courses of Action |
+
+The slot is **singular by design**: it records the *originating* step — where the question was raised — not every step the answer later serves. An object that plausibly spans steps (terrain that is both a step-2 effect and a step-4 COA input) still names one origin; downstream *usage* is what the trace graph carries (`compiled_into`, `scored_from`), and duplicating it into a multivalued slot would assert relevance the graph already proves.
+
+### A.2 Per-object assignments (the §3 audit, machine-carried)
+
+The fixture assignments below restate §3's audit one object at a time. They are pinned by an oracle-style fixture test: a change to any row is a coverage/register matter, not a casual edit.
+
+| K | Subject | Step | Reading of §3 |
+|---|---|---|---|
+| K1 | depths/beach gradients | `step1_define_oe` | OE bounds and physical characteristics |
+| K2 | causeway load | `step2_describe_effects` | MCOO obstacle/terrain layer |
+| K3 | civil population | `step1_define_oe` | OE significant characteristic |
+| K4 | garrison strength/posture | `step3_evaluate_adversary` | adversary disposition |
+| K5 | tide & storm D+0–4 | `step2_describe_effects` | weather effects (MCOO) |
+| K6 | FAC sortie rate | `step3_evaluate_adversary` | adversary capability |
+| K7 | AD envelope | `step2_describe_effects` | threat overlay as environmental effect (MCOO layer, per §3) |
+| K8 | battery fire-control radar | `step3_evaluate_adversary` | adversary capability state |
+| K9 | tide & storm D+2–9 | `step2_describe_effects` | weather effects (MCOO) |
+| K10 | will to capitulate | `step3_evaluate_adversary` | see below — the one assignment §3 left open |
+| K11 | mines loaded at Ledger quay | `step4_determine_adversary_coas` | event-matrix indicator at an NAI |
+| K12a | mine stock (defector) | `step3_evaluate_adversary` | adversary capability (order of battle) |
+| K12b | mine stock (manifests) | `step3_evaluate_adversary` | adversary capability (order of battle) |
+| K13 | HQ radio traffic | `step4_determine_adversary_coas` | event-matrix indicator |
+| K14a | R1 likelihood | `step4_determine_adversary_coas` | COA likelihood judgement |
+| K14b | R2 likelihood | `step4_determine_adversary_coas` | COA likelihood judgement |
+| K14c | R3 likelihood | `step4_determine_adversary_coas` | COA likelihood judgement |
+
+**K10 (resolved here).** §3's audit skipped the refused, retired object. Its question — will the garrison capitulate by D+5 — is a judgement about adversary *will to fight*, which JP 2-01.3 places squarely in step 3 (evaluating adversary capabilities **and will**). K10 therefore carries `step3_evaluate_adversary`: retirement does not erase origin, and the refusal exhibit gains its doctrinal home. K14a–c carry step 4 explicitly — likelihood judgements about adversary COAs are step-4 products, which makes the scenario-weight firewall's doctrinal location visible in the object itself.
+
+### A.3 Lint posture
+
+A knowledge write lacking `jipoe_step` draws a **warning-level lint** (`missing_jipoe_step`), mirroring the §2 width lint's v1 posture: never a refusal, recalibrated after Checkpoint-1 SME reaction (DEC-27). The forward-derivation programme (issue #43) needs the discipline at write time; the demonstrator needs only the warning.
+
+One deliberate divergence from the width lint: **`observed` values are NOT exempt.** The width exemption protects fact from a precision test that only bites assessments (DEC-14); origin is different — every question was raised somewhere in the process, survey charts included, so the annotation applies to every source class. Open questions are likewise covered: they are precisely the step-1-gap-origin objects §3 called out.
+
+Sources (amendment): JP 2-01.3 (2014) ch. II — the four steps by name, adversary evaluation including will to fight, event matrix/NAI indicators; review `2026-07-14-jipoe-c2-process-review.md` §4.1/A7/addendum S-A; issue #43; ASSAY register DEC-6/11/14/21/27.

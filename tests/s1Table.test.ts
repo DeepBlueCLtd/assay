@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { KnowledgeObject } from '../src/generated/types.js';
 import { s1Table, type S1Row } from '../src/components/s1Table.js';
 import { refusalBanner } from '../src/components/refusalBanner.js';
+import { componentLegend } from '../src/components/legends.js';
+import { provenanceChip } from '../src/components/provenanceChip.js';
 import { confidenceLint } from '../src/lint.js';
 import type { Refusal } from '../src/seam.js';
 
@@ -64,6 +66,22 @@ describe('S1 table — banded honesty made visible (SPEC-05; G2)', () => {
     const html = s1Table([{ object: k, warnings: confidenceLint(k) }]);
     expect(html.includes('assay-lint')).toBe(true);
     expect(html.includes('false precision')).toBe(true);
+  });
+
+  it('SPEC-21: the provenance chip renders the JIPOE step in words, on every chip-bearing row', () => {
+    const html = s1Table(rows(['K8', 'K1', 'K14a']));
+    expect(html).toContain('JIPOE 3 · evaluate the adversary'); // K8 — never a bare number
+    expect(html).toContain('JIPOE 1 · define the OE'); // K1 — observed values carry it too
+    expect(html).toContain('JIPOE 4 · determine adversary COAs'); // K14a — the firewall's doctrinal home
+    // words, not the enum token — on the chip itself (the glow sig is an internal attribute)
+    const chip = provenanceChip(byId.get('K8')!.provenance!, byId.get('K8')!.jipoe_step);
+    expect(chip).toContain('JIPOE 3 · evaluate the adversary');
+    expect(chip).not.toContain('step3_evaluate_adversary');
+  });
+
+  it('SPEC-21: the s1Table legend documents the JIPOE step chip', () => {
+    expect(componentLegend('s1Table')).toContain('JIPOE step chip');
+    expect(componentLegend('channelTrace')).toContain('JIPOE step chip');
   });
 
   it('refusalBanner renders reason, offending ref, and explanation', () => {
