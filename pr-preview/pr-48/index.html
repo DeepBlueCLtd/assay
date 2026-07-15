@@ -11,7 +11,7 @@
 
   DEPLOYMENT: the publish pipeline (scripts/build-site.ts, `npm run build:site`)
   copies this file to the site root as index.html; its relative links `gallery/`,
-  `wireframes.html`, `flow.html`, and `blog/` then resolve to the
+  `wireframes.html`, `flow.html`, `coa-viz.html`, and `blog/` then resolve to the
   published surfaces. Every shippable UI artefact is BOTH copied by build-site.ts
   AND linked from a card here, so a reviewer reaches it from the preview by
   clicking, never by typing a URL (comms plan §1.6). The
@@ -232,7 +232,7 @@
 </style>
 </head>
 <body>
-<div style="position:fixed;top:12px;right:12px;z-index:99;font-family:ui-monospace,monospace;font-size:11px;color:#3E5D8A;background:#E6ECF6;border:1px solid #C8D5EA;border-radius:999px;padding:4px 11px;box-shadow:0 1px 3px rgba(27,39,50,.14)">preview of PR #48 · <a style="color:inherit" href="https://github.com/DeepBlueCLtd/assay/commit/fabf2a6dd8d406c85120df6f90ccc3bb0d9f8124">fabf2a6</a></div>
+<div style="position:fixed;top:12px;right:12px;z-index:99;font-family:ui-monospace,monospace;font-size:11px;color:#3E5D8A;background:#E6ECF6;border:1px solid #C8D5EA;border-radius:999px;padding:4px 11px;box-shadow:0 1px 3px rgba(27,39,50,.14)">preview of PR #48 · <a style="color:inherit" href="https://github.com/DeepBlueCLtd/assay/commit/a8a0c0c2558233641f76c4bd0fe42207eaf230c2">a8a0c0c</a></div>
 <header class="hero">
   <div class="wrap hero-inner">
     <div class="tags">
@@ -342,7 +342,7 @@
       <a class="card" href="assets/app/index.html">
         <div class="eyebrow">Interactive · SPEC-16</div>
         <h3>The live demonstrator <span class="arw">&rarr;</span></h3>
-        <p>Four role tabs over one in-browser pipeline. Resolve a live contest and watch the
+        <p>Four role tabs — plus the shared <b>Spatial · COA</b> surface (DEC-36) — over one in-browser pipeline. Resolve a live contest and watch the
            real compile → score → relax recompute, with a "glow" that draws propagation honesty
            (G6) across the roles it touches. Edit an assessed band and see it refuse if dishonest.</p>
       </a>
@@ -367,6 +367,16 @@
            with a guided tour and a bounded sandbox driving the <b>real seam</b> (compile, score,
            relax). One canvas, three zoom layers; auto-recompute is stamped and attributed, never
            silent. Behaviours land under a flagged register candidate (ratify-after).</p>
+      </a>
+      <a class="card" href="coa-viz.html">
+        <div class="eyebrow">Interactive · built · SPEC-19 (ASSAY-DEC-36)</div>
+        <h3>Where the plan meets the water <span class="arw">&rarr;</span></h3>
+        <p>The COA made spatial and temporal: routes over banded channel surfaces (split fills,
+           never a heat stop), validity and task windows on one clock, and the C4 exposure
+           staircase that shows <b>where and when</b> the dwell was banked. Drag a waypoint and the
+           verdict re-scores through the <b>real in-browser pipeline</b>, glowing what moved (G6).
+           SME-endorsed and promoted: the same surface is now the <b>Spatial · COA</b> tab in the
+           live demonstrator above.</p>
       </a>
       <a class="card" href="flow-schematic.html">
         <div class="eyebrow">Proposal · interactive walkthrough</div>
