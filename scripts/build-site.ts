@@ -123,6 +123,15 @@ copyFileSync(
   fileURLToPath(new URL('index.html', coaVizDir)),
 );
 
+// The SME-facing doctrine page (comms artefact, DEC-30 category; review §4.1
+// crosswalk + §4.4 divergence register, actions W1/A1) — handed to SMEs before
+// free exploration. Shipped alongside SPEC-21, which makes the crosswalk's step
+// column machine-auditable. Linked from a Home-page card (comms plan §1.6).
+copyFileSync(
+  fileURLToPath(new URL('docs/assay-doctrine.html', root)),
+  fileURLToPath(new URL('doctrine.html', site)),
+);
+
 // The live interactive app (SPEC-16) — a self-contained bundle. Placed at
 // site/assets/app/ so the blog article's relative embed (../../assets/app/…)
 // resolves identically in the repo and on the published site.
