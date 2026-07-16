@@ -19,7 +19,7 @@ import { refusalBanner } from '../src/components/refusalBanner.js';
 import { s2Matrix, type S2Cell } from '../src/components/s2Matrix.js';
 import { handfulStrip, type HandfulStripRow } from '../src/components/handfulStrip.js';
 import { s3Cards, type S3Card } from '../src/components/s3Cards.js';
-import { scenarioStrip } from '../src/components/scenarioStrip.js';
+import { scenarioStrip, type ScenarioLikelihood } from '../src/components/scenarioStrip.js';
 import { sensitivityTable } from '../src/components/sensitivityTable.js';
 import { discriminationTable } from '../src/components/discriminationTable.js';
 import { stalenessFlags } from '../src/components/stalenessFlags.js';
@@ -280,7 +280,22 @@ if (!isRefusal(compiled)) {
       for (const row of stripRows) {
         planNames[row.plan.logical_id] = `${row.plan.logical_id} · ${row.name}`;
       }
-      scenarioStripHtml = scenarioStrip(rr.tensor, { planNames });
+      // SPEC-22 — the attention block: K14a–c likelihood bands under the
+      // interval order, above (never inside) the verdict grid.
+      const likelihoods: ScenarioLikelihood[] = [];
+      for (const sid of rr.tensor.scenarios) {
+        const coa = coas.find((c) => c.logical_id === sid);
+        if (!coa) continue; // BASE has no adversary weight
+        const item: ScenarioLikelihood = { scenario: sid, name: coa.name };
+        const k14 = coa.likelihood ? kById.get(coa.likelihood) : undefined;
+        if (coa.likelihood) item.logical_id = coa.likelihood;
+        if (k14?.answer) item.band = k14.answer;
+        if (k14?.provenance) item.provenance = k14.provenance;
+        if (k14?.jipoe_step) item.jipoe_step = k14.jipoe_step;
+        if (k14?.status === 'contested') item.contested = true;
+        likelihoods.push(item);
+      }
+      scenarioStripHtml = scenarioStrip(rr.tensor, { planNames, likelihoods });
       robustnessStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">robustness stamp ${rr.stamp.slice(0, 16)}… · ${rr.tensor.scenarios.length} scenarios × ${rr.tensor.plans.length} plans × ${rr.tensor.commitments.length} commitments · worst-case (minimax) verdict per plan×commitment · stamps_compatible=${rr.tensor.stamps_compatible}</span>`;
     }
   }
@@ -317,7 +332,7 @@ ${rows}
 <p style="font-size:12.5px;color:#5B6B77">The Stage-4 demo moment, run end-to-end by the actual machinery. Against the <b>R3m</b> world (both approaches mined, the causeway dropped) no plan satisfies C2, C3 and C4 together — by construction (vignette §6) — and the dropped causeway forecloses <b>C5</b> ("taken intact") for every plan, so C5 rides in every sacrifice set as a scenario-imposed, computed loss (SPEC-20). <code>/relax</code> does not pick one compromise and hide the trade: it returns every <b>inclusion-minimal</b> way forward, each naming what it gives up in <b>command language</b>. The sacrifices are <b>computed</b> — a commitment is sacrificed only when the SPEC-07 scorer returns <code>violated</code> for it — not authored. Ranked <b>least-worst first</b> by the commander's ordinal tiers (<code>must / should / prefer</code>, <b>no numeric weight</b> — DEC-19): the two <code>should</code>-sacrifices lead, the <code>must</code>-sacrifice (C2, "the strait opens two days late") is <b>ranked last but present</b> — never dropped, never silent (G4). Plans that give up <i>more</i> — <code>{C2,C4,C5}</code>, <code>{C3,C4,C5}</code> — are inclusion-dominated and never shown as separate options. ${relaxStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${s3}</div>
 <h2 style="font-size:16px;margin-top:32px">Scenario robustness — don't plan on most-likely (SPEC-10)</h2>
-<p style="font-size:12.5px;color:#5B6B77">The Stage-5 demo moment (thesis C; JP 2-01.3: "don't plan on most-likely"). The generated handful scored across <b>BASE, R1, R2, R3</b> — the adversary COA set from the vignette. Each cell is a four-stop verdict chip; a <b>▼</b> marks a verdict that dropped from its BASE value under that scenario ("collapse"). The <b>worst</b> column is the minimax: the plan's worst verdict for that commitment across all scenarios — a real verdict on a real scenario, not a weighted blend (DEC-15/19). <i>Toggle R2 (Strait Denial) and watch the strait-early plan die on C1/C2 while robust alternatives hold.</i> ${robustnessStampLine}</p>
+<p style="font-size:12.5px;color:#5B6B77">The Stage-5 demo moment (thesis C; JP 2-01.3: "don't plan on most-likely"). The generated handful scored across <b>BASE, R1, R2, R3</b> — the adversary COA set from the vignette. Each cell is a four-stop verdict chip; a <b>▼</b> marks a verdict that dropped from its BASE value under that scenario ("collapse"). The <b>worst</b> column is the minimax: the plan's worst verdict for that commitment across all scenarios — a real verdict on a real scenario, not a weighted blend (DEC-15/19). <i>Toggle R2 (Strait Denial) and watch the strait-early plan die on C1/C2 while robust alternatives hold.</i> Above the grid, the <b>attention block</b> (SPEC-22) renders the K14a–c likelihood bands under the <b>interval order</b>: R1 (45–70 %) ranks strictly above the level pair {R2, R3}, whose bands visibly overlap — the system refuses, in public, to rank what the bands don't rank. The block is labelled <b>"orders attention — never compiles"</b> (knowledge model §9): the verdicts below owe it nothing. ${robustnessStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${scenarioStripHtml}</div>
 <h2 style="font-size:16px;margin-top:32px">Sensitivity — which beliefs bear load (SPEC-11)</h2>
 <p style="font-size:12.5px;color:#5B6B77">The Stage-6 sensitivity demo moment (thesis E). Band-edge perturbation of each consumed knowledge object against the first handful plan: push each answer to its lo and hi edges, re-score, and count how many commitment verdicts change. <b>K8 tops the ranking</b> with <code>single_source: true</code> — its band-edge perturbation changes C4 verdicts via the battery fire-control threshold. The <code>single_source</code> flag is carried through from provenance, <b>never used in the ranking arithmetic</b> (DEC-19) — shown alongside so the commander sees the collection risk without it being laundered into a scalar. ${sensitivityStampLine}</p>
@@ -328,7 +343,7 @@ ${rows}
 <h2 style="font-size:16px;margin-top:32px">Staleness — what goes stale when knowledge changes (SPEC-13)</h2>
 <p style="font-size:12.5px;color:#5B6B77">The Stage-6 staleness demo moment (thesis F). Transitive forward trace walk from <b>K9</b> (the storm-window knowledge that superseded K5): follow every downstream edge — <code>consumed_by</code>, <code>scored_from</code>, <code>compiled_into</code> — using the <code>EDGE_ORIENTATION</code> map from <code>traceView.ts</code>. The walk flags <b>exactly the dependent verdicts</b> and nothing else. It does <b>not recompute</b> — the constitution says flags, then humans decide. ${stalenessStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${stalenessHtml}</div>
-<p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code> · relax per <code>docs/research/04-relaxation.md</code> · robustness per <code>docs/research/06-robustness.md</code> · analysis per <code>docs/research/08-analysis.md</code></p>
+<p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code> · relax per <code>docs/research/04-relaxation.md</code> · robustness per <code>docs/research/06-robustness.md</code> · analysis per <code>docs/research/08-analysis.md</code> · attention per <code>docs/research/11-attention.md</code></p>
 </div>
 </body>
 </html>
