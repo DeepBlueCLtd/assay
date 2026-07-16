@@ -58,10 +58,25 @@ function arrow(): string {
   return '<div style="display:flex;align-items:center;padding:0 4px;color:#C8D2DA;font-size:16px">→</div>';
 }
 
+/**
+ * The stated end-cap for a depth-truncated walk. Rendered when the frontier
+ * was still non-empty at maxDepth: the walk continues beyond what is shown,
+ * and saying so is the difference between an honest depth bound and a silent
+ * drop (G3/G4). `side` places the ellipsis on the correct end of the river.
+ */
+function truncationCap(side: 'upstream' | 'downstream'): string {
+  const label = side === 'upstream' ? '… deeper sources' : 'deeper effects …';
+  return `<div class="assay-dep-truncated" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:72px;color:#8091A0;font-size:9px;font-style:italic;text-align:center" title="walk stopped at the depth limit — raise depth to see more">${label}<div style="font-size:14px">⋯</div></div>`;
+}
+
 export function depGraphRiver(graph: DepGraph): string {
   const upLayers = [...graph.upstream].reverse();
   const parts: string[] = [];
 
+  if (graph.upstreamTruncated) {
+    parts.push(truncationCap('upstream'));
+    parts.push(arrow());
+  }
   for (const layer of upLayers) {
     parts.push(layerColumn(layer));
     parts.push(arrow());
@@ -75,6 +90,10 @@ export function depGraphRiver(graph: DepGraph): string {
   for (const layer of graph.downstream) {
     parts.push(arrow());
     parts.push(layerColumn(layer));
+  }
+  if (graph.downstreamTruncated) {
+    parts.push(arrow());
+    parts.push(truncationCap('downstream'));
   }
 
   const totalNodes = graph.upstream.reduce((s, l) => s + l.nodes.length, 0) +

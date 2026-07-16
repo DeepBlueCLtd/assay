@@ -3192,7 +3192,7 @@
       }
       frontier = nextFrontier;
     }
-    return layers;
+    return { layers, truncated: frontier.length > 0 };
   }
   function buildDepGraph(focusHash, trace, store, maxDepth = 4) {
     const focusObj = store.get(focusHash);
@@ -3203,10 +3203,14 @@
       known: store.exists(focusHash),
       depth: 0
     };
+    const up = walkDirection(focusHash, "upstream", trace, store, maxDepth);
+    const down = walkDirection(focusHash, "downstream", trace, store, maxDepth);
     return {
       focus,
-      upstream: walkDirection(focusHash, "upstream", trace, store, maxDepth),
-      downstream: walkDirection(focusHash, "downstream", trace, store, maxDepth)
+      upstream: up.layers,
+      downstream: down.layers,
+      upstreamTruncated: up.truncated,
+      downstreamTruncated: down.truncated
     };
   }
   function nodeDetail(hash, trace, store, maxDepth = 4) {
@@ -3218,8 +3222,8 @@
       known: store.exists(hash),
       depth: 0
     };
-    const upLayers = walkDirection(hash, "upstream", trace, store, maxDepth);
-    const downLayers = walkDirection(hash, "downstream", trace, store, maxDepth);
+    const upLayers = walkDirection(hash, "upstream", trace, store, maxDepth).layers;
+    const downLayers = walkDirection(hash, "downstream", trace, store, maxDepth).layers;
     const groupByEdgeType = (layers) => {
       const result = [];
       for (const layer of layers) {
@@ -5276,9 +5280,17 @@ ${items}
   function arrow() {
     return '<div style="display:flex;align-items:center;padding:0 4px;color:#C8D2DA;font-size:16px">\u2192</div>';
   }
+  function truncationCap(side) {
+    const label = side === "upstream" ? "\u2026 deeper sources" : "deeper effects \u2026";
+    return `<div class="assay-dep-truncated" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:72px;color:#8091A0;font-size:9px;font-style:italic;text-align:center" title="walk stopped at the depth limit \u2014 raise depth to see more">${label}<div style="font-size:14px">\u22EF</div></div>`;
+  }
   function depGraphRiver(graph) {
     const upLayers = [...graph.upstream].reverse();
     const parts = [];
+    if (graph.upstreamTruncated) {
+      parts.push(truncationCap("upstream"));
+      parts.push(arrow());
+    }
     for (const layer of upLayers) {
       parts.push(layerColumn(layer));
       parts.push(arrow());
@@ -5290,6 +5302,10 @@ ${items}
     for (const layer of graph.downstream) {
       parts.push(arrow());
       parts.push(layerColumn(layer));
+    }
+    if (graph.downstreamTruncated) {
+      parts.push(arrow());
+      parts.push(truncationCap("downstream"));
     }
     const totalNodes = graph.upstream.reduce((s, l) => s + l.nodes.length, 0) + 1 + graph.downstream.reduce((s, l) => s + l.nodes.length, 0);
     const totalEdges = graph.upstream.reduce((s, l) => s + l.edges.length, 0) + graph.downstream.reduce((s, l) => s + l.edges.length, 0);

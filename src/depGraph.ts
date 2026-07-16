@@ -40,6 +40,14 @@ export interface DepGraph {
   focus: DepGraphNode;
   upstream: DepGraphLayer[];
   downstream: DepGraphLayer[];
+  /**
+   * True when the upstream/downstream walk stopped at `maxDepth` with a
+   * non-empty frontier still to explore — i.e. there are deeper nodes not
+   * shown. Surfaced, never hidden: a depth cap that silently dropped the
+   * remainder would be exactly the silent truncation G3/G4 forbid.
+   */
+  upstreamTruncated: boolean;
+  downstreamTruncated: boolean;
 }
 
 export interface DepGraphNodeDetail {
@@ -118,7 +126,7 @@ function walkDirection(
   trace: TraceStore,
   store: ObjectStore,
   maxDepth: number,
-): DepGraphLayer[] {
+): { layers: DepGraphLayer[]; truncated: boolean } {
   const layers: DepGraphLayer[] = [];
   const visited = new Set<string>([startHash]);
   let frontier = [startHash];
@@ -184,7 +192,9 @@ function walkDirection(
     frontier = nextFrontier;
   }
 
-  return layers;
+  // A non-empty frontier here means the depth cap stopped the walk with more
+  // to explore — the walk is truncated by depth, not exhausted.
+  return { layers, truncated: frontier.length > 0 };
 }
 
 /**
@@ -207,10 +217,15 @@ export function buildDepGraph(
     depth: 0,
   };
 
+  const up = walkDirection(focusHash, 'upstream', trace, store, maxDepth);
+  const down = walkDirection(focusHash, 'downstream', trace, store, maxDepth);
+
   return {
     focus,
-    upstream: walkDirection(focusHash, 'upstream', trace, store, maxDepth),
-    downstream: walkDirection(focusHash, 'downstream', trace, store, maxDepth),
+    upstream: up.layers,
+    downstream: down.layers,
+    upstreamTruncated: up.truncated,
+    downstreamTruncated: down.truncated,
   };
 }
 
@@ -233,8 +248,8 @@ export function nodeDetail(
     depth: 0,
   };
 
-  const upLayers = walkDirection(hash, 'upstream', trace, store, maxDepth);
-  const downLayers = walkDirection(hash, 'downstream', trace, store, maxDepth);
+  const upLayers = walkDirection(hash, 'upstream', trace, store, maxDepth).layers;
+  const downLayers = walkDirection(hash, 'downstream', trace, store, maxDepth).layers;
 
   const groupByEdgeType = (layers: DepGraphLayer[]): DepGraphNodeDetail['upstream'] => {
     const result: DepGraphNodeDetail['upstream'] = [];

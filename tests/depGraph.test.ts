@@ -112,6 +112,17 @@ describe('depGraph — buildDepGraph', () => {
     expect(deep.downstream.length).toBeGreaterThanOrEqual(shallow.downstream.length);
   });
 
+  it('reports a depth-capped walk as truncated, never silently drops it (G3/G4)', () => {
+    // K5 feeds the compiled world, which feeds verdicts — so a depth-1 walk
+    // leaves a non-empty frontier that must be surfaced, not dropped.
+    const shallow = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 1);
+    expect(shallow.downstreamTruncated).toBe(true);
+    // A generous depth exhausts the small Meridian graph — nothing left over.
+    const exhausted = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 20);
+    expect(exhausted.downstreamTruncated).toBe(false);
+    expect(exhausted.upstreamTruncated).toBe(false);
+  });
+
   it('world node has upstream knowledge', () => {
     const graph = buildDepGraph(rig.worldHash, rig.svc.trace, rig.svc.store);
     expect(graph.focus.type).toBe('world');
@@ -181,6 +192,16 @@ describe('depGraph — component renderers', () => {
     const html = depGraphRiver(graph);
     expect(html).toMatch(/\d+ node/);
     expect(html).toMatch(/\d+ edge/);
+  });
+
+  it('depGraphRiver renders a stated end-cap when the walk is depth-truncated', () => {
+    const shallow = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 1);
+    const truncatedHtml = depGraphRiver(shallow);
+    expect(truncatedHtml).toContain('assay-dep-truncated');
+    expect(truncatedHtml).toContain('deeper effects');
+    // An exhausted walk shows no end-cap — the marker is not decorative.
+    const exhausted = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 20);
+    expect(depGraphRiver(exhausted)).not.toContain('assay-dep-truncated');
   });
 
   it('depGraphSidebar renders detail for a node', () => {

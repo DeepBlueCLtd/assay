@@ -99,6 +99,27 @@ theses:                      # state vocabulary is the register's own
 updates:
   - date: 2026-07-16
     note: >-
+      Dependency view anchored (issue #24, formalised SPEC-27): research note 14-dependency-view.md
+      (DEC-11 gate) retro-anchors the focused transitive dependency view that had been built ahead
+      of its note. The one real decision is that the transitive upstream/downstream walk goes by
+      orientation-resolved direction (EDGE_ORIENTATION applied at every hop, BFS by
+      orientation-distance) never by raw hash direction — because TraceStore.walk is
+      orientation-blind and a naive forward walk from a K stops at the compiled world; the view is
+      a second orientation-aware wrapper beside the one-hop menu and the staleness walk, no new
+      graph mechanics. Layout is a horizontal river (upstream → focus → downstream) with a
+      click-driven detail sidebar (Shneiderman overview + details-on-demand, the note-07 argument),
+      opened as a full-screen overlay from the trace menu's "View full graph →" link — not a sixth
+      tab (DEC-32's four role tabs stand; a drill-in lens is neither a role nor a surface).
+      Read-only: re-centring on a clicked node is selection, not computation (DEC-36(c)'s scrub
+      line); no scalar, no band collapse (G2/G6). The note's one correction to the shipped code is
+      folded in: a depth-capped walk that stops with a non-empty frontier now says so (a stated
+      river end-cap; upstreamTruncated/downstreamTruncated) instead of silently dropping the
+      remainder — G3/G4 applied to the view, no new invariant. The antithesis of thesis G's
+      false-precision risk: it renders only edges a service wrote at compute time (constitution
+      III), never inferred interdependencies. 495 tests, typecheck clean. Register candidate
+      concept §6.29 flagged, awaiting the next batch.
+  - date: 2026-07-16
+    note: >-
       SPEC-24 built (the Decision Support Matrix surface — decisions in time; review §4.2/M1/B1,
       addendum slice S-D, the keystone): research note 12-decision-support.md (DEC-11 gate) decides
       the three derivation rules doctrine's DST/DSM needs and ASSAY had never assembled — the
