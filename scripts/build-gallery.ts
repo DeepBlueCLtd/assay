@@ -177,9 +177,9 @@ if (!isRefusal(compiled) && stripRows.length > 0) {
   }
 }
 
-// SPEC-12 — discrimination: which open questions separate COAs. COA-pair band
-// separation over expected-answer miniatures (DEC-18). Cost shown alongside,
-// never collapsed with value (DEC-19).
+// SPEC-12/23 — discrimination inputs. The ranking itself is computed after the
+// robustness block so the SPEC-10 tensor can condition it on the operative
+// pairs (note 08 §7.1); rendered order in the gallery is unchanged.
 const k11 = kById.get('K11')!;
 const k13 = kById.get('K13')!;
 await svc.store.put(structuredClone(k11) as unknown as Record<string, unknown>);
@@ -189,17 +189,6 @@ const k13Ref = svc.store.versions('K13').at(-1)!;
 const discriminationSvc = new DiscriminationService({ store: svc.store });
 let discriminationHtml = '';
 let discriminationStampLine = '';
-{
-  const discResult = await discriminationSvc.analyse({
-    questions: [k11Ref, k13Ref],
-    coas: ['R1', 'R2', 'R3'],
-    engine_version: ENGINE_VERSION,
-  });
-  if (!isRefusal(discResult)) {
-    discriminationHtml = discriminationTable(discResult.ranking);
-    discriminationStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">discrimination stamp ${discResult.stamp.slice(0, 16)}… · ${discResult.ranking.length} open questions ranked · COA-pair separation over expected-answer bands (DEC-18) · cost alongside, never collapsed (DEC-19)</span>`;
-  }
-}
 
 // SPEC-13 — staleness: what goes stale when knowledge changes. Transitive forward
 // trace walk from K9 (the storm-window knowledge that superseded K5); flags exactly
@@ -261,6 +250,7 @@ if (!isRefusal(r3m)) {
 const robustnessSvc = new RobustnessService({ store: svc.store, scorer, commitments });
 let scenarioStripHtml = '';
 let robustnessStampLine = '';
+let liveTensor: import('../src/seam.js').ScenarioVerdictTensor | undefined;
 if (!isRefusal(compiled)) {
   const scenarioWorlds: Record<string, import('../src/store.js').Ref> = { BASE: compiled.world };
   for (const sid of ['R1', 'R2', 'R3']) {
@@ -281,8 +271,35 @@ if (!isRefusal(compiled)) {
         planNames[row.plan.logical_id] = `${row.plan.logical_id} · ${row.name}`;
       }
       scenarioStripHtml = scenarioStrip(rr.tensor, { planNames });
+      liveTensor = rr.tensor;
       robustnessStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">robustness stamp ${rr.stamp.slice(0, 16)}… · ${rr.tensor.scenarios.length} scenarios × ${rr.tensor.plans.length} plans × ${rr.tensor.commitments.length} commitments · worst-case (minimax) verdict per plan×commitment · stamps_compatible=${rr.tensor.stamps_compatible}</span>`;
     }
+  }
+}
+
+// SPEC-12/23 — discrimination: which open questions separate COAs. COA-pair
+// band separation over expected-answer miniatures (DEC-18), conditioned on the
+// OPERATIVE pairs — the scenario pairs the live decision's verdicts actually
+// turn on, derived from the tensor above (SPEC-23, note 08 §7.1). Cost shown
+// alongside, never collapsed with value (DEC-19).
+{
+  const discResult = await discriminationSvc.analyse({
+    questions: [k11Ref, k13Ref],
+    coas: ['R1', 'R2', 'R3'],
+    ...(liveTensor ? { tensor: liveTensor } : {}),
+    engine_version: ENGINE_VERSION,
+  });
+  if (!isRefusal(discResult)) {
+    discriminationHtml = discriminationTable(discResult.ranking, {
+      mode: discResult.mode,
+      ...(discResult.statement ? { statement: discResult.statement } : {}),
+      ...(discResult.operative ? { operative: discResult.operative } : {}),
+    });
+    const operativeNote =
+      discResult.mode === 'operative'
+        ? ` · operative pairs derived from the verdict tensor (SPEC-23, never curated)`
+        : '';
+    discriminationStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">discrimination stamp ${discResult.stamp.slice(0, 16)}… · ${discResult.ranking.length} open questions ranked · COA-pair separation over expected-answer bands (DEC-18) · cost alongside, never collapsed (DEC-19)${operativeNote}</span>`;
   }
 }
 

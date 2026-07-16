@@ -13,7 +13,7 @@
 #     the site polices its own optimism rather than trusting a human to.
 #   - Nothing here may show a capability the repository does not contain.
 
-updated: 2026-07-15
+updated: 2026-07-16
 current_stage: 7            # 0..7, the stage in flight
 current_stage_label: "Stage 6 built · Stage 7 next"
 gate_passed: false          # the spine-complete gate (SPEC-15)
@@ -97,6 +97,25 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-16
+    note: >-
+      SPEC-23 built (collection discrimination v2 — sharper where-to-look; review §3.4/B7,
+      addendum slice S-E): the note-08 §7 amendment (DEC-11 gate) decides the operative-pair
+      derivation — a scenario pair is operative iff some plan×commitment verdict diverges
+      across it in the SPEC-10 tensor, computed never curated, likelihood firewalled (K14
+      does not enter) — the three-way separation classification (disjoint / partial /
+      nested; a nested expectation can never single out the inner COA, and the surface now
+      says "cannot discriminate" instead of a second negative number; bands touching at an
+      endpoint classify partial, mirroring O-3's edge discipline), and provenance on
+      ExpectedAnswer (the full Provenance shape, optional slot, warning-level
+      missing_expected_answer_provenance lint — the event matrix was the only major
+      assessed content without a chip). The collect-next ranking now leads with the pairs
+      the live decision turns on, witnesses rendered ("operative: R1↔R2 — P1's C1/C2 turn
+      on it"); K11-above-K13 reproduces on the operative ranking and a pinned constructed
+      case shows v2 ≠ v1 exactly where best-pair-anywhere misleads; the v1 numeric
+      separations are byte-identical; degenerate states (no tensor, incomparable stamps,
+      one live scenario, no divergence) render honest statements, never a fabricated pair.
+      Register candidates concept §6.24/§6.25 flagged, awaiting the next batch.
   - date: 2026-07-15
     note: >-
       SPEC-21's DEC-30 companions shipped (comms category — projections of shipped work, not

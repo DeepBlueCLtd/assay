@@ -346,6 +346,9 @@ export class AppState {
     const panels: Panel[] = [];
     const stamps: Snapshot['stamps'] = {};
     let firstPlanRef: Ref | undefined;
+    // SPEC-23: the live decision's verdict tensor conditions the
+    // discrimination ranking on the operative pairs (note 08 §7.1).
+    let liveTensor: ScenarioVerdictTensor | undefined;
 
     // Live knowledge id set: the survivor K12a once resolved, else the whole
     // contested pair (so the compile honestly refuses).
@@ -555,6 +558,7 @@ export class AppState {
           });
           if (!isRefusal(rr)) {
             stamps.robustness = rr.stamp;
+            liveTensor = rr.tensor;
             const planNames: Record<string, string> = {};
             for (const planRef of h.plans) {
               const plan = this.#svc.store.get(planRef.content_hash) as Plan;
@@ -646,6 +650,9 @@ export class AppState {
         const discResult = await this.#discriminationSvc.analyse({
           questions: [k11Ref, k13Ref],
           coas: ['R1', 'R2', 'R3'],
+          // Absent tensor (compile refused, no plans scored) falls back to
+          // all-pairs semantics with the fallback stated, never silent.
+          ...(liveTensor ? { tensor: liveTensor } : {}),
           engine_version: ENGINE_VERSION,
         });
         if (!isRefusal(discResult)) {
@@ -654,8 +661,17 @@ export class AppState {
             id: 'discrimination',
             tab: 'j2',
             title: 'J-2 · discrimination ranking (thesis D)',
-            html: componentLegend('discriminationTable') + discriminationTable(discResult.ranking),
-            deps: new Set([`discrimination:${discResult.stamp}`]),
+            html:
+              componentLegend('discriminationTable') +
+              discriminationTable(discResult.ranking, {
+                mode: discResult.mode,
+                ...(discResult.statement ? { statement: discResult.statement } : {}),
+                ...(discResult.operative ? { operative: discResult.operative } : {}),
+              }),
+            deps: new Set([
+              `discrimination:${discResult.stamp}`,
+              ...(stamps.robustness ? [`robustness:${stamps.robustness}`] : []),
+            ]),
           });
         }
       }

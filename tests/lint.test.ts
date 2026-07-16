@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { KnowledgeObject } from '../src/generated/types.js';
-import { confidenceLint, jipoeStepLint, relativeWidth, WIDTH_FLOOR } from '../src/lint.js';
+import { confidenceLint, expectedAnswerProvenanceLint, jipoeStepLint, relativeWidth, WIDTH_FLOOR } from '../src/lint.js';
 
 const knowledge = JSON.parse(
   readFileSync(new URL('../fixtures/knowledge.json', import.meta.url), 'utf8'),
@@ -79,5 +79,36 @@ describe('missing-JIPOE-step lint (research note 01 amendment; SPEC-21)', () => 
     const k = K('K11'); // open, no answer, no provenance
     delete k.jipoe_step;
     expect(jipoeStepLint(k)).toHaveLength(1);
+  });
+});
+
+describe('missing ExpectedAnswer-provenance lint (research note 08 §7.3; SPEC-23)', () => {
+  it('every Meridian expected-answer row carries provenance — fixtures validate the rule', () => {
+    for (const k of knowledge) {
+      expect(expectedAnswerProvenanceLint(k), `${k.logical_id} should not trip the lint`).toEqual([]);
+    }
+  });
+
+  it('a provenance-less row draws the warning, naming the COA', () => {
+    const k = K('K11');
+    delete k.expected_answers![1]!.provenance;
+    const warnings = expectedAnswerProvenanceLint(k);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.code).toBe('missing_expected_answer_provenance');
+    expect(warnings[0]?.offending.logical_id).toBe('K11');
+    expect(warnings[0]?.message).toContain('R2');
+    expect(warnings[0]?.message).toContain('assessment');
+  });
+
+  it('objects without expected_answers are exempt — the lint is about the event matrix', () => {
+    expect(expectedAnswerProvenanceLint(K('K2'))).toEqual([]);
+  });
+
+  it('a warning is not a refusal — same posture as missing_jipoe_step (DEC-27 recalibration pending)', () => {
+    const k = K('K13');
+    for (const ea of k.expected_answers!) delete ea.provenance;
+    const warnings = expectedAnswerProvenanceLint(k);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.message).toContain('R1, R2, R3');
   });
 });

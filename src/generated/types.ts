@@ -109,6 +109,8 @@ export interface Waiver {
 export interface ExpectedAnswer {
   coa: LogicalId;
   band: Band;
+  /** Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.24. */
+  provenance?: Provenance;
 }
 
 
@@ -385,7 +387,7 @@ export const SCHEMA: {
     Provenance: { attributes: { source_class: { range: 'SourceClass', required: true, multivalued: false }, confidence: { range: 'ConfidenceBand', required: true, multivalued: false }, owner: { range: 'string', required: true, multivalued: false }, single_source: { range: 'boolean', required: true, multivalued: false }, collected_at: { range: 'Timestep', required: false, multivalued: false }, note: { range: 'string', required: false, multivalued: false } } },
     ValidityWindow: { attributes: { valid_from: { range: 'Timestep', required: true, multivalued: false }, valid_until: { range: 'Timestep', required: true, multivalued: false } } },
     Waiver: { attributes: { granted_by: { range: 'string', required: true, multivalued: false }, justification: { range: 'string', required: true, multivalued: false }, granted_at: { range: 'Timestep', required: true, multivalued: false } } },
-    ExpectedAnswer: { attributes: { coa: { range: 'LogicalId', required: true, multivalued: false }, band: { range: 'Band', required: true, multivalued: false } } },
+    ExpectedAnswer: { attributes: { coa: { range: 'LogicalId', required: true, multivalued: false }, band: { range: 'Band', required: true, multivalued: false }, provenance: { range: 'Provenance', required: false, multivalued: false } } },
     CollectionOption: { attributes: { method: { range: 'string', required: true, multivalued: false }, cost: { range: 'Band', required: true, multivalued: false }, earliest_result: { range: 'Timestep', required: false, multivalued: false } } },
     StoredObject: { abstract: true, attributes: { logical_id: { range: 'LogicalId', required: true, multivalued: false }, version: { range: 'integer', required: true, multivalued: false } } },
     KnowledgeObject: { parent: 'StoredObject', attributes: { question: { range: 'string', required: true, multivalued: false }, subject: { range: 'string', required: true, multivalued: false }, encoding_class: { range: 'EncodingClass', required: true, multivalued: false }, answer: { range: 'Band', required: false, multivalued: false }, provenance: { range: 'Provenance', required: false, multivalued: false }, criticality: { range: 'Criticality', required: true, multivalued: false }, validity: { range: 'ValidityWindow', required: false, multivalued: false }, status: { range: 'LifecycleStatus', required: true, multivalued: false }, waiver: { range: 'Waiver', required: false, multivalued: false }, expected_answers: { range: 'ExpectedAnswer', required: false, multivalued: true }, collection: { range: 'CollectionOption', required: false, multivalued: true }, jipoe_step: { range: 'JipoeStep', required: false, multivalued: false } } },
