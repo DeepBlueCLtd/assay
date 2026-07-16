@@ -265,6 +265,99 @@ export interface DiscriminationSuccess {
 export type DiscriminationResult = DiscriminationSuccess | Refusal;
 
 /**
+ * SPEC-24 — decision-support movement types (seam §8; review slice S-D, the
+ * keystone). `POST /analyse/decision-support` derives the doctrinal DSM —
+ * decision points, commit steps, LTIOV, discriminators, tripwires — as a thin
+ * orchestration over the tensor (SPEC-10), the SPEC-12/23 separation
+ * classification, plan geometry (DEC-20 stated routes), and validity windows.
+ * The derivation rules are decided by research note
+ * `docs/research/12-decision-support.md` (DEC-11 gate): the two-class DP
+ * predicate (§2), the commit-step rule per metric kind (§3), LTIOV =
+ * commit_step − lead with lead 0 stated (§4), the three-state
+ * answerable-in-time predicate with the honest red branch (§4), world-level
+ * tripwire scope (§5). Every quantity is a band, a step, a verdict, or a
+ * classification word — no urgency/priority/risk scalar exists (DEC-19).
+ * Register candidates concept §6.27/§6.28 — flagged, not asserted (DEC-2).
+ */
+export interface DecisionSupportRequest {
+  plan: Ref;
+  /** The selected world — margin-class evidence is read under it (note 12 §2). */
+  world: Ref;
+  /** Scenario worlds the tensor ranges over, keyed by scenario id; must include the selected world. */
+  worlds: Record<string, Ref>;
+  /** The adversary COA vocabulary — divergence is measured over these only (note 12 §2). */
+  coas: string[];
+  commitments: Ref[];
+  /** Open-question refs (the store is class-blind — callers supply refs, as discrimination does). */
+  questions?: Ref[];
+  engine_version: string;
+}
+
+/** The verdict pattern that makes a row a decision point (note 12 §2). */
+export type DpEvidence =
+  | { kind: 'scenario_divergence'; a: string; b: string; verdict_a: VerdictBand; verdict_b: VerdictBand }
+  | { kind: 'margin'; scenario: string; verdict: VerdictBand; margin?: Band };
+
+/** One collection option's answerable-in-time state — three states, never collapsed
+ *  (note 12 §4): `in_time` absent ⟺ no `earliest_result` stated (never assumed
+ *  answerable); `slack` (a step count) present iff in time. */
+export interface DsmCollection {
+  method: string;
+  cost: Band;
+  earliest_result?: number;
+  in_time?: boolean;
+  slack?: number;
+}
+
+/** An open question attached to a DP: its per-evidence-pair classification and
+ *  its collection options. Attached iff at least one pair is non-nested. */
+export interface DsmDiscriminator {
+  question: Ref;
+  pairs: { a: string; b: string; classification: SeparationClass; separation: Band }[];
+  collection: DsmCollection[];
+}
+
+export interface DsmTripwire {
+  knowledge: Ref;
+  valid_until: number;
+  commit_step: number;
+}
+
+export interface DecisionPointRow {
+  commitment: string;
+  tier: string;
+  statement: string;
+  evidence: DpEvidence[];
+  /** How the commit step was derived: a route leg, the horizon (world-decided),
+   *  or none (margin-class only / underivable — stated, never invented). */
+  commit_kind: 'route_leg' | 'world_decided' | 'none';
+  /** Render-ready sentence: where the commitment happens, in words. */
+  commit_detail: string;
+  commit_step?: number;
+  ltiov?: number;
+  discriminators: DsmDiscriminator[];
+  /** The named intelligence gap — set iff divergence evidence exists but no question can settle any pair. */
+  gap?: string;
+  tripwires: DsmTripwire[];
+}
+
+export interface DecisionSupportSuccess {
+  rows: DecisionPointRow[];
+  plan: string;
+  /** Scenario key of the selected world. */
+  selected: string;
+  coas: string[];
+  /** Decision-cycle lead, 0 in v1 — stated, never silently assumed (note 12 §4). */
+  lead: number;
+  stamps_compatible: boolean;
+  /** Honest empty state / mixed-stamps fallback sentence, render-ready. */
+  statement?: string;
+  stamp: string;
+}
+
+export type DecisionSupportResult = DecisionSupportSuccess | Refusal;
+
+/**
  * SPEC-13 — staleness movement types (seam §8, thesis F). Transitive forward
  * trace walk from a superseded/changed knowledge object; returns exactly the
  * dependent artefacts and nothing else. Nothing recomputes — flags, then humans

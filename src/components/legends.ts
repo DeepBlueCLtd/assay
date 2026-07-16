@@ -119,6 +119,21 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'Two questions had exactly equal discrimination standing; the queue placed the one bearing on the more-likely scenario pair (interval order) first, and says so. Weight breaks ties only — it never overrides the primary discrimination ranking (DEC-18) and never touches a verdict.',
   },
+  decision_point: {
+    term: 'decision point (derived)',
+    gloss:
+      'A commitment whose verdict turns on open information: scenario-divergent (some adversary-COA pair flips it — the evidence chips name the pair and both verdicts) or margin-class (tight/marginal under the selected world — the margin band is the evidence). Derived from the verdict tensor, never authored; uniformly robust or uniformly violated commitments are not decision points (SPEC-24). Rows sit in commitment-id order — a stated presentation order, not an urgency ranking (DEC-19).',
+  },
+  ltiov_state: {
+    term: 'LTIOV state (in time / cannot answer in time / no earliest result stated)',
+    gloss:
+      'Latest time information is of value = the commit step minus a stated lead (0 in v1), on the scenario clock. A collection answers in time iff its earliest result lands at or before it — slack shown as a step count; the red state renders with its arithmetic and is never dropped; a collection with no stated earliest result is never assumed answerable. The system ranks and derives — tasking the collection is a human act with its own commitment consequences (the KINGFISHER/C6 discipline).',
+  },
+  tripwire: {
+    term: 'tripwire (⏱ lapses before the commit step)',
+    gloss:
+      'A knowledge object the selected world consumed whose validity window ends before this decision must be taken: at commit time the world underneath the verdict will contain lapsed knowledge — re-validate first. World-level scope, stated as such (the trace graph’s honest granularity); lapse is marked, never carried (SPEC-24, thesis F at the decision layer).',
+  },
   invalidated: {
     term: 'invalidated artefact',
     gloss:
@@ -162,6 +177,7 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict'],
   discriminationTable: ['separation', 'separation_class', 'operative_pair', 'collection_cost', 'band', 'provenance', 'weight_tiebreak'],
   stalenessFlags: ['invalidated'],
+  dsmTable: ['decision_point', 'ltiov_state', 'tripwire', 'separation_class', 'collection_cost', 'band', 'provenance', 'tier'],
 };
 
 /** Convenience: the legend for a named component. */
