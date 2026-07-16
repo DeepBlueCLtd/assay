@@ -241,9 +241,42 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
       criticality: "critical",
       status: "open",
       expected_answers: [
-        { coa: "R1", band: { lo: 0, hi: 0.2, unit: "fraction of stock staged" } },
-        { coa: "R2", band: { lo: 0.7, hi: 1, unit: "fraction of stock staged" } },
-        { coa: "R3", band: { lo: 0.5, hi: 0.9, unit: "fraction of stock staged" } }
+        {
+          coa: "R1",
+          band: { lo: 0, hi: 0.2, unit: "fraction of stock staged" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "moderate",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "COA template: under Fortress Halcyon the mines stay in bunkers \u2014 templated from mine-warfare doctrine against the garrison orbat (SPEC-23)."
+          }
+        },
+        {
+          coa: "R2",
+          band: { lo: 0.7, hi: 1, unit: "fraction of stock staged" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "moderate",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "COA template: Strait Denial requires the stock staged at the quay before laying \u2014 templated from mine-warfare doctrine (SPEC-23)."
+          }
+        },
+        {
+          coa: "R3",
+          band: { lo: 0.5, hi: 0.9, unit: "fraction of stock staged" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "moderate",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "COA template: Delay & Demolish stages most of the stock for harbour denial \u2014 templated from mine-warfare doctrine (SPEC-23)."
+          }
+        }
       ],
       collection: [
         {
@@ -301,9 +334,42 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
       criticality: "routine",
       status: "open",
       expected_answers: [
-        { coa: "R1", band: { lo: 40, hi: 90, unit: "msgs/day" } },
-        { coa: "R2", band: { lo: 50, hi: 110, unit: "msgs/day" } },
-        { coa: "R3", band: { lo: 30, hi: 100, unit: "msgs/day" } }
+        {
+          coa: "R1",
+          band: { lo: 40, hi: 90, unit: "msgs/day" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "low",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "Traffic-analysis baseline; the low confidence is visible in the width and overlap of the expected bands themselves (SPEC-23)."
+          }
+        },
+        {
+          coa: "R2",
+          band: { lo: 50, hi: 110, unit: "msgs/day" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "low",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "Traffic-analysis baseline; mine-laying coordination adds some HQ traffic but the envelope overlaps R1's (SPEC-23)."
+          }
+        },
+        {
+          coa: "R3",
+          band: { lo: 30, hi: 100, unit: "msgs/day" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "low",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "Traffic-analysis baseline; withdrawal-and-demolition traffic spans nearly the whole envelope (SPEC-23)."
+          }
+        }
       ],
       collection: [
         {
@@ -794,7 +860,7 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
       Provenance: { attributes: { source_class: { range: "SourceClass", required: true, multivalued: false }, confidence: { range: "ConfidenceBand", required: true, multivalued: false }, owner: { range: "string", required: true, multivalued: false }, single_source: { range: "boolean", required: true, multivalued: false }, collected_at: { range: "Timestep", required: false, multivalued: false }, note: { range: "string", required: false, multivalued: false } } },
       ValidityWindow: { attributes: { valid_from: { range: "Timestep", required: true, multivalued: false }, valid_until: { range: "Timestep", required: true, multivalued: false } } },
       Waiver: { attributes: { granted_by: { range: "string", required: true, multivalued: false }, justification: { range: "string", required: true, multivalued: false }, granted_at: { range: "Timestep", required: true, multivalued: false } } },
-      ExpectedAnswer: { attributes: { coa: { range: "LogicalId", required: true, multivalued: false }, band: { range: "Band", required: true, multivalued: false } } },
+      ExpectedAnswer: { attributes: { coa: { range: "LogicalId", required: true, multivalued: false }, band: { range: "Band", required: true, multivalued: false }, provenance: { range: "Provenance", required: false, multivalued: false } } },
       CollectionOption: { attributes: { method: { range: "string", required: true, multivalued: false }, cost: { range: "Band", required: true, multivalued: false }, earliest_result: { range: "Timestep", required: false, multivalued: false } } },
       StoredObject: { abstract: true, attributes: { logical_id: { range: "LogicalId", required: true, multivalued: false }, version: { range: "integer", required: true, multivalued: false } } },
       KnowledgeObject: { parent: "StoredObject", attributes: { question: { range: "string", required: true, multivalued: false }, subject: { range: "string", required: true, multivalued: false }, encoding_class: { range: "EncodingClass", required: true, multivalued: false }, answer: { range: "Band", required: false, multivalued: false }, provenance: { range: "Provenance", required: false, multivalued: false }, criticality: { range: "Criticality", required: true, multivalued: false }, validity: { range: "ValidityWindow", required: false, multivalued: false }, status: { range: "LifecycleStatus", required: true, multivalued: false }, waiver: { range: "Waiver", required: false, multivalued: false }, expected_answers: { range: "ExpectedAnswer", required: false, multivalued: true }, collection: { range: "CollectionOption", required: false, multivalued: true }, jipoe_step: { range: "JipoeStep", required: false, multivalued: false } } },
@@ -946,6 +1012,19 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
         code: "missing_jipoe_step",
         offending,
         message: `${ko.logical_id}: no originating JIPOE step named \u2014 the doctrinal-shape claim stays asserted, not auditable (research note 01, amendment).`
+      }
+    ];
+  }
+  function expectedAnswerProvenanceLint(ko) {
+    if (!ko.expected_answers || ko.expected_answers.length === 0) return [];
+    const missing = ko.expected_answers.filter((ea) => ea.provenance === void 0);
+    if (missing.length === 0) return [];
+    const offending = { logical_id: ko.logical_id, content_hash: "" };
+    return [
+      {
+        code: "missing_expected_answer_provenance",
+        offending,
+        message: `${ko.logical_id}: expected-answer row(s) ${missing.map((ea) => ea.coa).join(", ")} carry no provenance \u2014 who says the COA would look like that? An expectation is an assessment, owed a chip like every other (research note 08, \xA77.3 amendment).`
       }
     ];
   }
@@ -1105,7 +1184,7 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     }
     /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
     #lints(ko) {
-      return [...confidenceLint(ko), ...jipoeStepLint(ko)];
+      return [...confidenceLint(ko), ...jipoeStepLint(ko), ...expectedAnswerProvenanceLint(ko)];
     }
     #latestHash(id) {
       const versions = this.#store.versions(id);

@@ -219,9 +219,42 @@
       criticality: "critical",
       status: "open",
       expected_answers: [
-        { coa: "R1", band: { lo: 0, hi: 0.2, unit: "fraction of stock staged" } },
-        { coa: "R2", band: { lo: 0.7, hi: 1, unit: "fraction of stock staged" } },
-        { coa: "R3", band: { lo: 0.5, hi: 0.9, unit: "fraction of stock staged" } }
+        {
+          coa: "R1",
+          band: { lo: 0, hi: 0.2, unit: "fraction of stock staged" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "moderate",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "COA template: under Fortress Halcyon the mines stay in bunkers \u2014 templated from mine-warfare doctrine against the garrison orbat (SPEC-23)."
+          }
+        },
+        {
+          coa: "R2",
+          band: { lo: 0.7, hi: 1, unit: "fraction of stock staged" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "moderate",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "COA template: Strait Denial requires the stock staged at the quay before laying \u2014 templated from mine-warfare doctrine (SPEC-23)."
+          }
+        },
+        {
+          coa: "R3",
+          band: { lo: 0.5, hi: 0.9, unit: "fraction of stock staged" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "moderate",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "COA template: Delay & Demolish stages most of the stock for harbour denial \u2014 templated from mine-warfare doctrine (SPEC-23)."
+          }
+        }
       ],
       collection: [
         {
@@ -279,9 +312,42 @@
       criticality: "routine",
       status: "open",
       expected_answers: [
-        { coa: "R1", band: { lo: 40, hi: 90, unit: "msgs/day" } },
-        { coa: "R2", band: { lo: 50, hi: 110, unit: "msgs/day" } },
-        { coa: "R3", band: { lo: 30, hi: 100, unit: "msgs/day" } }
+        {
+          coa: "R1",
+          band: { lo: 40, hi: 90, unit: "msgs/day" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "low",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "Traffic-analysis baseline; the low confidence is visible in the width and overlap of the expected bands themselves (SPEC-23)."
+          }
+        },
+        {
+          coa: "R2",
+          band: { lo: 50, hi: 110, unit: "msgs/day" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "low",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "Traffic-analysis baseline; mine-laying coordination adds some HQ traffic but the envelope overlaps R1's (SPEC-23)."
+          }
+        },
+        {
+          coa: "R3",
+          band: { lo: 30, hi: 100, unit: "msgs/day" },
+          provenance: {
+            source_class: "assessed",
+            confidence: "low",
+            owner: "J-2 red cell",
+            single_source: false,
+            collected_at: 2,
+            note: "Traffic-analysis baseline; withdrawal-and-demolition traffic spans nearly the whole envelope (SPEC-23)."
+          }
+        }
       ],
       collection: [
         {
@@ -852,7 +918,7 @@
       Provenance: { attributes: { source_class: { range: "SourceClass", required: true, multivalued: false }, confidence: { range: "ConfidenceBand", required: true, multivalued: false }, owner: { range: "string", required: true, multivalued: false }, single_source: { range: "boolean", required: true, multivalued: false }, collected_at: { range: "Timestep", required: false, multivalued: false }, note: { range: "string", required: false, multivalued: false } } },
       ValidityWindow: { attributes: { valid_from: { range: "Timestep", required: true, multivalued: false }, valid_until: { range: "Timestep", required: true, multivalued: false } } },
       Waiver: { attributes: { granted_by: { range: "string", required: true, multivalued: false }, justification: { range: "string", required: true, multivalued: false }, granted_at: { range: "Timestep", required: true, multivalued: false } } },
-      ExpectedAnswer: { attributes: { coa: { range: "LogicalId", required: true, multivalued: false }, band: { range: "Band", required: true, multivalued: false } } },
+      ExpectedAnswer: { attributes: { coa: { range: "LogicalId", required: true, multivalued: false }, band: { range: "Band", required: true, multivalued: false }, provenance: { range: "Provenance", required: false, multivalued: false } } },
       CollectionOption: { attributes: { method: { range: "string", required: true, multivalued: false }, cost: { range: "Band", required: true, multivalued: false }, earliest_result: { range: "Timestep", required: false, multivalued: false } } },
       StoredObject: { abstract: true, attributes: { logical_id: { range: "LogicalId", required: true, multivalued: false }, version: { range: "integer", required: true, multivalued: false } } },
       KnowledgeObject: { parent: "StoredObject", attributes: { question: { range: "string", required: true, multivalued: false }, subject: { range: "string", required: true, multivalued: false }, encoding_class: { range: "EncodingClass", required: true, multivalued: false }, answer: { range: "Band", required: false, multivalued: false }, provenance: { range: "Provenance", required: false, multivalued: false }, criticality: { range: "Criticality", required: true, multivalued: false }, validity: { range: "ValidityWindow", required: false, multivalued: false }, status: { range: "LifecycleStatus", required: true, multivalued: false }, waiver: { range: "Waiver", required: false, multivalued: false }, expected_answers: { range: "ExpectedAnswer", required: false, multivalued: true }, collection: { range: "CollectionOption", required: false, multivalued: true }, jipoe_step: { range: "JipoeStep", required: false, multivalued: false } } },
@@ -1004,6 +1070,19 @@
         code: "missing_jipoe_step",
         offending,
         message: `${ko.logical_id}: no originating JIPOE step named \u2014 the doctrinal-shape claim stays asserted, not auditable (research note 01, amendment).`
+      }
+    ];
+  }
+  function expectedAnswerProvenanceLint(ko) {
+    if (!ko.expected_answers || ko.expected_answers.length === 0) return [];
+    const missing = ko.expected_answers.filter((ea) => ea.provenance === void 0);
+    if (missing.length === 0) return [];
+    const offending = { logical_id: ko.logical_id, content_hash: "" };
+    return [
+      {
+        code: "missing_expected_answer_provenance",
+        offending,
+        message: `${ko.logical_id}: expected-answer row(s) ${missing.map((ea) => ea.coa).join(", ")} carry no provenance \u2014 who says the COA would look like that? An expectation is an assessment, owed a chip like every other (research note 08, \xA77.3 amendment).`
       }
     ];
   }
@@ -1163,7 +1242,7 @@
     }
     /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
     #lints(ko) {
-      return [...confidenceLint(ko), ...jipoeStepLint(ko)];
+      return [...confidenceLint(ko), ...jipoeStepLint(ko), ...expectedAnswerProvenanceLint(ko)];
     }
     #latestHash(id) {
       const versions = this.#store.versions(id);
@@ -2359,6 +2438,37 @@
       if (req.coas.length < 2) {
         return refusal7("unknown_ref", [], "Discrimination requires at least two COAs.");
       }
+      let mode = "all_pairs";
+      let statement;
+      let operative;
+      if (!req.tensor) {
+        statement = "no live decision \u2014 showing all-pairs separation.";
+      } else if (!req.tensor.stamps_compatible) {
+        statement = "scenario worlds have mixed stamp lineages \u2014 the tensor cannot condition the ranking; showing all-pairs separation.";
+      } else {
+        const live = req.tensor.scenarios.filter((s) => req.coas.includes(s));
+        if (live.length < 2) {
+          const stamp2 = await this.#stamp(req, "degenerate", void 0, []);
+          return {
+            ranking: [],
+            mode: "degenerate",
+            statement: "one scenario live \u2014 nothing to discriminate.",
+            stamp: stamp2
+          };
+        }
+        operative = await deriveOperativePairs(req.tensor, req.coas);
+        if (operative.pairs.length === 0) {
+          operative = void 0;
+          statement = "no live decision turns on scenario identity \u2014 the current plans' verdicts do not diverge across any scenario pair; showing all-pairs separation.";
+        } else {
+          mode = "operative";
+          const allLivePairs = live.length * (live.length - 1) / 2;
+          if (operative.pairs.length === allLivePairs) {
+            statement = "every pair operative \u2014 the operative ranking coincides with all-pairs separation.";
+          }
+        }
+      }
+      const operativeKeys = new Set(operative?.pairs.map((p) => pairKey(p.a, p.b)) ?? []);
       const ranking = [];
       for (const { ref, ko } of questions) {
         if (!ko.expected_answers || ko.expected_answers.length === 0) continue;
@@ -2368,6 +2478,7 @@
         }
         const pairs = [];
         let bestSep;
+        let operativeBest;
         for (let i = 0; i < req.coas.length; i++) {
           for (let j = i + 1; j < req.coas.length; j++) {
             const coaA = req.coas[i];
@@ -2376,9 +2487,22 @@
             const bandB = answerByCoa.get(coaB);
             if (!bandA || !bandB) continue;
             const separation = computeSeparation(bandA, bandB);
-            pairs.push({ coa_a: coaA, coa_b: coaB, separation });
+            const classification = classifySeparation(bandA, bandB);
+            const isOperative = operativeKeys.has(pairKey(coaA, coaB));
+            pairs.push({
+              coa_a: coaA,
+              coa_b: coaB,
+              separation,
+              classification,
+              ...mode === "operative" ? { operative: isOperative } : {}
+            });
             if (!bestSep || separation.lo > bestSep.lo) {
               bestSep = separation;
+            }
+            if (isOperative && classification !== "nested") {
+              if (!operativeBest || separation.lo > operativeBest.lo) {
+                operativeBest = separation;
+              }
             }
           }
         }
@@ -2388,20 +2512,52 @@
           question: ref,
           pairs,
           best_separation: bestSep,
-          cost
+          ...operativeBest ? { operative_best: operativeBest } : {},
+          cost,
+          expected_answers: ko.expected_answers
         });
       }
-      ranking.sort((a, b) => {
-        if (b.best_separation.lo !== a.best_separation.lo) return b.best_separation.lo - a.best_separation.lo;
-        return b.best_separation.hi - a.best_separation.hi;
-      });
-      const stamp = await contentHash({
+      if (mode === "operative") {
+        const couldCount = (e) => e.pairs.filter((p) => p.operative && p.classification !== "nested").length;
+        ranking.sort((a, b) => {
+          if (a.operative_best && b.operative_best) {
+            if (b.operative_best.lo !== a.operative_best.lo) return b.operative_best.lo - a.operative_best.lo;
+            if (b.operative_best.hi !== a.operative_best.hi) return b.operative_best.hi - a.operative_best.hi;
+          } else if (a.operative_best) {
+            return -1;
+          } else if (b.operative_best) {
+            return 1;
+          }
+          if (b.best_separation.lo !== a.best_separation.lo) return b.best_separation.lo - a.best_separation.lo;
+          if (b.best_separation.hi !== a.best_separation.hi) return b.best_separation.hi - a.best_separation.hi;
+          if (couldCount(b) !== couldCount(a)) return couldCount(b) - couldCount(a);
+          return a.question.logical_id < b.question.logical_id ? -1 : a.question.logical_id > b.question.logical_id ? 1 : 0;
+        });
+      } else {
+        ranking.sort((a, b) => {
+          if (b.best_separation.lo !== a.best_separation.lo) return b.best_separation.lo - a.best_separation.lo;
+          return b.best_separation.hi - a.best_separation.hi;
+        });
+      }
+      const stamp = await this.#stamp(req, mode, operative, ranking);
+      return {
+        ranking,
+        mode,
+        ...operative ? { operative } : {},
+        ...statement ? { statement } : {},
+        stamp
+      };
+    }
+    async #stamp(req, mode, operative, ranking) {
+      return contentHash({
         questions: ranking.map((e) => e.question.logical_id).sort(),
         coas: [...req.coas].sort(),
         engine_version: req.engine_version,
-        analysis: "discrimination"
+        analysis: "discrimination",
+        mode,
+        // Absent slots are omitted, never null (knowledge model §2).
+        ...operative ? { operative_stamp: operative.stamp } : {}
       });
-      return { ranking, stamp };
     }
     #resolveQuestions(refs) {
       const results = [];
@@ -2413,9 +2569,6 @@
           }
         }
       } else {
-        const seen = /* @__PURE__ */ new Set();
-        for (let i = 0; i < this.#store.size; i++) {
-        }
       }
       return results;
     }
@@ -2426,6 +2579,44 @@
       return hash ? this.#store.get(hash) : void 0;
     }
   };
+  async function deriveOperativePairs(tensor, coas) {
+    const live = tensor.scenarios.filter((s) => coas.includes(s));
+    const pairs = [];
+    for (let i = 0; i < live.length; i++) {
+      for (let j = i + 1; j < live.length; j++) {
+        const a = live[i];
+        const b = live[j];
+        const evidence = [];
+        for (const plan2 of tensor.plans) {
+          for (const commitment of tensor.commitments) {
+            const va = tensor.verdicts.get(`${plan2}-${commitment}-${a}`);
+            const vb = tensor.verdicts.get(`${plan2}-${commitment}-${b}`);
+            if (va && vb && va.verdict !== vb.verdict) {
+              evidence.push({ plan: plan2, commitment, verdict_a: va.verdict, verdict_b: vb.verdict });
+            }
+          }
+        }
+        if (evidence.length > 0) pairs.push({ a, b, evidence });
+      }
+    }
+    const stamp = await contentHash({
+      analysis: "operative-pairs",
+      pairs: pairs.map((p) => ({
+        a: p.a,
+        b: p.b,
+        evidence: p.evidence.map((e) => `${e.plan}-${e.commitment}:${e.verdict_a}/${e.verdict_b}`)
+      }))
+    });
+    return { pairs, stamp };
+  }
+  function classifySeparation(a, b) {
+    if (a.hi < b.lo || b.hi < a.lo) return "disjoint";
+    const aInB = b.lo <= a.lo && a.hi <= b.hi;
+    const bInA = a.lo <= b.lo && b.hi <= a.hi;
+    if (aInB || bInA) return "nested";
+    return "partial";
+  }
+  var pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
   function computeSeparation(a, b) {
     if (a.hi < b.lo) {
       return { lo: b.lo - a.hi, hi: b.lo - a.hi, unit: a.unit };
@@ -3632,33 +3823,82 @@ ${items}
     const text = sep.lo === sep.hi ? `${sep.lo} ${sep.unit}` : `${sep.lo}\u2013${sep.hi} ${sep.unit}`;
     return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${bg};color:${fg};margin:1px 2px">${esc13(text)}</span>`;
   }
-  function pairChip(pair) {
-    const label = `${esc13(pair.coa_a)} vs ${esc13(pair.coa_b)}`;
-    return `<span style="display:inline-flex;align-items:center;gap:3px;margin:2px 0"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${label}</span>${separationChip(pair.separation)}</span>`;
+  var CLASS_LABEL = {
+    disjoint: { mark: "\u2713", word: "discriminates", fg: "#1E6B3A", bg: "#E4F0E8" },
+    partial: { mark: "~", word: "weak \u2014 could discriminate", fg: "#7A6A12", bg: "#F5F0DC" },
+    nested: { mark: "\u2715", word: "cannot discriminate", fg: "#8A2020", bg: "#F6E4E4" }
+  };
+  function classChip(c) {
+    const l = CLASS_LABEL[c];
+    return `<span data-separation-class="${c}" style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:9.5px;font-weight:600;background:${l.bg};color:${l.fg};margin:1px 2px">${l.mark} ${esc13(l.word)}</span>`;
   }
-  function discriminationTable(ranking, opts) {
-    if (ranking.length === 0) {
-      return '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77;padding:8px">No discrimination data.</div>';
+  function pairChip(pair) {
+    const operativeTag = pair.operative ? `<span style="font-family:ui-monospace,monospace;font-size:9px;font-weight:700;color:#3E5D8A;background:#EAF0F7;border:1px solid #C9D7E8;border-radius:3px;padding:0 4px">operative</span>` : "";
+    const label = `${esc13(pair.coa_a)}\u2194${esc13(pair.coa_b)}`;
+    return `<span data-pair="${esc13(pair.coa_a)}-${esc13(pair.coa_b)}" style="display:inline-flex;align-items:center;gap:3px;margin:2px 0"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${label}</span>${separationChip(pair.separation)}${classChip(pair.classification)}${operativeTag}</span>`;
+  }
+  function expectedBlock(expected) {
+    const rows = expected.map((ea) => {
+      const chip5 = ea.provenance ? provenanceChip(ea.provenance) : `<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#A33131;background:#F8E2E2;border:1px solid #EFC6C6;border-radius:3px;padding:1px 5px">no provenance \u2014 expectation unattributed</span>`;
+      return `<div data-expected-coa="${esc13(ea.coa)}" style="display:flex;align-items:center;gap:4px;margin:2px 0;flex-wrap:wrap"><span style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:600;color:#1B2732">${esc13(ea.coa)}</span>${bandPill2(ea.band)}${chip5}</div>`;
+    }).join("");
+    return `<details style="margin-top:3px"><summary style="cursor:pointer;font-size:10px;color:#3E5D8A">expected answers (who says the COA would look like that)</summary><div style="margin-top:3px">${rows}</div></details>`;
+  }
+  function operativeLine(operative) {
+    const parts = operative.pairs.map((p) => {
+      const byPlan = /* @__PURE__ */ new Map();
+      for (const e of p.evidence) {
+        const list = byPlan.get(e.plan) ?? [];
+        if (!list.includes(e.commitment)) list.push(e.commitment);
+        byPlan.set(e.plan, list);
+      }
+      const witnesses = [...byPlan.entries()].map(([plan2, commitments]) => `${esc13(plan2)}'s ${commitments.map(esc13).join(", ")}`).join("; ");
+      return `<span data-operative-pair="${esc13(p.a)}-${esc13(p.b)}" style="display:inline-block;margin-right:10px"><strong>${esc13(p.a)}\u2194${esc13(p.b)}</strong> \u2014 ${witnesses} turn on it</span>`;
+    });
+    return `operative: ${parts.join(" ")}`;
+  }
+  function discriminationTable(ranking, opts = {}) {
+    const mode = opts.mode ?? "all_pairs";
+    const lines = [];
+    if (mode === "operative" && opts.operative) {
+      lines.push(
+        `<div class="assay-discrimination-mode" data-mode="operative" style="font-family:ui-monospace,monospace;font-size:10.5px;color:#3E5D8A;background:#EAF0F7;border:1px solid #C9D7E8;border-radius:4px;padding:4px 8px;margin-bottom:6px">${operativeLine(opts.operative)}</div>`
+      );
     }
+    if (opts.statement) {
+      lines.push(
+        `<div class="assay-discrimination-statement" data-mode="${esc13(mode)}" style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;background:#F1F3F5;border:1px solid #D8DFE4;border-radius:4px;padding:4px 8px;margin-bottom:6px">${esc13(opts.statement)}</div>`
+      );
+    }
+    if (ranking.length === 0) {
+      const empty = '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77;padding:8px">No discrimination data.</div>';
+      return lines.join("") + empty;
+    }
+    const th = (label, center = false) => `<th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4${center ? ";text-align:center" : ""}">${label}</th>`;
+    const operativeCol = mode === "operative";
     const head = `<tr style="text-align:left">
-    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Question ID</th>
-    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:center">Best Separation</th>
-    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:center">Cost</th>
-    <th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4">Per-pair Separation</th>
+    ${th("Question ID")}
+    ${operativeCol ? th("Operative Separation", true) : ""}
+    ${th(operativeCol ? "Best Separation (all pairs)" : "Best Separation", true)}
+    ${th("Cost", true)}
+    ${th("Per-pair Separation")}
   </tr>`;
     const rows = ranking.map((entry) => {
       const logicalId = entry.question.logical_id;
       const pairChips = entry.pairs.map(pairChip).join("<br>");
-      const tieBreak = opts?.tieBreaks?.get(logicalId);
+      const operativeCell = operativeCol ? `<td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${entry.operative_best ? separationChip(entry.operative_best) : '<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#8A2020">no could-discriminate operative pair</span>'}</td>` : "";
+      const tieBreak = opts.tieBreaks?.get(logicalId);
       const tieBreakLine = tieBreak ? `<div class="assay-tie-break" style="margin-top:3px;font-family:ui-monospace,monospace;font-size:9.5px;color:#3E5D8A;white-space:nowrap">\u2696 ${esc13(tieBreak)}</div>` : "";
-      return `<tr data-logical-id="${esc13(logicalId)}" data-glow-id="disc:${esc13(logicalId)}" data-glow-sig="${entry.best_separation.lo}${tieBreak ? "|tb" : ""}">
-        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap">${esc13(logicalId)}${tieBreakLine}</td>
-        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${separationChip(entry.best_separation)}</td>
-        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${bandPill2(entry.cost)}</td>
-        <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${pairChips}</td>
+      const glowSig = `${mode}:${entry.operative_best ? `${entry.operative_best.lo}` : ""}:${entry.best_separation.lo}${tieBreak ? "|tb" : ""}`;
+      return `<tr data-logical-id="${esc13(logicalId)}" data-glow-id="disc:${esc13(logicalId)}" data-glow-sig="${esc13(glowSig)}">
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap;vertical-align:top">${esc13(logicalId)}${tieBreakLine}</td>
+        ${operativeCell}
+        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2;vertical-align:top">${separationChip(entry.best_separation)}</td>
+        <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2;vertical-align:top">${bandPill2(entry.cost)}</td>
+        <td style="padding:5px 10px;border-bottom:1px solid #EDF0F2">${pairChips}${expectedBlock(entry.expected_answers)}</td>
       </tr>`;
     }).join("");
-    return `<div style="overflow-x:auto"><table class="assay-discrimination-table" style="border-collapse:collapse;width:100%">
+    return `${lines.join("")}<div style="overflow-x:auto"><table class="assay-discrimination-table" style="border-collapse:collapse;width:100%">
   <thead>${head}</thead>
   <tbody>${rows}</tbody>
 </table></div>`;
@@ -3767,6 +4007,14 @@ ${items}
       term: "collection cost (band)",
       gloss: "The cost of collecting on this question, shown alongside discrimination value, never collapsed with it (DEC-19)."
     },
+    separation_class: {
+      term: "separation class (\u2713 discriminates / ~ could discriminate / \u2715 cannot discriminate)",
+      gloss: "What an observation could settle for this COA pair. Disjoint (\u2713): any observation in either expected band settles it. Partial overlap (~): a lucky observation outside the shared region settles it either way. Nested (\u2715): the inner COA has no exclusive region \u2014 no observation can ever single it out, at best a fluke outside the inner band points to the outer; tasking to confirm the inner COA is impossible (SPEC-23)."
+    },
+    operative_pair: {
+      term: "operative pair (A\u2194B)",
+      gloss: "A scenario pair the live decision actually turns on: some plan and commitment in the current set have differing verdicts across it. Derived from the verdict tensor \u2014 computed from verdict divergence only, never hand-picked and never likelihood-weighted (K14 does not enter; SPEC-23). The ranking leads with these pairs; all-pairs separation stays as context."
+    },
     attention: {
       term: "likelihood layers (orders attention \u2014 never compiles)",
       gloss: "Adversary-COA likelihood bands (scenario weights) ordered by the interval order: one ranks above another only when the whole band sits above it. Overlapping bands render level \u2014 honestly unranked; a missing assessment renders unranked, never defaulted. The ordering directs attention and collection only (knowledge model \xA79): no verdict, score, or membership owes it anything."
@@ -3804,7 +4052,7 @@ ${items}
     scenarioStrip: ["verdict", "scenario_collapse", "worst_case", "attention", "band", "provenance"],
     refusalBanner: ["refusal"],
     sensitivityTable: ["sensitivity", "single_source_flag", "verdict"],
-    discriminationTable: ["separation", "collection_cost", "band", "weight_tiebreak"],
+    discriminationTable: ["separation", "separation_class", "operative_pair", "collection_cost", "band", "provenance", "weight_tiebreak"],
     stalenessFlags: ["invalidated"]
   };
   function componentLegend(component, title) {
@@ -4049,6 +4297,7 @@ ${items}
       const panels = [];
       const stamps = {};
       let firstPlanRef;
+      let liveTensor;
       const liveIds = this.#resolved ? [...BASE, "K12a"] : [...BASE, "K12a", "K12b"];
       const s1Rows = liveIds.map((id) => {
         const ko = this.#latest(id);
@@ -4239,6 +4488,7 @@ ${items}
             });
             if (!isRefusal(rr)) {
               stamps.robustness = rr.stamp;
+              liveTensor = rr.tensor;
               const planNames = {};
               for (const planRef of h.plans) {
                 const plan2 = this.#svc.store.get(planRef.content_hash);
@@ -4342,6 +4592,9 @@ ${items}
           const discResult = await this.#discriminationSvc.analyse({
             questions: [k11Ref, k13Ref],
             coas: ["R1", "R2", "R3"],
+            // Absent tensor (compile refused, no plans scored) falls back to
+            // all-pairs semantics with the fallback stated, never silent.
+            ...liveTensor ? { tensor: liveTensor } : {},
             engine_version: ENGINE_VERSION
           });
           if (!isRefusal(discResult)) {
@@ -4353,22 +4606,46 @@ ${items}
               if ((this.#svc.effectiveStatus(coa.likelihood) ?? ko?.status) === "contested") continue;
               likelihoodBands.set(coa.logical_id, ko?.answer);
             }
-            const tieEntries = discResult.ranking.map((e) => ({
-              question: e.question.logical_id,
-              best_separation: e.best_separation,
-              bestPairs: e.pairs.filter((p) => p.separation.lo === e.best_separation.lo && p.separation.hi === e.best_separation.hi).map((p) => [p.coa_a, p.coa_b])
-            }));
-            const tb = weightTieBreak(tieEntries, likelihoodBands);
+            const bandKey = (b) => b ? `${b.lo}|${b.hi}|${b.unit}` : "\u2205";
+            const couldCount = (e) => e.pairs.filter((p) => p.operative && p.classification !== "nested").length;
+            const standingKey = (e) => discResult.mode === "operative" ? `${bandKey(e.operative_best)}\xB7${bandKey(e.best_separation)}\xB7${couldCount(e)}` : bandKey(e.best_separation);
+            const toTieEntry = (e) => {
+              const standing = e.operative_best ?? e.best_separation;
+              return {
+                question: e.question.logical_id,
+                best_separation: e.best_separation,
+                bestPairs: e.pairs.filter((p) => p.separation.lo === standing.lo && p.separation.hi === standing.hi).map((p) => [p.coa_a, p.coa_b])
+              };
+            };
+            const order = [];
+            const statements = /* @__PURE__ */ new Map();
+            let i = 0;
+            while (i < discResult.ranking.length) {
+              let j = i + 1;
+              while (j < discResult.ranking.length && standingKey(discResult.ranking[j]) === standingKey(discResult.ranking[i]))
+                j++;
+              const run = discResult.ranking.slice(i, j);
+              const tb = weightTieBreak(run.map(toTieEntry), likelihoodBands);
+              order.push(...tb.order);
+              for (const [q, s] of tb.statements) statements.set(q, s);
+              i = j;
+            }
             const entryById = new Map(discResult.ranking.map((e) => [e.question.logical_id, e]));
-            const queue = tb.order.map((q) => entryById.get(q));
+            const queue = order.map((q) => entryById.get(q));
             panels.push({
               id: "discrimination",
               tab: "j2",
               title: "J-2 \xB7 discrimination ranking (thesis D)",
-              html: componentLegend("discriminationTable") + discriminationTable(queue, { tieBreaks: tb.statements }),
+              html: componentLegend("discriminationTable") + discriminationTable(queue, {
+                mode: discResult.mode,
+                ...discResult.statement ? { statement: discResult.statement } : {},
+                ...discResult.operative ? { operative: discResult.operative } : {},
+                tieBreaks: statements
+              }),
               deps: /* @__PURE__ */ new Set([
                 `discrimination:${discResult.stamp}`,
-                `queue:${tb.order.join(",")}|${[...tb.statements.keys()].sort().join(",")}`
+                ...stamps.robustness ? [`robustness:${stamps.robustness}`] : [],
+                `queue:${order.join(",")}|${[...statements.keys()].sort().join(",")}`
               ])
             });
           }
