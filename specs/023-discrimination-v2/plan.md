@@ -1,11 +1,11 @@
 # Implementation Plan: Collection discrimination v2 — sharper where-to-look (SPEC-23)
 
-**Spec**: `specs/023-discrimination-v2/spec.md` · **Research note**: `docs/research/08-analysis.md` **§7 amendment** (**DEC-11 gate — authored first**; decides the operative-pair derivation, the three-way classification incl. the endpoint-touching boundary, and the ExpectedAnswer provenance shape + lint posture) · **Register**: concept §6 items 24 (ExpectedAnswer provenance — schema change, touches DEC-18/DEC-9) and 25 (operative-pair conditioning — ranking semantics, touches DEC-18's "computed, never asserted" discipline); both flagged, not asserted (DEC-2)
+**Spec**: `specs/023-discrimination-v2/spec.md` · **Research note**: `docs/research/08-analysis.md` **§7 amendment** (**DEC-11 gate — authored first**; decides the operative-pair derivation, the three-way classification incl. the endpoint-touching boundary, and the ExpectedAnswer provenance shape + lint posture) · **Register**: concept §6 items 25 (ExpectedAnswer provenance — schema change, touches DEC-18/DEC-9) and 26 (operative-pair conditioning — ranking semantics, touches DEC-18's "computed, never asserted" discipline); both flagged, not asserted (DEC-2)
 
 ## Shape — the note decides, the code carries
 
 ```
-Phase A  note-08 §7 amendment + concept §6.24/§6.25   ── derivation rule, classification, provenance shape, lint posture
+Phase A  note-08 §7 amendment + concept §6.25/§6.26   ── derivation rule, classification, provenance shape, lint posture
    ▼
 Phase B  schema (doc §4/§11 → yaml → regen)           ── optional provenance slot on ExpectedAnswer (DEC-21 regen)
    ▼
@@ -18,7 +18,7 @@ Phase E  surfaces                                     ── table v2 (operative
 Phase F  tests + batch propagation + regen assets + verify
 ```
 
-Nothing in B–F starts before the amendment lands (DEC-11). No register decision is asserted — both candidates are **flagged** (concept §6.24/§6.25) awaiting the next batch (DEC-2).
+Nothing in B–F starts before the amendment lands (DEC-11). No register decision is asserted — both candidates are **flagged** (concept §6.25/§6.26) awaiting the next batch (DEC-2).
 
 ## The load-bearing facts
 
@@ -57,6 +57,6 @@ Operative mode leads with `operative_best` (lo desc, hi desc — v1's comparator
 
 ## Out of scope / deferred (tracked)
 
-- **Register ratification** of §6.24/§6.25 — next batch.
+- **Register ratification** of §6.25/§6.26 — next batch.
 - **SPEC-22 attention ordering** (likelihood tie-breaks in the queue layer) — separate slice; nothing here reads K14.
 - **S-D decision-support matrix** — consumes this slice's ranking; not built here.

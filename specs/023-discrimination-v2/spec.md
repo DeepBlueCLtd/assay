@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-15
 
-**Status**: Implemented — the research-note amendment (`docs/research/08-analysis.md` §7) landed 2026-07-16 and the register candidates are flagged as concept §6.24/§6.25
+**Status**: Implemented — the research-note amendment (`docs/research/08-analysis.md` §7) landed 2026-07-16 and the register candidates are flagged as concept §6.25/§6.26
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §3.4, action B7, addendum §10 slice S-E), plus the knowledge-model open item the review seconds ("does `ExpectedAnswer` need its own provenance?"). Three sharpenings of SPEC-12's band-separation ranking: **(a)** condition the ranking on the **operative pair** — the scenario pair the current plan-set's verdicts actually turn on — rather than best-pair-anywhere, so a question that cleanly separates an inert pair cannot outrank one that moderately separates the pair that matters; **(b)** distinguish **nested** expected bands (can never discriminate, however the observation lands) from **partially overlapping** ones (could discriminate, given a lucky observation) — both score negative today and are epistemically different; **(c)** give `ExpectedAnswer` **provenance** — the event matrix is an assessment ("who says the COA would look like that?") and is currently the only major assessed content without a chip.
 

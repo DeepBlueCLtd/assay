@@ -109,7 +109,7 @@ export interface Waiver {
 export interface ExpectedAnswer {
   coa: LogicalId;
   band: Band;
-  /** Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.24. */
+  /** Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.25. */
   provenance?: Provenance;
 }
 

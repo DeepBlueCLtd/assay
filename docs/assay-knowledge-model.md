@@ -64,13 +64,13 @@ The central type: one quantified JIPOE Q&A, whole-life.
 | `validity` | ValidityWindow, optional | Perishable answers (forecasts) carry one; expiry against scenario clock ⇒ `stale` |
 | `status` | LifecycleStatus | `open → answered → (superseded | stale | contested) → resolved | retired` (DEC-17) |
 | `waiver` | Waiver, optional | Required for an assessed/reported source claiming `hard_constraint` (§9); `{granted_by, justification, granted_at}` |
-| `expected_answers` | ExpectedAnswer[], optional | The miniature event matrix (DEC-18): per ScenarioCOA, the band the answer is expected to fall in if that COA is the truth. Meaningful for `open` questions; retained after answering for audit. Each row carries its own `provenance` (optional in schema, warning-linted when absent) — an expectation is an assessment, owed a chip like every other (research note `08-analysis.md` §7.3; SPEC-23; register candidate concept §6.24) |
+| `expected_answers` | ExpectedAnswer[], optional | The miniature event matrix (DEC-18): per ScenarioCOA, the band the answer is expected to fall in if that COA is the truth. Meaningful for `open` questions; retained after answering for audit. Each row carries its own `provenance` (optional in schema, warning-linted when absent) — an expectation is an assessment, owed a chip like every other (research note `08-analysis.md` §7.3; SPEC-23; register candidate concept §6.25) |
 | `collection` | CollectionOption[], optional | For open questions: `{method, cost: Band, earliest_result: timestep}` — cost is an estimate, therefore banded |
 | `jipoe_step` | JipoeStep, optional | The *originating* JIPOE step (singular by design — usage lives in the trace graph). Assignments decided in research note `01-knowledge.md` (amendment); a step-less write draws a warning-level lint (`observed` not exempt). SPEC-21; register candidate concept §6.23 |
 
 **Lifecycle (normative).** `open`: posed, unanswered — ranked by discrimination (from `expected_answers` separation) and carried in S1's collect queue. `answered`: answer + provenance present. `superseded`: a `supersedes` edge points at this version; the superseding object identifies exactly the verdicts this version fed (thesis F is a trace walk from here). `stale`: validity window expired on the scenario clock, or superseded. `contested`: a `contests` edge links two live objects answering the same question — **neither may compile** (G5) until a `resolves` edge lands. `resolved`: contest closed with a surviving answer. `retired`: withdrawn from use by owner decision, without replacement.
 
-**Discrimination (DEC-18).** The discrimination value of an open question is a function of the separation between its `expected_answers` bands across the live COA set — disjoint bands discriminate; partially overlapping bands could (a lucky observation settles the pair); nested bands cannot single out the inner COA (research note `08-analysis.md` §7.2). `/analyse/discrimination` computes this; nothing stores it (it changes whenever the COA set or bands change). Since SPEC-23 the ranking leads with the **operative pairs** — the scenario pairs the current plan-set's verdicts actually turn on, derived from the SPEC-10 tensor, never curated (note §7.1; register candidate concept §6.25).
+**Discrimination (DEC-18).** The discrimination value of an open question is a function of the separation between its `expected_answers` bands across the live COA set — disjoint bands discriminate; partially overlapping bands could (a lucky observation settles the pair); nested bands cannot single out the inner COA (research note `08-analysis.md` §7.2). `/analyse/discrimination` computes this; nothing stores it (it changes whenever the COA set or bands change). Since SPEC-23 the ranking leads with the **operative pairs** — the scenario pairs the current plan-set's verdicts actually turn on, derived from the SPEC-10 tensor, never curated (note §7.1; register candidate concept §6.26).
 
 ## 5. Commitment (DEC-19)
 
@@ -249,7 +249,7 @@ classes:
     attributes:
       coa: {range: LogicalId, required: true}
       band: {range: Band, required: true}
-      provenance: {range: Provenance, description: Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.24.}
+      provenance: {range: Provenance, description: Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.25.}
 
   CollectionOption:
     attributes:
@@ -483,4 +483,4 @@ classes:
 - **No REMIT imports** of any kind (DEC-3). Convergence findings go back as REMIT register candidates.
 - **No PMESII node-link classes** — thesis G is horizon (concept §1); admitting shapes for it now would be false-precision risk with no consumer.
 
-Open items for a future register batch: whether `criticality` earns its keep once discrimination/sensitivity rankings exist (it may be redundant with computed priority). ~~Whether `ExpectedAnswer` needs a provenance of its own (who says the COA would look like that?)~~ — answered yes by research note `08-analysis.md` §7.3 (SPEC-23); flagged as register candidate concept §6.24, awaiting ratification.
+Open items for a future register batch: whether `criticality` earns its keep once discrimination/sensitivity rankings exist (it may be redundant with computed priority). ~~Whether `ExpectedAnswer` needs a provenance of its own (who says the COA would look like that?)~~ — answered yes by research note `08-analysis.md` §7.3 (SPEC-23); flagged as register candidate concept §6.25, awaiting ratification.

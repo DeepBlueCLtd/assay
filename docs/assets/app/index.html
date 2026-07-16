@@ -3578,6 +3578,85 @@ ${items}
 </div>`;
   }
 
+  // src/attention.ts
+  function strictlyAbove(a, b) {
+    if (a.unit !== b.unit) {
+      throw new Error(`attention: unit mismatch '${a.unit}' vs '${b.unit}' \u2014 likelihood bands compare only in like units`);
+    }
+    return strictlyBetter(a, b, 0);
+  }
+  function attentionLayers(items) {
+    const ranked = items.filter((i) => i.band !== void 0 && !i.contested);
+    const unranked = items.filter((i) => i.band === void 0 || i.contested).map((i) => i.scenario);
+    const depth = /* @__PURE__ */ new Map();
+    const depthOf = (item) => {
+      const cached = depth.get(item.scenario);
+      if (cached !== void 0) return cached;
+      let d = 0;
+      for (const other of ranked) {
+        if (other.scenario !== item.scenario && strictlyAbove(other.band, item.band)) {
+          d = Math.max(d, depthOf(other) + 1);
+        }
+      }
+      depth.set(item.scenario, d);
+      return d;
+    };
+    const layers = [];
+    for (const item of ranked) {
+      const d = depthOf(item);
+      (layers[d] ??= []).push(item.scenario);
+    }
+    for (const layer of layers) layer.sort();
+    return { layers, unranked };
+  }
+  function pairRanksAbove(a, b, bands) {
+    const aOnly = a.filter((s) => !b.includes(s));
+    const bOnly = b.filter((s) => !a.includes(s));
+    if (aOnly.length === 0 || bOnly.length === 0) return false;
+    return aOnly.every((sa) => {
+      const ba = bands.get(sa);
+      if (!ba) return false;
+      return bOnly.every((sb) => {
+        const bb = bands.get(sb);
+        return bb !== void 0 && strictlyAbove(ba, bb);
+      });
+    });
+  }
+  var TIE_BREAK_STATEMENT = "tie broken by scenario weight (attention only)";
+  var sameBand = (a, b) => a.lo === b.lo && a.hi === b.hi && a.unit === b.unit;
+  var bearsAbove = (a, b, bands) => a.bestPairs.length > 0 && b.bestPairs.length > 0 && a.bestPairs.every((pa) => b.bestPairs.every((pb) => pairRanksAbove(pa, pb, bands)));
+  function weightTieBreak(entries, bands) {
+    const order = [];
+    const statements = /* @__PURE__ */ new Map();
+    let i = 0;
+    while (i < entries.length) {
+      let j = i + 1;
+      while (j < entries.length && sameBand(entries[j].best_separation, entries[i].best_separation)) j++;
+      const group = entries.slice(i, j);
+      if (group.length === 1) {
+        order.push(group[0].question);
+      } else {
+        const remaining = [...group];
+        while (remaining.length > 0) {
+          const pickIdx = Math.max(
+            0,
+            remaining.findIndex((cand) => !remaining.some((other) => other !== cand && bearsAbove(other, cand, bands)))
+          );
+          const picked = remaining.splice(pickIdx, 1)[0];
+          order.push(picked.question);
+          for (const other of remaining) {
+            if (bearsAbove(picked, other, bands) || bearsAbove(other, picked, bands)) {
+              statements.set(picked.question, TIE_BREAK_STATEMENT);
+              statements.set(other.question, TIE_BREAK_STATEMENT);
+            }
+          }
+        }
+      }
+      i = j;
+    }
+    return { order, statements };
+  }
+
   // src/components/scenarioStrip.ts
   var esc11 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var STOP2 = {
@@ -3605,6 +3684,46 @@ ${items}
     return `<td data-glow-id="vw:${esc11(planId)}:${esc11(commitmentId)}" data-glow-sig="${esc11(verdict)}" style="padding:4px 5px;text-align:center;border-bottom:1px solid #EDF0F2;border-left:2px solid #1B2732">
     <span class="assay-verdict-chip" title="worst case across all scenarios" style="display:inline-block;min-width:54px;padding:2px 6px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${s.bg};color:${s.fg}">${s.label}</span>
   </td>`;
+  }
+  var contestMark = () => `<span style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:#F8E2E2;color:#A33131;border:1px solid #EFC6C6;white-space:nowrap">contested \u2014 orders nothing until resolved</span>`;
+  function likelihoodLine(l) {
+    const label = l.name ? `${l.scenario} \xB7 ${l.name}` : l.scenario;
+    const sig = `${l.band ? `${l.band.lo}-${l.band.hi} ${l.band.unit}` : "none"}|${l.contested ? "contested" : ""}`;
+    const traceHook = l.logical_id ? ` data-logical-id="${esc11(l.logical_id)}"` : "";
+    const pill = l.band ? bandPill(l.band, { trackLo: 0, trackHi: 100, label: "likelihood" }) : `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#9A6A14">no assessment \u2014 unranked, never defaulted</span>`;
+    const prov = l.provenance ? provenanceChip(l.provenance, l.jipoe_step) : "";
+    const mark = l.contested ? contestMark() : "";
+    return `<div class="assay-attention-scenario"${traceHook} data-glow-id="att:${esc11(l.logical_id ?? l.scenario)}" data-glow-sig="${esc11(sig)}" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:3px 0">
+    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;min-width:150px">${esc11(label)}</span>
+    ${pill}
+    ${prov}${mark}
+  </div>`;
+  }
+  function attentionBlock(likelihoods) {
+    const items = likelihoods.map((l) => {
+      const item = { scenario: l.scenario };
+      if (l.band) item.band = l.band;
+      if (l.contested) item.contested = l.contested;
+      return item;
+    });
+    const { layers, unranked } = attentionLayers(items);
+    const byScenario = new Map(likelihoods.map((l) => [l.scenario, l]));
+    const layerRows = layers.map((layer, idx) => {
+      const lines = layer.map((sid) => likelihoodLine(byScenario.get(sid))).join("");
+      const levelNote = layer.length > 1 ? `<div style="font-size:10px;color:#9A6A14;font-family:ui-monospace,monospace;padding:1px 0">level \u2014 bands overlap; honestly unranked between themselves</div>` : "";
+      return `<div class="assay-attention-layer" data-attention-layer="${idx}" style="border-left:3px solid #C8D2DA;padding:3px 0 3px 10px;margin:2px 0">${levelNote}${lines}</div>`;
+    }).join("");
+    const unrankedRow = unranked.length > 0 ? `<div class="assay-attention-unranked" style="border-left:3px dashed #C8D2DA;padding:3px 0 3px 10px;margin:2px 0">
+    <div style="font-size:10px;color:#5B6B77;font-family:ui-monospace,monospace;padding:1px 0">unranked</div>
+    ${unranked.map((sid) => likelihoodLine(byScenario.get(sid))).join("")}
+  </div>` : "";
+    return `<div class="assay-attention" style="border:1px solid #D8DFE4;border-radius:6px;padding:8px 12px;margin-bottom:10px;background:#FCFDFD">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+    <span style="font-size:11px;font-weight:700;color:#1B2732;letter-spacing:.03em">Adversary COA likelihood (J-2 assessment)</span>
+    <span class="assay-attention-label" style="font-family:ui-monospace,monospace;font-size:10.5px;padding:2px 7px;border-radius:3px;background:#EAF0F7;color:#3E5D8A;border:1px solid #C9D7E8;white-space:nowrap">orders attention \u2014 never compiles</span>
+  </div>
+  ${layerRows}${unrankedRow}
+</div>`;
   }
   function scenarioStrip(tensor, opts) {
     const { scenarios, plans, commitments, verdicts, worst_case, stamps_compatible } = tensor;
@@ -3639,7 +3758,8 @@ ${items}
       }).join("");
       return `<tr><td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;white-space:nowrap">${esc11(planName(pid))}</td>${cells}</tr>`;
     }).join("");
-    return `${incompatBanner}<div style="overflow-x:auto"><table class="assay-scenario-strip" style="border-collapse:collapse;width:100%">
+    const attention = opts?.likelihoods && opts.likelihoods.length > 0 ? attentionBlock(opts.likelihoods) : "";
+    return `${attention}${incompatBanner}<div style="overflow-x:auto"><table class="assay-scenario-strip" style="border-collapse:collapse;width:100%">
   <thead>${head}</thead>
   <tbody>${body}</tbody>
 </table></div>`;
@@ -3767,9 +3887,11 @@ ${items}
       const logicalId = entry.question.logical_id;
       const pairChips = entry.pairs.map(pairChip).join("<br>");
       const operativeCell = operativeCol ? `<td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2">${entry.operative_best ? separationChip(entry.operative_best) : '<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#8A2020">no could-discriminate operative pair</span>'}</td>` : "";
-      const glowSig = `${mode}:${entry.operative_best ? `${entry.operative_best.lo}` : ""}:${entry.best_separation.lo}`;
+      const tieBreak = opts.tieBreaks?.get(logicalId);
+      const tieBreakLine = tieBreak ? `<div class="assay-tie-break" style="margin-top:3px;font-family:ui-monospace,monospace;font-size:9.5px;color:#3E5D8A;white-space:nowrap">\u2696 ${esc13(tieBreak)}</div>` : "";
+      const glowSig = `${mode}:${entry.operative_best ? `${entry.operative_best.lo}` : ""}:${entry.best_separation.lo}${tieBreak ? "|tb" : ""}`;
       return `<tr data-logical-id="${esc13(logicalId)}" data-glow-id="disc:${esc13(logicalId)}" data-glow-sig="${esc13(glowSig)}">
-        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap;vertical-align:top">${esc13(logicalId)}</td>
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap;vertical-align:top">${esc13(logicalId)}${tieBreakLine}</td>
         ${operativeCell}
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2;vertical-align:top">${separationChip(entry.best_separation)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2;vertical-align:top">${bandPill2(entry.cost)}</td>
@@ -3893,6 +4015,14 @@ ${items}
       term: "operative pair (A\u2194B)",
       gloss: "A scenario pair the live decision actually turns on: some plan and commitment in the current set have differing verdicts across it. Derived from the verdict tensor \u2014 computed from verdict divergence only, never hand-picked and never likelihood-weighted (K14 does not enter; SPEC-23). The ranking leads with these pairs; all-pairs separation stays as context."
     },
+    attention: {
+      term: "likelihood layers (orders attention \u2014 never compiles)",
+      gloss: "Adversary-COA likelihood bands (scenario weights) ordered by the interval order: one ranks above another only when the whole band sits above it. Overlapping bands render level \u2014 honestly unranked; a missing assessment renders unranked, never defaulted. The ordering directs attention and collection only (knowledge model \xA79): no verdict, score, or membership owes it anything."
+    },
+    weight_tiebreak: {
+      term: "tie broken by scenario weight (attention only)",
+      gloss: "Two questions had exactly equal discrimination standing; the queue placed the one bearing on the more-likely scenario pair (interval order) first, and says so. Weight breaks ties only \u2014 it never overrides the primary discrimination ranking (DEC-18) and never touches a verdict."
+    },
     invalidated: {
       term: "invalidated artefact",
       gloss: "A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes \u2014 flags only, then humans decide (constitution)."
@@ -3919,10 +4049,10 @@ ${items}
     s2Matrix: ["verdict"],
     handfulStrip: ["distinct"],
     s3Cards: ["sacrifice", "tier"],
-    scenarioStrip: ["verdict", "scenario_collapse", "worst_case"],
+    scenarioStrip: ["verdict", "scenario_collapse", "worst_case", "attention", "band", "provenance"],
     refusalBanner: ["refusal"],
     sensitivityTable: ["sensitivity", "single_source_flag", "verdict"],
-    discriminationTable: ["separation", "separation_class", "operative_pair", "collection_cost", "band", "provenance"],
+    discriminationTable: ["separation", "separation_class", "operative_pair", "collection_cost", "band", "provenance", "weight_tiebreak"],
     stalenessFlags: ["invalidated"]
   };
   function componentLegend(component, title) {
@@ -3974,6 +4104,10 @@ ${items}
       if (k11) await svc.create(structuredClone(k11));
       const k13 = this.#kById.get("K13");
       if (k13) await svc.create(structuredClone(k13));
+      for (const id of ["K14a", "K14b", "K14c"]) {
+        const k14 = this.#kById.get(id);
+        if (k14) await svc.create(structuredClone(k14));
+      }
       for (const coa of this.#fx.coas) await svc.store.put(coa);
       for (const c of this.#fx.commitments)
         await svc.store.put(c);
@@ -4360,12 +4494,30 @@ ${items}
                 const plan2 = this.#svc.store.get(planRef.content_hash);
                 planNames[planRef.logical_id] = `${plan2.logical_id} \xB7 ${plan2.name}`;
               }
+              const stripDeps = /* @__PURE__ */ new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)]);
+              const likelihoods = [];
+              for (const sid of rr.tensor.scenarios) {
+                const coa = this.#fx.coas.find((c) => c.logical_id === sid);
+                if (!coa) continue;
+                const item = { scenario: sid, name: coa.name };
+                if (coa.likelihood) {
+                  item.logical_id = coa.likelihood;
+                  const ko = this.#latest(coa.likelihood);
+                  if (ko?.answer) item.band = ko.answer;
+                  if (ko?.provenance) item.provenance = ko.provenance;
+                  if (ko?.jipoe_step) item.jipoe_step = ko.jipoe_step;
+                  if ((this.#svc.effectiveStatus(coa.likelihood) ?? ko?.status) === "contested") item.contested = true;
+                  const h14 = this.#latestHash(coa.likelihood);
+                  if (h14) stripDeps.add(h14);
+                }
+                likelihoods.push(item);
+              }
               panels.push({
                 id: "scenarios",
                 tab: "commander",
                 title: "Commander \xB7 scenario robustness (thesis C)",
-                html: componentLegend("scenarioStrip") + scenarioStrip(rr.tensor, { planNames }),
-                deps: /* @__PURE__ */ new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)])
+                html: componentLegend("scenarioStrip") + scenarioStrip(rr.tensor, { planNames, likelihoods }),
+                deps: stripDeps
               });
             }
           }
@@ -4447,18 +4599,53 @@ ${items}
           });
           if (!isRefusal(discResult)) {
             stamps.discrimination = discResult.stamp;
+            const likelihoodBands = /* @__PURE__ */ new Map();
+            for (const coa of this.#fx.coas) {
+              if (!coa.likelihood) continue;
+              const ko = this.#latest(coa.likelihood);
+              if ((this.#svc.effectiveStatus(coa.likelihood) ?? ko?.status) === "contested") continue;
+              likelihoodBands.set(coa.logical_id, ko?.answer);
+            }
+            const bandKey = (b) => b ? `${b.lo}|${b.hi}|${b.unit}` : "\u2205";
+            const couldCount = (e) => e.pairs.filter((p) => p.operative && p.classification !== "nested").length;
+            const standingKey = (e) => discResult.mode === "operative" ? `${bandKey(e.operative_best)}\xB7${bandKey(e.best_separation)}\xB7${couldCount(e)}` : bandKey(e.best_separation);
+            const toTieEntry = (e) => {
+              const standing = e.operative_best ?? e.best_separation;
+              return {
+                question: e.question.logical_id,
+                best_separation: e.best_separation,
+                bestPairs: e.pairs.filter((p) => p.separation.lo === standing.lo && p.separation.hi === standing.hi).map((p) => [p.coa_a, p.coa_b])
+              };
+            };
+            const order = [];
+            const statements = /* @__PURE__ */ new Map();
+            let i = 0;
+            while (i < discResult.ranking.length) {
+              let j = i + 1;
+              while (j < discResult.ranking.length && standingKey(discResult.ranking[j]) === standingKey(discResult.ranking[i]))
+                j++;
+              const run = discResult.ranking.slice(i, j);
+              const tb = weightTieBreak(run.map(toTieEntry), likelihoodBands);
+              order.push(...tb.order);
+              for (const [q, s] of tb.statements) statements.set(q, s);
+              i = j;
+            }
+            const entryById = new Map(discResult.ranking.map((e) => [e.question.logical_id, e]));
+            const queue = order.map((q) => entryById.get(q));
             panels.push({
               id: "discrimination",
               tab: "j2",
               title: "J-2 \xB7 discrimination ranking (thesis D)",
-              html: componentLegend("discriminationTable") + discriminationTable(discResult.ranking, {
+              html: componentLegend("discriminationTable") + discriminationTable(queue, {
                 mode: discResult.mode,
                 ...discResult.statement ? { statement: discResult.statement } : {},
-                ...discResult.operative ? { operative: discResult.operative } : {}
+                ...discResult.operative ? { operative: discResult.operative } : {},
+                tieBreaks: statements
               }),
               deps: /* @__PURE__ */ new Set([
                 `discrimination:${discResult.stamp}`,
-                ...stamps.robustness ? [`robustness:${stamps.robustness}`] : []
+                ...stamps.robustness ? [`robustness:${stamps.robustness}`] : [],
+                `queue:${order.join(",")}|${[...statements.keys()].sort().join(",")}`
               ])
             });
           }

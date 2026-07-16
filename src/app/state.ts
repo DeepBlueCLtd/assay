@@ -16,6 +16,7 @@
  * the browser, so this runs unchanged under vitest.
  */
 import type {
+  Band,
   Commitment,
   CommitmentVerdict,
   CompiledWorld,
@@ -52,9 +53,10 @@ import { refusalBanner } from '../components/refusalBanner.js';
 import { s2Matrix, type S2Cell } from '../components/s2Matrix.js';
 import { handfulStrip, type HandfulStripRow } from '../components/handfulStrip.js';
 import { s3Cards, type S3Card } from '../components/s3Cards.js';
-import { scenarioStrip } from '../components/scenarioStrip.js';
+import { scenarioStrip, type ScenarioLikelihood } from '../components/scenarioStrip.js';
 import { sensitivityTable } from '../components/sensitivityTable.js';
 import { discriminationTable } from '../components/discriminationTable.js';
+import { weightTieBreak, type TieBreakEntry } from '../attention.js';
 import { stalenessFlags } from '../components/stalenessFlags.js';
 import { componentLegend } from '../components/legends.js';
 import { ENGINE_VERSION } from '../engine.js';
@@ -141,6 +143,15 @@ export class AppState {
     if (k11) await svc.create(structuredClone(k11));
     const k13 = this.#kById.get('K13');
     if (k13) await svc.create(structuredClone(k13));
+    // K14a–c — the scenario weights (SPEC-22). Legal knowledge writes; they are
+    // NEVER passed to compile (a contested weight must not block a world it
+    // never enters — research note 11-attention.md §2), and they reach no
+    // channel by any path (knowledge model §9). They feed the attention block
+    // and the queue tie-break only.
+    for (const id of ['K14a', 'K14b', 'K14c']) {
+      const k14 = this.#kById.get(id);
+      if (k14) await svc.create(structuredClone(k14));
+    }
     for (const coa of this.#fx.coas) await svc.store.put(coa as unknown as Record<string, unknown>);
     for (const c of this.#fx.commitments)
       await svc.store.put(c as unknown as Record<string, unknown>);
@@ -564,12 +575,34 @@ export class AppState {
               const plan = this.#svc.store.get(planRef.content_hash) as Plan;
               planNames[planRef.logical_id] = `${plan.logical_id} · ${plan.name}`;
             }
+            // SPEC-22 — the attention block: each scenario's likelihood band
+            // (K14a–c via ScenarioCOA.likelihood), rendered under the interval
+            // order above the verdict grid. Attention only: the grid's content
+            // and order never move with it (research note 11-attention.md §5).
+            const stripDeps = new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)]);
+            const likelihoods: ScenarioLikelihood[] = [];
+            for (const sid of rr.tensor.scenarios) {
+              const coa = this.#fx.coas.find((c) => c.logical_id === sid);
+              if (!coa) continue; // BASE is not an adversary COA — no weight exists to render
+              const item: ScenarioLikelihood = { scenario: sid, name: coa.name };
+              if (coa.likelihood) {
+                item.logical_id = coa.likelihood;
+                const ko = this.#latest(coa.likelihood);
+                if (ko?.answer) item.band = ko.answer;
+                if (ko?.provenance) item.provenance = ko.provenance;
+                if (ko?.jipoe_step) item.jipoe_step = ko.jipoe_step;
+                if ((this.#svc.effectiveStatus(coa.likelihood) ?? ko?.status) === 'contested') item.contested = true;
+                const h14 = this.#latestHash(coa.likelihood);
+                if (h14) stripDeps.add(h14);
+              }
+              likelihoods.push(item);
+            }
             panels.push({
               id: 'scenarios',
               tab: 'commander',
               title: 'Commander · scenario robustness (thesis C)',
-              html: componentLegend('scenarioStrip') + scenarioStrip(rr.tensor, { planNames }),
-              deps: new Set([`robustness:${rr.stamp}`, ...Object.values(scenarioWorlds).map((w) => w.content_hash)]),
+              html: componentLegend('scenarioStrip') + scenarioStrip(rr.tensor, { planNames, likelihoods }),
+              deps: stripDeps,
             });
           }
         }
@@ -657,20 +690,76 @@ export class AppState {
         });
         if (!isRefusal(discResult)) {
           stamps.discrimination = discResult.stamp;
+          // SPEC-22 — the queue MAY tie-break exactly-equal discrimination
+          // standings by scenario weight, stated in the rendering. Composed
+          // HERE, around the untouched service — its ranking and stamp never
+          // see a weight (research note 11-attention.md §3). Contested weights
+          // order nothing until resolved.
+          //
+          // SPEC-23 composition: the standing is the FULL v2 sort key — in
+          // operative mode (operative_best, all-pairs best, could-discriminate
+          // count), else the all-pairs best alone. The weight reorders only
+          // within runs equal on the whole standing (it replaces the service's
+          // logical-id fallback, never its primary or secondary keys), so the
+          // operative-conditioned ranking (note 08 §7.1) is never overridden.
+          const likelihoodBands = new Map<string, Band | undefined>();
+          for (const coa of this.#fx.coas) {
+            if (!coa.likelihood) continue;
+            const ko = this.#latest(coa.likelihood);
+            if ((this.#svc.effectiveStatus(coa.likelihood) ?? ko?.status) === 'contested') continue;
+            likelihoodBands.set(coa.logical_id, ko?.answer);
+          }
+          const bandKey = (b?: Band): string => (b ? `${b.lo}|${b.hi}|${b.unit}` : '∅');
+          const couldCount = (e: (typeof discResult.ranking)[number]): number =>
+            e.pairs.filter((p) => p.operative && p.classification !== 'nested').length;
+          const standingKey = (e: (typeof discResult.ranking)[number]): string =>
+            discResult.mode === 'operative'
+              ? `${bandKey(e.operative_best)}·${bandKey(e.best_separation)}·${couldCount(e)}`
+              : bandKey(e.best_separation);
+          const toTieEntry = (e: (typeof discResult.ranking)[number]): TieBreakEntry => {
+            const standing = e.operative_best ?? e.best_separation;
+            return {
+              question: e.question.logical_id,
+              best_separation: e.best_separation,
+              bestPairs: e.pairs
+                .filter((p) => p.separation.lo === standing.lo && p.separation.hi === standing.hi)
+                .map((p) => [p.coa_a, p.coa_b] as const),
+            };
+          };
+          const order: string[] = [];
+          const statements = new Map<string, string>();
+          let i = 0;
+          while (i < discResult.ranking.length) {
+            let j = i + 1;
+            while (
+              j < discResult.ranking.length &&
+              standingKey(discResult.ranking[j]!) === standingKey(discResult.ranking[i]!)
+            )
+              j++;
+            const run = discResult.ranking.slice(i, j);
+            const tb = weightTieBreak(run.map(toTieEntry), likelihoodBands);
+            order.push(...tb.order);
+            for (const [q, s] of tb.statements) statements.set(q, s);
+            i = j;
+          }
+          const entryById = new Map(discResult.ranking.map((e) => [e.question.logical_id, e]));
+          const queue = order.map((q) => entryById.get(q)!);
           panels.push({
             id: 'discrimination',
             tab: 'j2',
             title: 'J-2 · discrimination ranking (thesis D)',
             html:
               componentLegend('discriminationTable') +
-              discriminationTable(discResult.ranking, {
+              discriminationTable(queue, {
                 mode: discResult.mode,
                 ...(discResult.statement ? { statement: discResult.statement } : {}),
                 ...(discResult.operative ? { operative: discResult.operative } : {}),
+                tieBreaks: statements,
               }),
             deps: new Set([
               `discrimination:${discResult.stamp}`,
               ...(stamps.robustness ? [`robustness:${stamps.robustness}`] : []),
+              `queue:${order.join(',')}|${[...statements.keys()].sort().join(',')}`,
             ]),
           });
         }

@@ -1,15 +1,15 @@
 # Tasks: Collection discrimination v2 — sharper where-to-look (SPEC-23)
 
-Dependency-ordered. `[P]` = parallelisable. **Gate**: the note-08 §7 amendment present (DEC-11) and concept §6 items 24/25 flagged — Phase A produces both; Phases B–F do not start until Phase A lands.
+Dependency-ordered. `[P]` = parallelisable. **Gate**: the note-08 §7 amendment present (DEC-11) and concept §6 items 25/26 flagged — Phase A produces both; Phases B–F do not start until Phase A lands.
 
 ## Phase A — research amendment & register candidates (the DEC-11 gate)
 
 - [X] **T01** Amend `docs/research/08-analysis.md` (§7): the operative-pair derivation rule (verdict divergence only; COA-vocabulary restriction; comparability guard first; the five degenerate states decided), the three-way classification (disjoint/partial/nested; endpoint-touching → partial; endpoint-sharing containment → nested; the honest one-sidedness of "cannot discriminate"), the ExpectedAnswer provenance shape (full `Provenance`, optional slot, `missing_expected_answer_provenance` warning lint) and the Meridian fixture assignments.
-- [X] **T02** Flag concept §6 items 24 (ExpectedAnswer provenance — schema change touching DEC-18/DEC-9) and 25 (operative-pair conditioning — ranking semantics touching DEC-18); **do not assert** either decision (DEC-2).
+- [X] **T02** Flag concept §6 items 25 (ExpectedAnswer provenance — schema change touching DEC-18/DEC-9) and 26 (operative-pair conditioning — ranking semantics touching DEC-18); **do not assert** either decision (DEC-2).
 
 ## Phase B — schema (after Phase A)
 
-- [X] **T03** `docs/assay-knowledge-model.md`: add optional `provenance` to the `ExpectedAnswer` class in the §11 LinkML block + the §4 slot-table row; strike the §12 open item (resolved by §6.24, pending ratification).
+- [X] **T03** `docs/assay-knowledge-model.md`: add optional `provenance` to the `ExpectedAnswer` class in the §11 LinkML block + the §4 slot-table row; strike the §12 open item (resolved by §6.25, pending ratification).
 - [X] **T04** `schema/assay-knowledge-model.yaml`: the same change, extracted verbatim (a divergence is a defect).
 - [X] **T05** `npm run gen` — regenerate `src/generated/types.ts`; never hand-edited.
 

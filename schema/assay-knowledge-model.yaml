@@ -106,7 +106,7 @@ classes:
     attributes:
       coa: {range: LogicalId, required: true}
       band: {range: Band, required: true}
-      provenance: {range: Provenance, description: Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.24.}
+      provenance: {range: Provenance, description: Who says the COA would look like that — the row is an assessment (research note 08-analysis.md §7.3; warning-linted when absent). SPEC-23; register candidate concept §6.25.}
 
   CollectionOption:
     attributes:

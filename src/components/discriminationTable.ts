@@ -18,6 +18,11 @@
  * legend-keyed. Expected bands render with their provenance chips (G3 applies
  * to the event matrix, not just through it); a provenance-less row is marked,
  * never silently bare.
+ *
+ * SPEC-22 — where the queue assembly broke an exact-equality tie by scenario
+ * weight (the firewall's positive half, research note 11-attention.md §3),
+ * the affected rows render the stated tie-break line — stated, never silent
+ * (DEC-19). The primary ranking itself never sees a weight.
  */
 import type { Band, ExpectedAnswer } from '../generated/types.js';
 import type { CoaPairSeparation, DiscriminationEntry, DiscriminationSuccess, OperativePairs, SeparationClass } from '../seam.js';
@@ -94,6 +99,9 @@ export interface DiscriminationTableOpts {
   mode?: DiscriminationSuccess['mode'] | undefined;
   statement?: string | undefined;
   operative?: OperativePairs | undefined;
+  /** SPEC-22 — question logical_id → stated tie-break line, rendered on the
+   *  row wherever the queue assembly applied the weight tie-break. */
+  tieBreaks?: ReadonlyMap<string, string> | undefined;
 }
 
 export function discriminationTable(ranking: DiscriminationEntry[], opts: DiscriminationTableOpts = {}): string {
@@ -141,9 +149,13 @@ export function discriminationTable(ranking: DiscriminationEntry[], opts: Discri
               : '<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#8A2020">no could-discriminate operative pair</span>'
           }</td>`
         : '';
-      const glowSig = `${mode}:${entry.operative_best ? `${entry.operative_best.lo}` : ''}:${entry.best_separation.lo}`;
+      const tieBreak = opts.tieBreaks?.get(logicalId);
+      const tieBreakLine = tieBreak
+        ? `<div class="assay-tie-break" style="margin-top:3px;font-family:ui-monospace,monospace;font-size:9.5px;color:#3E5D8A;white-space:nowrap">⚖ ${esc(tieBreak)}</div>`
+        : '';
+      const glowSig = `${mode}:${entry.operative_best ? `${entry.operative_best.lo}` : ''}:${entry.best_separation.lo}${tieBreak ? '|tb' : ''}`;
       return `<tr data-logical-id="${esc(logicalId)}" data-glow-id="disc:${esc(logicalId)}" data-glow-sig="${esc(glowSig)}">
-        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap;vertical-align:top">${esc(logicalId)}</td>
+        <td style="padding:5px 10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;color:#1B2732;border-bottom:1px solid #EDF0F2;white-space:nowrap;vertical-align:top">${esc(logicalId)}${tieBreakLine}</td>
         ${operativeCell}
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2;vertical-align:top">${separationChip(entry.best_separation)}</td>
         <td style="padding:5px 10px;text-align:center;border-bottom:1px solid #EDF0F2;vertical-align:top">${bandPill(entry.cost)}</td>
