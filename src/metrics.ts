@@ -57,6 +57,37 @@ interface Commitmentish {
   scope?: string;
 }
 
+/**
+ * SPEC-24 — the registry projected for the DSM's commit-step derivation
+ * (research note 12 §3). Names the responsible element whose stated route the
+ * commit step is read from, and the channel the metric reads along it (reach ⇒
+ * mobility — the factor in the duration arithmetic; exposure ⇒ its channel).
+ * `fires` reads only the plan's own geometry (no channel — it cannot
+ * scenario-diverge); `state` has no route (world-decided).
+ */
+export interface MetricProfile {
+  kind: 'reach' | 'exposure' | 'fires' | 'state';
+  element?: string;
+  channel?: ChannelKind;
+}
+
+export function metricProfile(commitment: Pick<Commitmentish, 'metric' | 'scope'>): MetricProfile {
+  const spec = METRICS[commitment.metric];
+  if (!spec) {
+    throw new Error(`metrics: no evaluator for metric '${commitment.metric}' (fixture/spec defect)`);
+  }
+  switch (spec.kind) {
+    case 'reach':
+      return { kind: 'reach', element: spec.element!, channel: 'mobility' };
+    case 'exposure':
+      return { kind: 'exposure', element: commitment.scope ?? spec.element!, channel: spec.channel! };
+    case 'fires':
+      return { kind: 'fires', element: spec.element! };
+    case 'state':
+      return { kind: 'state' };
+  }
+}
+
 /** Evaluate a commitment's metric over a plan and world. Unit = the commitment's. */
 export function evaluateMetric(
   commitment: Commitmentish,

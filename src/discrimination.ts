@@ -298,7 +298,8 @@ export function classifySeparation(a: Band, b: Band): SeparationClass {
 
 const pairKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
-function computeSeparation(a: Band, b: Band): Band {
+/** Exported for SPEC-24's per-row discriminator attachment (note 12 §5) — semantics untouched. */
+export function computeSeparation(a: Band, b: Band): Band {
   if (a.hi < b.lo) {
     return { lo: b.lo - a.hi, hi: b.lo - a.hi, unit: a.unit };
   }

@@ -23,6 +23,8 @@ import { scenarioStrip, type ScenarioLikelihood } from '../src/components/scenar
 import { sensitivityTable } from '../src/components/sensitivityTable.js';
 import { discriminationTable } from '../src/components/discriminationTable.js';
 import { stalenessFlags } from '../src/components/stalenessFlags.js';
+import { dsmTable } from '../src/components/dsmTable.js';
+import { DecisionSupportService } from '../src/decisionSupport.js';
 import { RobustnessService } from '../src/robustness.js';
 import { SensitivityService } from '../src/sensitivity.js';
 import { DiscriminationService } from '../src/discrimination.js';
@@ -57,6 +59,9 @@ const commitments = JSON.parse(
 const vignetteConfig = JSON.parse(
   readFileSync(new URL('../fixtures/vignette-config.json', import.meta.url), 'utf8'),
 ) as VignetteConfig;
+const plans = JSON.parse(
+  readFileSync(new URL('../fixtures/plans.json', import.meta.url), 'utf8'),
+) as Plan[];
 
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -137,6 +142,9 @@ const stampLine =
 // four-stop chips (margins on hover, no decimals); the handful strip shows the
 // organiser's derived reason each plan is in the set.
 for (const c of commitments) await svc.store.put(c as unknown as Record<string, unknown>);
+// The canned P1/P2 (SPEC-07 suite) back the SPEC-24 DSM exhibit below.
+const planRefsById = new Map<string, import('../src/store.js').Ref>();
+for (const p of plans) planRefsById.set(p.logical_id, await svc.store.put(p as unknown as Record<string, unknown>));
 const scorer = new ScoreService({ store: svc.store, trace: svc.trace, config: vignetteConfig, commitments });
 const handfulSvc = new HandfulService({ store: svc.store, scorer, config: vignetteConfig, commitments });
 const matrixRows: S2Cell[] = [];
@@ -250,6 +258,8 @@ if (!isRefusal(r3m)) {
 const robustnessSvc = new RobustnessService({ store: svc.store, scorer, commitments });
 let scenarioStripHtml = '';
 let robustnessStampLine = '';
+let dsmHtml = '';
+let dsmStampLine = '';
 let liveTensor: import('../src/seam.js').ScenarioVerdictTensor | undefined;
 if (!isRefusal(compiled)) {
   const scenarioWorlds: Record<string, import('../src/store.js').Ref> = { BASE: compiled.world };
@@ -288,6 +298,38 @@ if (!isRefusal(compiled)) {
       scenarioStripHtml = scenarioStrip(rr.tensor, { planNames, likelihoods });
       liveTensor = rr.tensor; // SPEC-23 — conditions the discrimination ranking below
       robustnessStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">robustness stamp ${rr.stamp.slice(0, 16)}… · ${rr.tensor.scenarios.length} scenarios × ${rr.tensor.plans.length} plans × ${rr.tensor.commitments.length} commitments · worst-case (minimax) verdict per plan×commitment · stamps_compatible=${rr.tensor.stamps_compatible}</span>`;
+    }
+  }
+
+  // SPEC-24 — the decision support matrix (review §4.2/M1, the keystone):
+  // decision points, commit steps, LTIOV, discriminators, tripwires — derived
+  // for the canned P2 over the same scenario worlds, never authored (note 12).
+  const p2Ref = planRefsById.get('P2');
+  if (p2Ref && Object.keys(scenarioWorlds).length > 1) {
+    const dsmSvc = new DecisionSupportService({
+      store: svc.store,
+      trace: svc.trace,
+      config: vignetteConfig,
+      robustness: robustnessSvc,
+    });
+    const dsmResult = await dsmSvc.analyse({
+      plan: p2Ref,
+      world: compiled.world,
+      worlds: scenarioWorlds,
+      coas: ['R1', 'R2', 'R3'],
+      commitments: commitments.map((c) => refFor(c.logical_id)),
+      questions: [k11Ref, k13Ref],
+      engine_version: ENGINE_VERSION,
+    });
+    if (!isRefusal(dsmResult)) {
+      const dsmKnowledge = Object.fromEntries(
+        [...BASE, 'K12a', 'K11', 'K13'].map((id) => [id, kById.get(id)!]),
+      ) as Record<string, KnowledgeObject>;
+      dsmHtml = dsmTable(dsmResult, {
+        knowledgeById: dsmKnowledge,
+        selectionNote: 'no /select selection exists — derived for the viewer-chosen P2 (sweep-first)',
+      });
+      dsmStampLine = `<span style="font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">decision-support stamp ${dsmResult.stamp.slice(0, 16)}… · ${dsmResult.rows.length} decision points, derived not drawn · LTIOV = commit step − lead (lead 0, stated) · red states rendered with their arithmetic, never dropped (G4) · every row cited_in back to its evidence (G3) · no urgency scalar anywhere (DEC-19)</span>`;
     }
   }
 }
@@ -357,10 +399,13 @@ ${rows}
 <h2 style="font-size:16px;margin-top:32px">Discrimination — which questions separate COAs (SPEC-12)</h2>
 <p style="font-size:12.5px;color:#5B6B77">The Stage-6 discrimination demo moment (thesis D). COA-pair band separation over open questions' expected-answer miniatures (DEC-18): for each open question with <code>expected_answers</code>, measure how well the answer bands separate each pair of adversary COAs. <b>K11 ranks above K13</b> despite higher collection cost — the R1/R2 expected-answer bands are disjoint (mines loaded vs not), while K13's radio-traffic bands overlap across all COAs. Cost is shown alongside, <b>never collapsed with value</b> (DEC-19): the commander sees both and decides. No Shannon entropy, no VOI, no scenario weights (research note 08-analysis.md §3). ${discriminationStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${discriminationHtml}</div>
+<h2 style="font-size:16px;margin-top:32px">Decision support — decisions in time (SPEC-24)</h2>
+<p style="font-size:12.5px;color:#5B6B77">The keystone demo moment (review §4.2 — "the artefact a J-3 actually recognises"). The doctrinal <b>decision support matrix</b>, <b>derived, never drawn</b> (research note 12): a commitment is a <b>decision point</b> iff its verdict turns on open information — scenario-divergent across the adversary COA set, or margin-class under the selected world. The <b>commit step</b> is read from the plan's own geometry (the first route leg whose channel read differs across the scenario worlds — past it, the branch is taken); <b>LTIOV</b> = commit step − lead (lead 0, stated); each collection option renders <b>in time</b> (slack as a step count) or the honest red <b>"cannot answer in time"</b> with its arithmetic visible — never dropped. On P2 (sweep-first) the port decision (C1) holds open to step 10 and <b>DET KINGFISHER's step-8 report arrives in time with 2 steps of slack</b> — where strait-early (P1) commits at step 4, a day before recon can report: the DSM shows, computed, why sweep-first buys decision space. The system <b>ranks and derives, never tasks</b> — tasking KINGFISHER is a human act with its own commitment consequence (C6). ${dsmStampLine}</p>
+<div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${dsmHtml}</div>
 <h2 style="font-size:16px;margin-top:32px">Staleness — what goes stale when knowledge changes (SPEC-13)</h2>
 <p style="font-size:12.5px;color:#5B6B77">The Stage-6 staleness demo moment (thesis F). Transitive forward trace walk from <b>K9</b> (the storm-window knowledge that superseded K5): follow every downstream edge — <code>consumed_by</code>, <code>scored_from</code>, <code>compiled_into</code> — using the <code>EDGE_ORIENTATION</code> map from <code>traceView.ts</code>. The walk flags <b>exactly the dependent verdicts</b> and nothing else. It does <b>not recompute</b> — the constitution says flags, then humans decide. ${stalenessStampLine}</p>
 <div style="background:#FCFDFD;border:1px solid #D8DFE4;border-radius:6px;padding:14px;overflow-x:auto">${stalenessHtml}</div>
-<p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code> · relax per <code>docs/research/04-relaxation.md</code> · robustness per <code>docs/research/06-robustness.md</code> · analysis per <code>docs/research/08-analysis.md</code> · attention per <code>docs/research/11-attention.md</code></p>
+<p style="font-size:11.5px;color:#5B6B77;margin-top:28px">Generated from <code>fixtures/</code> by <code>npm run gallery</code> · identifiers frozen per assay-vignette.md §8 · compile per research note <code>docs/research/02-compile.md</code> · score per <code>docs/research/03-score-plan.md</code> · relax per <code>docs/research/04-relaxation.md</code> · robustness per <code>docs/research/06-robustness.md</code> · analysis per <code>docs/research/08-analysis.md</code> · attention per <code>docs/research/11-attention.md</code> · decision support per <code>docs/research/12-decision-support.md</code></p>
 </div>
 </body>
 </html>

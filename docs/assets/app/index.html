@@ -1139,8 +1139,8 @@
     /** POST /knowledge — encoding discipline enforced here; nothing persists on refusal. */
     async create(ko) {
       this.#assertValid(ko);
-      const refusal9 = checkEncoding(ko);
-      if (refusal9) return refusal9;
+      const refusal10 = checkEncoding(ko);
+      if (refusal10) return refusal10;
       const hash = await contentHash(ko);
       const isNew = !this.#store.exists(hash);
       const ref = await this.#store.put(ko);
@@ -1159,8 +1159,8 @@
     /** POST /knowledge/{id}/supersede — writes a supersedes edge; returns what it staled. */
     async supersede(next, priorId) {
       this.#assertValid(next);
-      const refusal9 = checkEncoding(next);
-      if (refusal9) return refusal9;
+      const refusal10 = checkEncoding(next);
+      if (refusal10) return refusal10;
       const priorHash = this.#latestHash(priorId);
       if (!priorHash) {
         return unknownRef(priorId, `${priorId}: no live version to supersede.`);
@@ -1512,6 +1512,22 @@
     // region from scope (port_district)
     causeway_intact: { kind: "state", channel: "mobility", region: "causeway" }
   };
+  function metricProfile(commitment) {
+    const spec = METRICS[commitment.metric];
+    if (!spec) {
+      throw new Error(`metrics: no evaluator for metric '${commitment.metric}' (fixture/spec defect)`);
+    }
+    switch (spec.kind) {
+      case "reach":
+        return { kind: "reach", element: spec.element, channel: "mobility" };
+      case "exposure":
+        return { kind: "exposure", element: commitment.scope ?? spec.element, channel: spec.channel };
+      case "fires":
+        return { kind: "fires", element: spec.element };
+      case "state":
+        return { kind: "state" };
+    }
+  }
   function evaluateMetric(commitment, plan2, world, config) {
     const spec = METRICS[commitment.metric];
     if (!spec) {
@@ -2785,6 +2801,283 @@
     explanation
   });
 
+  // src/decisionSupport.ts
+  var LEAD = 0;
+  var DecisionSupportService = class {
+    #store;
+    #trace;
+    #config;
+    #robustness;
+    #writtenBy;
+    constructor(opts) {
+      this.#store = opts.store;
+      this.#trace = opts.trace;
+      this.#config = opts.config;
+      this.#robustness = opts.robustness;
+      this.#writtenBy = opts.writtenBy ?? "decision-support-service";
+    }
+    /** POST /analyse/decision-support — derived, never authored; refuses first-class. */
+    async analyse(req) {
+      const plan2 = this.#resolve(req.plan);
+      if (!plan2) return refusal9("unknown_ref", [req.plan], `${req.plan.logical_id}: no such plan.`);
+      const selected = Object.entries(req.worlds).find(
+        ([, ref]) => req.world.content_hash && ref.content_hash === req.world.content_hash || !req.world.content_hash && ref.logical_id === req.world.logical_id
+      )?.[0];
+      if (!selected) {
+        return refusal9(
+          "stamp_mismatch",
+          [req.world],
+          "the selected world is not among the scenario worlds \u2014 margin-class evidence would read a different tableau than divergence evidence."
+        );
+      }
+      const commitments = [];
+      for (const cRef of req.commitments) {
+        const c = this.#resolve(cRef);
+        if (!c) return refusal9("unknown_ref", [cRef], `${cRef.logical_id}: no such commitment.`);
+        commitments.push(c);
+      }
+      commitments.sort((a, b) => cmp6(a.logical_id, b.logical_id));
+      const rr = await this.#robustness.robustness({
+        plans: [req.plan],
+        worlds: req.worlds,
+        engine_version: req.engine_version
+      });
+      if (isRefusal(rr)) return rr;
+      const tensor = rr.tensor;
+      const worldOf = /* @__PURE__ */ new Map();
+      for (const [sid, wRef] of Object.entries(req.worlds)) {
+        const w = this.#resolve(wRef);
+        if (!w) return refusal9("unknown_ref", [wRef], `${wRef.logical_id}: no such world for scenario ${sid}.`);
+        worldOf.set(sid, w);
+      }
+      const selectedWorld = worldOf.get(selected);
+      const coas = [...req.coas].filter((c) => tensor.scenarios.includes(c)).sort(cmp6);
+      const divergenceDerivable = tensor.stamps_compatible && coas.length >= 2;
+      const questions = this.#resolveQuestions(req.questions);
+      const rows = [];
+      const pid = req.plan.logical_id;
+      for (const c of commitments) {
+        const evidence = [];
+        if (divergenceDerivable) {
+          for (let i = 0; i < coas.length; i++) {
+            for (let j = i + 1; j < coas.length; j++) {
+              const a = coas[i];
+              const b = coas[j];
+              const va = tensor.verdicts.get(`${pid}-${c.logical_id}-${a}`);
+              const vb = tensor.verdicts.get(`${pid}-${c.logical_id}-${b}`);
+              if (va && vb && va.verdict !== vb.verdict) {
+                evidence.push({ kind: "scenario_divergence", a, b, verdict_a: va.verdict, verdict_b: vb.verdict });
+              }
+            }
+          }
+        }
+        const divergent = evidence.length > 0;
+        const vSel = tensor.verdicts.get(`${pid}-${c.logical_id}-${selected}`);
+        if (vSel && (vSel.verdict === "tight" || vSel.verdict === "marginal")) {
+          const m = { kind: "margin", scenario: selected, verdict: vSel.verdict };
+          if (vSel.margin) m.margin = vSel.margin;
+          evidence.push(m);
+        }
+        if (evidence.length === 0) continue;
+        const row = this.#deriveRow(c, plan2, evidence, divergent, coas, worldOf, questions, selectedWorld);
+        rows.push(row);
+      }
+      let statement;
+      if (!divergenceDerivable && tensor.stamps_compatible === false) {
+        statement = "scenario worlds have mixed stamp lineages \u2014 divergence evidence cannot be derived; margin-class rows only.";
+      } else if (rows.length === 0) {
+        statement = "no verdict turns on open information \u2014 every commitment is scenario-stable and clear of the line.";
+      }
+      const stamp = await contentHash({
+        analysis: "decision-support",
+        plan: { logical_id: pid, content_hash: req.plan.content_hash },
+        worlds: Object.keys(req.worlds).sort(cmp6).map((sid) => ({ scenario: sid, stamp: worldOf.get(sid).stamp })),
+        selected,
+        coas,
+        commitments: commitments.map((c) => c.logical_id),
+        questions: questions.map((q) => q.ref.logical_id).sort(cmp6),
+        lead: LEAD,
+        engine_version: req.engine_version
+      });
+      const envelope = {
+        analysis: "decision-support",
+        plan: pid,
+        selected,
+        coas,
+        lead: LEAD,
+        stamp,
+        rows
+      };
+      const envRef = await this.#store.put(envelope);
+      const edged = /* @__PURE__ */ new Set();
+      const edge = (fromHash) => {
+        if (!fromHash || edged.has(fromHash)) return;
+        edged.add(fromHash);
+        this.#trace.add(this.#edge(fromHash, envRef.content_hash, stamp));
+      };
+      for (const row of rows) {
+        for (const ev of row.evidence) {
+          if (ev.kind === "scenario_divergence") {
+            for (const sid of [ev.a, ev.b]) {
+              const v = tensor.verdicts.get(`${pid}-${row.commitment}-${sid}`);
+              if (v) edge((await this.#store.put(v)).content_hash);
+            }
+          } else {
+            const v = tensor.verdicts.get(`${pid}-${row.commitment}-${ev.scenario}`);
+            if (v) edge((await this.#store.put(v)).content_hash);
+          }
+        }
+        for (const d of row.discriminators) edge(d.question.content_hash);
+        for (const t of row.tripwires) edge(t.knowledge.content_hash);
+      }
+      return {
+        rows,
+        plan: pid,
+        selected,
+        coas,
+        lead: LEAD,
+        stamps_compatible: tensor.stamps_compatible,
+        ...statement ? { statement } : {},
+        stamp
+      };
+    }
+    /** One row: commit step (note 12 §3), LTIOV + in-time (§4), discriminators + tripwires (§5). */
+    #deriveRow(c, plan2, evidence, divergent, coas, worldOf, questions, selectedWorld) {
+      const profile = metricProfile(c);
+      let commit_kind = "none";
+      let commit_detail = "";
+      let commit_step;
+      if (!divergent) {
+        commit_detail = "margin-class \u2014 turns on the width of answered knowledge, not on scenario identity; see the sensitivity ranking (thesis E).";
+      } else if (profile.kind === "state") {
+        commit_kind = "world_decided";
+        commit_step = this.#config.grid.horizon_steps;
+        commit_detail = `world-decided \u2014 the plan takes no branch; the ${c.metric} read happens at the horizon (step ${commit_step}). Information is of value until then.`;
+      } else if (profile.kind === "reach" || profile.kind === "exposure") {
+        const ep = plan2.elements.find((e) => e.force_element === profile.element);
+        const legs = ep?.route ?? [];
+        for (const leg3 of legs) {
+          const reads = coas.map((sid) => channelAt(worldOf.get(sid), this.#config, profile.channel, leg3.x, leg3.y, leg3.enter_step));
+          const keys = new Set(reads.map((b) => `${b.lo}|${b.hi}`));
+          if (keys.size > 1) {
+            commit_kind = "route_leg";
+            commit_step = leg3.enter_step;
+            commit_detail = `${profile.element} enters the leg at (${leg3.x}, ${leg3.y}) at step ${leg3.enter_step} \u2014 the ${profile.channel} read differs across ${coas.join("/")} from there; the branch is taken.`;
+            break;
+          }
+        }
+        if (commit_kind === "none") {
+          commit_detail = "commit step underivable \u2014 divergent verdicts with no divergent route read; stated, not improvised.";
+        }
+      } else {
+        commit_detail = "commit step underivable \u2014 a fires metric reads only the plan\u2019s own geometry; stated, not improvised.";
+      }
+      const ltiov = commit_step === void 0 ? void 0 : commit_step - LEAD;
+      const divergencePairs = evidence.filter((e) => e.kind === "scenario_divergence").map((e) => ({ a: e.a, b: e.b }));
+      const discriminators = [];
+      for (const { ref, ko } of questions) {
+        if (divergencePairs.length === 0) break;
+        const answerByCoa = /* @__PURE__ */ new Map();
+        for (const ea of ko.expected_answers ?? []) answerByCoa.set(ea.coa, ea.band);
+        const pairs = [];
+        for (const { a, b } of divergencePairs) {
+          const bandA = answerByCoa.get(a);
+          const bandB = answerByCoa.get(b);
+          if (!bandA || !bandB) continue;
+          pairs.push({ a, b, classification: classifySeparation(bandA, bandB), separation: computeSeparation(bandA, bandB) });
+        }
+        if (pairs.some((p) => p.classification !== "nested")) {
+          const collection = (ko.collection ?? []).map((co) => {
+            const entry = { method: co.method, cost: co.cost };
+            if (co.earliest_result !== void 0) {
+              entry.earliest_result = co.earliest_result;
+              if (ltiov !== void 0) {
+                entry.in_time = co.earliest_result <= ltiov;
+                if (entry.in_time) entry.slack = ltiov - co.earliest_result;
+              }
+            }
+            return entry;
+          });
+          discriminators.push({ question: ref, pairs, collection });
+        }
+      }
+      const best = (d) => {
+        let b;
+        for (const p of d.pairs) {
+          if (p.classification === "nested") continue;
+          if (!b || p.separation.lo > b.lo || p.separation.lo === b.lo && p.separation.hi > b.hi) b = p.separation;
+        }
+        return b;
+      };
+      discriminators.sort((x, y) => {
+        const bx = best(x);
+        const by = best(y);
+        if (by.lo !== bx.lo) return by.lo - bx.lo;
+        if (by.hi !== bx.hi) return by.hi - bx.hi;
+        return cmp6(x.question.logical_id, y.question.logical_id);
+      });
+      const gap = divergent && discriminators.length === 0 ? `intelligence gap \u2014 no knowledge in the KB separates ${divergencePairs.map((p) => `${p.a}\u2194${p.b}`).join(", ")}; a collection requirement, not an empty cell.` : void 0;
+      const tripwires = [];
+      if (commit_step !== void 0) {
+        for (const kRef of selectedWorld.consumed) {
+          const ko = this.#store.get(kRef.content_hash);
+          if (ko?.validity && ko.validity.valid_until < commit_step) {
+            tripwires.push({ knowledge: { logical_id: kRef.logical_id, content_hash: kRef.content_hash }, valid_until: ko.validity.valid_until, commit_step });
+          }
+        }
+        tripwires.sort((a, b) => cmp6(a.knowledge.logical_id, b.knowledge.logical_id));
+      }
+      const row = {
+        commitment: c.logical_id,
+        tier: c.tier,
+        statement: c.statement,
+        evidence,
+        commit_kind,
+        commit_detail,
+        discriminators,
+        tripwires
+      };
+      if (commit_step !== void 0) row.commit_step = commit_step;
+      if (ltiov !== void 0) row.ltiov = ltiov;
+      if (gap) row.gap = gap;
+      return row;
+    }
+    #resolveQuestions(refs) {
+      const results = [];
+      for (const ref of refs ?? []) {
+        const resolved = this.#latestRef(ref);
+        if (!resolved) continue;
+        const ko = this.#store.get(resolved.content_hash);
+        if (ko && ko.status === "open" && ko.expected_answers && ko.expected_answers.length > 0) {
+          results.push({ ref: resolved, ko });
+        }
+      }
+      results.sort((a, b) => cmp6(a.ref.logical_id, b.ref.logical_id));
+      return results;
+    }
+    #latestRef(ref) {
+      if (ref.content_hash) return this.#store.exists(ref.content_hash) ? ref : void 0;
+      const versions = this.#store.versions(ref.logical_id);
+      return versions.length > 0 ? versions[versions.length - 1] : void 0;
+    }
+    #resolve(ref) {
+      if (ref.content_hash) return this.#store.get(ref.content_hash);
+      const versions = this.#store.versions(ref.logical_id);
+      const hash = versions.length > 0 ? versions[versions.length - 1].content_hash : void 0;
+      return hash ? this.#store.get(hash) : void 0;
+    }
+    #edge(from, to, stamp) {
+      return { from_hash: from, to_hash: to, edge_type: "cited_in", stamp, written_by: this.#writtenBy };
+    }
+  };
+  var cmp6 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  var refusal9 = (reason, offending, explanation) => ({
+    refused: true,
+    reason,
+    offending,
+    explanation
+  });
+
   // src/depGraph.ts
   function classifyObject(obj) {
     if (!obj) return "unknown";
@@ -3389,12 +3682,12 @@ ${cursor}
 
   // src/components/refusalBanner.ts
   var esc5 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  function refusalBanner(refusal9) {
-    const refs = refusal9.offending.map((r) => esc5(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
+  function refusalBanner(refusal10) {
+    const refs = refusal10.offending.map((r) => esc5(r.logical_id || r.content_hash)).filter(Boolean).join(", ");
     return `<div class="assay-refusal" role="alert" style="font-family:ui-monospace,monospace;font-size:11.5px;border:1px solid #EFC6C6;border-left:4px solid #A33131;background:#FBEDED;color:#7A1F1F;padding:8px 11px;border-radius:4px">
-  <span style="font-weight:700">Refused \xB7 ${esc5(refusal9.reason)}</span>
+  <span style="font-weight:700">Refused \xB7 ${esc5(refusal10.reason)}</span>
   <span style="margin-left:8px;color:#9A3B3B">offending: ${refs}</span>
-  <div style="margin-top:3px;color:#5E2020">${esc5(refusal9.explanation)}</div>
+  <div style="margin-top:3px;color:#5E2020">${esc5(refusal10.explanation)}</div>
 </div>`;
   }
 
@@ -3941,6 +4234,116 @@ ${items}
 </div>`;
   }
 
+  // src/components/dsmTable.ts
+  var esc15 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var STOP4 = {
+    robust: { bg: "#1E6B3A", fg: "#FFFFFF" },
+    marginal: { bg: "#7A6A12", fg: "#FFFFFF" },
+    tight: { bg: "#9A5212", fg: "#FFFFFF" },
+    violated: { bg: "#8A2020", fg: "#FFFFFF" }
+  };
+  var verdictChip2 = (v) => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:${STOP4[v].bg};color:${STOP4[v].fg}">${v}</span>`;
+  function bandPill3(b) {
+    const text = b.lo === b.hi ? `${b.lo} ${b.unit}` : `${b.lo}\u2013${b.hi} ${b.unit}`;
+    return `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:#E0E8ED;color:#1B2732;margin:1px 2px">${esc15(text)}</span>`;
+  }
+  var stepPill = (n) => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;background:#EAF0F7;color:#3E5D8A;border:1px solid #C9D7E8">step ${n}</span>`;
+  var tierChip = (tier) => `<span style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:600;color:#3E5D8A;background:#EAF0F7;border:1px solid #C9D7E8;border-radius:3px;padding:0 4px">${esc15(tier)}</span>`;
+  var CLASS_LABEL2 = {
+    disjoint: { mark: "\u2713", word: "discriminates", fg: "#1E6B3A", bg: "#E4F0E8" },
+    partial: { mark: "~", word: "could discriminate", fg: "#7A6A12", bg: "#F5F0DC" },
+    nested: { mark: "\u2715", word: "cannot discriminate", fg: "#8A2020", bg: "#F6E4E4" }
+  };
+  function evidenceLine(ev) {
+    if (ev.kind === "scenario_divergence") {
+      return `<div data-dp-evidence="divergence:${esc15(ev.a)}-${esc15(ev.b)}" style="display:flex;align-items:center;gap:4px;margin:2px 0;flex-wrap:wrap"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${esc15(ev.a)}</span>${verdictChip2(ev.verdict_a)}<span style="font-size:9.5px;color:#5B6B77">\u2194</span><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${esc15(ev.b)}</span>${verdictChip2(ev.verdict_b)}</div>`;
+    }
+    return `<div data-dp-evidence="margin:${esc15(ev.scenario)}" style="display:flex;align-items:center;gap:4px;margin:2px 0;flex-wrap:wrap"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${esc15(ev.scenario)}</span>${verdictChip2(ev.verdict)}${ev.margin ? `<span style="font-size:9.5px;color:#5B6B77">margin</span>${bandPill3(ev.margin)}` : ""}</div>`;
+  }
+  function inTimeState(co, ltiov) {
+    if (co.earliest_result === void 0) {
+      return `<span data-ltiov-state="unstated" style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77;background:#F1F3F5;border:1px solid #D8DFE4;border-radius:3px;padding:1px 5px">no earliest result stated \u2014 never assumed answerable</span>`;
+    }
+    if (ltiov === void 0 || co.in_time === void 0) {
+      return `<span data-ltiov-state="no-ltiov" style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77;background:#F1F3F5;border:1px solid #D8DFE4;border-radius:3px;padding:1px 5px">earliest result ${co.earliest_result} \u2014 no LTIOV to evaluate against</span>`;
+    }
+    if (co.in_time) {
+      return `<span data-ltiov-state="in-time" style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:600;color:#1E6B3A;background:#E4F0E8;border:1px solid #BFDCC9;border-radius:3px;padding:1px 5px">in time \u2014 earliest result ${co.earliest_result} \u2264 LTIOV ${ltiov} (slack ${co.slack} steps)</span>`;
+    }
+    return `<span data-ltiov-state="red" style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:700;color:#FFFFFF;background:#8A2020;border:1px solid #6E1717;border-radius:3px;padding:1px 5px">cannot answer in time \u2014 earliest result ${co.earliest_result} &gt; LTIOV ${ltiov}</span>`;
+  }
+  function discriminatorBlock(row, knowledgeById) {
+    if (row.gap) {
+      return `<div data-dp-gap style="font-family:ui-monospace,monospace;font-size:10px;color:#9A6A14;background:#F7EDD8;border:1px solid #E7D3A6;border-radius:4px;padding:4px 8px">${esc15(row.gap)}</div>`;
+    }
+    if (row.discriminators.length === 0) {
+      return `<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">margin-class \u2014 no COA pair to separate; the sensitivity ranking (thesis E) is the informing surface</span>`;
+    }
+    return row.discriminators.map((d) => {
+      const qid = d.question.logical_id;
+      const ko = knowledgeById[qid];
+      const pairChips = d.pairs.map((p) => {
+        const l = CLASS_LABEL2[p.classification];
+        const sepText = p.separation.lo === p.separation.hi ? `${round(p.separation.lo)} ${p.separation.unit}` : `${round(p.separation.lo)}\u2013${round(p.separation.hi)} ${p.separation.unit}`;
+        return `<span data-pair="${esc15(p.a)}-${esc15(p.b)}" data-separation-class="${p.classification}" style="display:inline-flex;align-items:center;gap:3px;margin:1px 4px 1px 0"><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">${esc15(p.a)}\u2194${esc15(p.b)}</span><span style="display:inline-block;padding:0 5px;border-radius:8px;font-family:ui-monospace,monospace;font-size:9.5px;font-weight:600;background:${l.bg};color:${l.fg}">${l.mark} ${esc15(l.word)}</span><span style="font-family:ui-monospace,monospace;font-size:9px;color:#5B6B77">${esc15(sepText)}</span></span>`;
+      }).join("");
+      const expected = (ko?.expected_answers ?? []).filter((ea) => d.pairs.some((p) => p.a === ea.coa || p.b === ea.coa)).map((ea) => {
+        const chip5 = ea.provenance ? provenanceChip(ea.provenance) : `<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#A33131;background:#F8E2E2;border:1px solid #EFC6C6;border-radius:3px;padding:1px 5px">no provenance \u2014 expectation unattributed</span>`;
+        return `<div data-expected-coa="${esc15(ea.coa)}" style="display:flex;align-items:center;gap:4px;margin:2px 0;flex-wrap:wrap"><span style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:600;color:#1B2732">${esc15(ea.coa)}</span>${bandPill3(ea.band)}${chip5}</div>`;
+      }).join("");
+      const collection = d.collection.map(
+        (co) => `<div data-collection style="display:flex;align-items:center;gap:5px;margin:2px 0;flex-wrap:wrap"><span style="font-size:10px;color:#1B2732">${esc15(co.method)}</span><span style="font-size:9.5px;color:#5B6B77">cost</span>${bandPill3(co.cost)}${inTimeState(co, row.ltiov)}</div>`
+      ).join("");
+      return `<div data-discriminator="${esc15(qid)}" data-logical-id="${esc15(qid)}" style="margin:3px 0;padding:4px 6px;border:1px solid #EDF0F2;border-radius:4px"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;color:#1B2732">${esc15(qid)}</span>${ko ? `<span style="font-size:10px;color:#5B6B77">${esc15(ko.question)}</span>` : ""}</div><div style="margin-top:2px">${pairChips}</div>${expected ? `<details style="margin-top:2px"><summary style="cursor:pointer;font-size:9.5px;color:#3E5D8A">expected answers (who says the COA would look like that)</summary><div style="margin-top:2px">${expected}</div></details>` : ""}${collection}</div>`;
+    }).join("");
+  }
+  var round = (n) => Math.round(n * 1e3) / 1e3;
+  function tripwireBlock(row, knowledgeById) {
+    if (row.tripwires.length === 0) {
+      return `<span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77">\u2014</span>`;
+    }
+    return row.tripwires.map((t) => {
+      const ko = knowledgeById[t.knowledge.logical_id];
+      return `<div data-tripwire="${esc15(t.knowledge.logical_id)}" data-logical-id="${esc15(t.knowledge.logical_id)}" style="margin:2px 0"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><span style="font-family:ui-monospace,monospace;font-size:10px;font-weight:700;color:#9A6A14">\u23F1 ${esc15(t.knowledge.logical_id)}</span><span style="font-family:ui-monospace,monospace;font-size:9.5px;color:#9A6A14;background:#F7EDD8;border:1px solid #E7D3A6;border-radius:3px;padding:1px 5px">lapses at ${t.valid_until} \u2014 before the commit step (${t.commit_step})</span></div>${ko?.provenance ? `<div style="margin-top:1px">${provenanceChip(ko.provenance, ko.jipoe_step)}</div>` : ""}<div style="font-size:9.5px;color:#5B6B77">the world under this decision will contain lapsed knowledge at decision time \u2014 re-validate before committing</div></div>`;
+    }).join("");
+  }
+  function rowSig(row) {
+    const ev = row.evidence.map((e) => e.kind === "scenario_divergence" ? `${e.a}${e.verdict_a}|${e.b}${e.verdict_b}` : `${e.scenario}${e.verdict}${e.margin ? `${e.margin.lo},${e.margin.hi}` : ""}`).join(";");
+    const disc = row.discriminators.map((d) => `${d.question.logical_id}:${d.collection.map((c) => `${c.earliest_result ?? "\u2205"}${c.in_time === void 0 ? "?" : c.in_time ? "+" : "-"}${c.slack ?? ""}`).join(",")}`).join(";");
+    const trip = row.tripwires.map((t) => `${t.knowledge.logical_id}@${t.valid_until}<${t.commit_step}`).join(";");
+    return `${row.commit_kind}:${row.commit_step ?? "\u2205"}:${row.ltiov ?? "\u2205"}|${ev}|${disc}|${trip}${row.gap ? "|gap" : ""}`;
+  }
+  function dsmTable(result, opts = {}) {
+    const kb = opts.knowledgeById ?? {};
+    const headerBits = [
+      `derived for <strong>${esc15(result.plan)}</strong>`,
+      `selected world <strong>${esc15(result.selected)}</strong>`,
+      `adversary vocabulary ${result.coas.map(esc15).join("/")}`,
+      `lead ${result.lead} (v1 \u2014 a non-zero lead is an authored assessment, not an engine constant)`
+    ];
+    const header = `<div class="assay-dsm-header" style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77;margin-bottom:4px">${headerBits.join(" \xB7 ")}${opts.selectionNote ? ` \xB7 ${esc15(opts.selectionNote)}` : ""}</div>`;
+    const statement = result.statement ? `<div class="assay-dsm-statement" data-dsm-statement style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5B6B77;background:#F1F3F5;border:1px solid #D8DFE4;border-radius:4px;padding:4px 8px;margin-bottom:6px">${esc15(result.statement)}</div>` : "";
+    if (result.rows.length === 0) {
+      return `${header}${statement}`;
+    }
+    const th = (label) => `<th style="padding:5px 10px;font-size:10px;color:#5B6B77;border-bottom:2px solid #D8DFE4;text-align:left">${label}</th>`;
+    const head = `<tr>${th("Decision point")}${th("Evidence (why it is a DP)")}${th("Commit step \xB7 LTIOV")}${th("Discriminating questions \xB7 collection (ranked by separation \u2014 tasking is a human act)")}${th("Tripwires")}</tr>`;
+    const rows = result.rows.map((row) => {
+      const commitCell = row.commit_step !== void 0 ? `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${stepPill(row.commit_step)}${row.commit_kind === "world_decided" ? `<span style="font-family:ui-monospace,monospace;font-size:9px;color:#3E5D8A;background:#EAF0F7;border:1px solid #C9D7E8;border-radius:3px;padding:0 4px">world-decided</span>` : ""}</div><div style="font-family:ui-monospace,monospace;font-size:9.5px;color:#5B6B77;margin-top:2px">LTIOV ${row.ltiov}</div><div style="font-size:9.5px;color:#5B6B77;margin-top:2px">${esc15(row.commit_detail)}</div>` : `<div data-commit-absent style="font-size:9.5px;color:#5B6B77">${esc15(row.commit_detail)}</div>`;
+      return `<tr data-logical-id="${esc15(row.commitment)}" data-glow-id="dsm:${esc15(result.plan)}:${esc15(row.commitment)}" data-glow-sig="${esc15(rowSig(row))}">
+        <td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top;white-space:nowrap"><span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732">${esc15(row.commitment)}</span> ${tierChip(row.tier)}<div style="font-size:10px;color:#5B6B77;margin-top:2px;max-width:180px;white-space:normal">${esc15(row.statement)}</div></td>
+        <td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top">${row.evidence.map(evidenceLine).join("")}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top;max-width:220px">${commitCell}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top">${discriminatorBlock(row, kb)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #EDF0F2;vertical-align:top;max-width:230px">${tripwireBlock(row, kb)}</td>
+      </tr>`;
+    }).join("");
+    return `${header}${statement}<div style="overflow-x:auto"><table class="assay-dsm-table" style="border-collapse:collapse;width:100%">
+  <thead>${head}</thead>
+  <tbody>${rows}</tbody>
+</table></div>`;
+  }
+
   // src/components/legends.ts
   var PILL_LEGEND = {
     band: {
@@ -4023,21 +4426,33 @@ ${items}
       term: "tie broken by scenario weight (attention only)",
       gloss: "Two questions had exactly equal discrimination standing; the queue placed the one bearing on the more-likely scenario pair (interval order) first, and says so. Weight breaks ties only \u2014 it never overrides the primary discrimination ranking (DEC-18) and never touches a verdict."
     },
+    decision_point: {
+      term: "decision point (derived)",
+      gloss: "A commitment whose verdict turns on open information: scenario-divergent (some adversary-COA pair flips it \u2014 the evidence chips name the pair and both verdicts) or margin-class (tight/marginal under the selected world \u2014 the margin band is the evidence). Derived from the verdict tensor, never authored; uniformly robust or uniformly violated commitments are not decision points (SPEC-24). Rows sit in commitment-id order \u2014 a stated presentation order, not an urgency ranking (DEC-19)."
+    },
+    ltiov_state: {
+      term: "LTIOV state (in time / cannot answer in time / no earliest result stated)",
+      gloss: "Latest time information is of value = the commit step minus a stated lead (0 in v1), on the scenario clock. A collection answers in time iff its earliest result lands at or before it \u2014 slack shown as a step count; the red state renders with its arithmetic and is never dropped; a collection with no stated earliest result is never assumed answerable. The system ranks and derives \u2014 tasking the collection is a human act with its own commitment consequences (the KINGFISHER/C6 discipline)."
+    },
+    tripwire: {
+      term: "tripwire (\u23F1 lapses before the commit step)",
+      gloss: "A knowledge object the selected world consumed whose validity window ends before this decision must be taken: at commit time the world underneath the verdict will contain lapsed knowledge \u2014 re-validate first. World-level scope, stated as such (the trace graph\u2019s honest granularity); lapse is marked, never carried (SPEC-24, thesis F at the decision layer)."
+    },
     invalidated: {
       term: "invalidated artefact",
       gloss: "A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes \u2014 flags only, then humans decide (constitution)."
     }
   };
-  var esc15 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc16 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function legend(pillIds, opts = {}) {
     const title = opts.title ?? "What the pills mean";
     const rows = pillIds.map((id) => PILL_LEGEND[id]).filter((e) => e !== void 0).map(
-      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc15(
+      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc16(
         e.term
-      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc15(e.gloss)}</div></div>`
+      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc16(e.gloss)}</div></div>`
     ).join("");
     return `<details class="assay-legend" style="margin:8px 0;border:1px dashed #C8D2DA;border-radius:6px;padding:4px 10px;background:#F7F9FA">
-  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc15(
+  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc16(
       title
     )}</summary>
   <div style="margin-top:6px">${rows}</div>
@@ -4053,7 +4468,8 @@ ${items}
     refusalBanner: ["refusal"],
     sensitivityTable: ["sensitivity", "single_source_flag", "verdict"],
     discriminationTable: ["separation", "separation_class", "operative_pair", "collection_cost", "band", "provenance", "weight_tiebreak"],
-    stalenessFlags: ["invalidated"]
+    stalenessFlags: ["invalidated"],
+    dsmTable: ["decision_point", "ltiov_state", "tripwire", "separation_class", "collection_cost", "band", "provenance", "tier"]
   };
   function componentLegend(component, title) {
     const pills = COMPONENT_PILLS[component] ?? [];
@@ -4080,6 +4496,7 @@ ${items}
     #sensitivitySvc;
     #discriminationSvc;
     #stalenessSvc;
+    #dsmSvc;
     #resolved = false;
     #notice;
     /** The Spatial tab's clock — pure selection over the compiled world (DEC-36c). */
@@ -4148,6 +4565,12 @@ ${items}
       this.#stalenessSvc = new StalenessService({
         store: svc.store,
         trace: svc.trace
+      });
+      this.#dsmSvc = new DecisionSupportService({
+        store: svc.store,
+        trace: svc.trace,
+        config: this.#fx.config,
+        robustness: this.#robustnessSvc
       });
     }
     get store() {
@@ -4332,6 +4755,13 @@ ${items}
             tab: "coa",
             title: "Spatial \xB7 the map refuses with the compile",
             html: `<div data-glow-id="panel:coamap" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
+            deps: /* @__PURE__ */ new Set([`refusal:${compiled.reason}`])
+          });
+          panels.push({
+            id: "dsm",
+            tab: "commander",
+            title: "Commander \xB7 decisions in time \u2014 refuses with the compile",
+            html: `<div data-glow-id="panel:dsm" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
             deps: /* @__PURE__ */ new Set([`refusal:${compiled.reason}`])
           });
         }
@@ -4519,6 +4949,41 @@ ${items}
                 html: componentLegend("scenarioStrip") + scenarioStrip(rr.tensor, { planNames, likelihoods }),
                 deps: stripDeps
               });
+            }
+            if ((this.#fx.plans ?? []).some((p) => p.logical_id === "P2")) {
+              const { ref: p2Ref } = this.latestPlan("P2");
+              const k11Ref = this.#latestRef("K11");
+              const k13Ref = this.#latestRef("K13");
+              const dsmResult = await this.#dsmSvc.analyse({
+                plan: p2Ref,
+                world: compiled.world,
+                worlds: scenarioWorlds,
+                coas: ["R1", "R2", "R3"],
+                commitments: this.#fx.commitments.map((c) => refFor(c.logical_id)),
+                questions: [...k11Ref ? [k11Ref] : [], ...k13Ref ? [k13Ref] : []],
+                engine_version: ENGINE_VERSION
+              });
+              if (!isRefusal(dsmResult)) {
+                stamps.dsm = dsmResult.stamp;
+                const kbIds = [...liveIds, "K11", "K13"];
+                const knowledgeById2 = Object.fromEntries(
+                  kbIds.map((id) => [id, this.#latest(id)]).filter(([, ko]) => ko !== void 0)
+                );
+                panels.push({
+                  id: "dsm",
+                  tab: "commander",
+                  title: "Commander \xB7 decisions in time (the DSM, derived \u2014 never tasked)",
+                  html: componentLegend("dsmTable") + dsmTable(dsmResult, {
+                    knowledgeById: knowledgeById2,
+                    selectionNote: "no /select selection exists \u2014 derived for the viewer-chosen P2 (sweep-first); the absence of a commander selection is stated"
+                  }),
+                  deps: /* @__PURE__ */ new Set([
+                    `dsm:${dsmResult.stamp}`,
+                    p2Ref.content_hash,
+                    ...Object.values(scenarioWorlds).map((w) => w.content_hash)
+                  ])
+                });
+              }
             }
           }
         }
@@ -4769,7 +5234,7 @@ ${items}
   }
 
   // src/components/depGraphRiver.ts
-  var esc16 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc17 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var NODE_STYLE = {
     knowledge: { bg: "#2E5C8A", fg: "#FFFFFF" },
     world: { bg: "#3B7A57", fg: "#FFFFFF" },
@@ -4783,7 +5248,7 @@ ${items}
     const border = opts.focus ? "border:2px solid #1B2732;" : "border:1px solid transparent;";
     const opacity = node.known ? "" : "opacity:0.6;";
     const deadEnd = node.known ? "" : " (dead end \u2014 G3)";
-    return `<div class="assay-dep-node" data-dep-hash="${esc16(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc16(node.hash)}${esc16(deadEnd)}">${esc16(node.label)}</div>`;
+    return `<div class="assay-dep-node" data-dep-hash="${esc17(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc17(node.hash)}${esc17(deadEnd)}">${esc17(node.label)}</div>`;
   }
   var MAX_VISIBLE_PER_LAYER = 5;
   function typeSummary(nodes) {
@@ -4835,7 +5300,7 @@ ${items}
   }
 
   // src/components/depGraphSidebar.ts
-  var esc17 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc18 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var TYPE_COLOUR = {
     knowledge: "#2E5C8A",
     world: "#3B7A57",
@@ -4847,23 +5312,23 @@ ${items}
   function nodeChip2(node) {
     const colour = TYPE_COLOUR[node.type];
     const opacity = node.known ? "" : "opacity:0.6;";
-    return `<span class="assay-dep-node" data-dep-hash="${esc17(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc17(node.hash)}">${esc17(node.label)}</span>`;
+    return `<span class="assay-dep-node" data-dep-hash="${esc18(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc18(node.hash)}">${esc18(node.label)}</span>`;
   }
   function directionSection(title, groups) {
     if (groups.length === 0) {
       return `<div style="margin:8px 0">
-      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc17(title)}</div>
+      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc18(title)}</div>
       <div style="font-size:11px;color:#5B6B77">\u2014 none \u2014</div>
     </div>`;
     }
     const rows = groups.map(
       (g) => `<div style="margin:4px 0;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">
-          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc17(g.edgeType)}</div>
+          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc18(g.edgeType)}</div>
           <div style="display:flex;flex-wrap:wrap;gap:2px">${g.nodes.map((n) => nodeChip2(n)).join("")}</div>
         </div>`
     ).join("");
     return `<div style="margin:8px 0">
-    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc17(title)}</div>
+    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc18(title)}</div>
     ${rows}
   </div>`;
   }
@@ -4871,10 +5336,10 @@ ${items}
     const typeColour = TYPE_COLOUR[detail.node.type];
     return `<div class="assay-dep-sidebar">
   <div style="margin-bottom:8px">
-    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc17(detail.node.label)}</span>
-    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc17(detail.node.type)}</span>
+    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc18(detail.node.label)}</span>
+    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc18(detail.node.type)}</span>
   </div>
-  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc17(detail.metadata)}</div>
+  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc18(detail.metadata)}</div>
   ${directionSection("Upstream (depends on)", detail.upstream)}
   ${directionSection("Downstream (feeds into)", detail.downstream)}
 </div>`;
@@ -5133,7 +5598,7 @@ ${items}
 [data-projection="wall"] .assay-panel{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 [data-projection="wall"] .assay-narrative-bar{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 `;
-  var esc18 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc19 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function mountShell(root, app) {
     const doc = root.ownerDocument;
     const style = doc.createElement("style");
@@ -5166,7 +5631,7 @@ ${items}
     <span class="label">Narrative:</span>
     <select id="assay-narrative-select">
       <option value="">\u2014 free exploration \u2014</option>
-      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc18(n.name)} (${esc18(n.audience)})</option>`).join("")}
+      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc19(n.name)} (${esc19(n.audience)})</option>`).join("")}
     </select>
     <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:auto">
       <input type="checkbox" id="assay-wall-toggle"> Wall projection
@@ -5216,19 +5681,19 @@ ${items}
       }
       const isCentrepiece = beatIndex === n.beats.length - 1;
       narratorEl.innerHTML = `<div class="assay-narrator">
-      <div class="beat-title">${esc18(beat.title)}</div>
-      <div class="beat-count">${esc18(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc18(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
-      <div class="presenter-note">${esc18(beat.presenterNote)}</div>
-      ${beat.doctrinalQuote ? `<div class="doctrine">${esc18(beat.doctrinalQuote)}</div>` : ""}
-      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc18(n.centrepiece)}</div>` : ""}
-      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc18(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
+      <div class="beat-title">${esc19(beat.title)}</div>
+      <div class="beat-count">${esc19(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc19(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
+      <div class="presenter-note">${esc19(beat.presenterNote)}</div>
+      ${beat.doctrinalQuote ? `<div class="doctrine">${esc19(beat.doctrinalQuote)}</div>` : ""}
+      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc19(n.centrepiece)}</div>` : ""}
+      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc19(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
       <div class="nav">
         <button id="assay-beat-prev" ${beatIndex === 0 ? "disabled" : ""}>\u25C0 Previous</button>
         <button id="assay-beat-next" ${beatIndex >= n.beats.length - 1 ? "disabled" : ""}>Next \u25B6</button>
       </div>
       <details class="principles" style="cursor:pointer">
         <summary>Scripting principles (note 09 \xA74)</summary>
-        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc18(p)}</div>`).join("")}
+        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc19(p)}</div>`).join("")}
       </details>
     </div>`;
       const prevBtn = root.querySelector("#assay-beat-prev");

@@ -1,10 +1,10 @@
 # Feature Specification: The Decision Support Matrix surface — decisions in time (SPEC-24)
 
-**Feature Branch**: TBD at pickup (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `024-decision-support-matrix`)
+**Feature Branch**: `claude/spec-24-9pywc3` (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `024-decision-support-matrix`)
 
-**Created**: 2026-07-15
+**Created**: 2026-07-15 · **Picked up**: 2026-07-16
 
-**Status**: Draft — queued; **the keystone slice** of the review series (implementation gates on the research note below)
+**Status**: In build — research note `docs/research/12-decision-support.md` authored (the DEC-11 gate); concept §6.27/§6.28 flagged; plan.md + tasks.md in this directory
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §4.2, mockup M1, action B1, addendum §10 slice S-D). JIPOE earns its keep in doctrine at the artefact ASSAY stops one step short of: the **decision support template/matrix** — decision points tied to the intelligence that discriminates them, with a latest time the information is of value (LTIOV). ASSAY has quietly built every ingredient: a commitment whose verdict is scenario-divergent or `tight` *is* a decision point; the discriminating open question *is* the NAI's indicator; `collection.earliest_result` against the plan's commit step *is* the LTIOV calculation; staleness flags *are* DSM re-validation. Missing is only the artefact that assembles them — the one a J-3 actually recognises. Per DEC-5 (surfaces are config-declared projections) this slice is **a projection plus one derivation rule**, not a new engine.
 

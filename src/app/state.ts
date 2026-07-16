@@ -37,6 +37,7 @@ import { RobustnessService } from '../robustness.js';
 import { SensitivityService } from '../sensitivity.js';
 import { DiscriminationService } from '../discrimination.js';
 import { StalenessService } from '../staleness.js';
+import { DecisionSupportService } from '../decisionSupport.js';
 import type { ScenarioVerdictTensor } from '../seam.js';
 import { checkEncoding } from '../encoding.js';
 import { confidenceLint } from '../lint.js';
@@ -58,6 +59,7 @@ import { sensitivityTable } from '../components/sensitivityTable.js';
 import { discriminationTable } from '../components/discriminationTable.js';
 import { weightTieBreak, type TieBreakEntry } from '../attention.js';
 import { stalenessFlags } from '../components/stalenessFlags.js';
+import { dsmTable } from '../components/dsmTable.js';
 import { componentLegend } from '../components/legends.js';
 import { ENGINE_VERSION } from '../engine.js';
 
@@ -76,7 +78,7 @@ export interface Snapshot {
   panels: Panel[];
   resolved: boolean;
   scenario: string;
-  stamps: { world?: string; r3m?: string; handful?: string; relax?: string; robustness?: string; sensitivity?: string; discrimination?: string; staleness?: string };
+  stamps: { world?: string; r3m?: string; handful?: string; relax?: string; robustness?: string; sensitivity?: string; discrimination?: string; staleness?: string; dsm?: string };
   deltaCount: number;
   /** Last edit outcome, surfaced to the operator (refusal or lint caution). */
   notice?: { kind: 'refusal' | 'warning'; html: string };
@@ -114,6 +116,7 @@ export class AppState {
   #sensitivitySvc!: SensitivityService;
   #discriminationSvc!: DiscriminationService;
   #stalenessSvc!: StalenessService;
+  #dsmSvc!: DecisionSupportService;
   #resolved = false;
   #notice?: Snapshot['notice'];
   /** The Spatial tab's clock — pure selection over the compiled world (DEC-36c). */
@@ -193,6 +196,12 @@ export class AppState {
     this.#stalenessSvc = new StalenessService({
       store: svc.store,
       trace: svc.trace,
+    });
+    this.#dsmSvc = new DecisionSupportService({
+      store: svc.store,
+      trace: svc.trace,
+      config: this.#fx.config,
+      robustness: this.#robustnessSvc,
     });
   }
 
@@ -406,6 +415,15 @@ export class AppState {
           html: `<div data-glow-id="panel:coamap" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
           deps: new Set([`refusal:${compiled.reason}`]),
         });
+        // The DSM refuses with the compile too — a row cannot silently rest on
+        // refused knowledge (SPEC-24 edge case; G5).
+        panels.push({
+          id: 'dsm',
+          tab: 'commander',
+          title: 'Commander · decisions in time — refuses with the compile',
+          html: `<div data-glow-id="panel:dsm" data-glow-sig="refusal:${compiled.reason}">${refusalBanner(compiled)}</div>`,
+          deps: new Set([`refusal:${compiled.reason}`]),
+        });
       }
     } else {
       stamps.world = compiled.stamp;
@@ -604,6 +622,53 @@ export class AppState {
               html: componentLegend('scenarioStrip') + scenarioStrip(rr.tensor, { planNames, likelihoods }),
               deps: stripDeps,
             });
+          }
+
+          // ---- SPEC-24 — the decision support matrix (review §4.2/M1, the
+          // keystone). Derived for the canned P2 lineage over the SAME scenario
+          // worlds the strip scores — a projection plus the note-12 derivation
+          // rules, no new engine (DEC-5/10). Absent a /select selection, the
+          // viewer-chosen plan is stated, never a fabricated "the commander's
+          // plan" (spec Assumptions). The service computes its own P2 tensor
+          // (scorer-in-a-loop); rows re-derive on recompile and glow value-keyed
+          // via their data-glow-sig (G6).
+          if ((this.#fx.plans ?? []).some((p) => p.logical_id === 'P2')) {
+            const { ref: p2Ref } = this.latestPlan('P2');
+            const k11Ref = this.#latestRef('K11');
+            const k13Ref = this.#latestRef('K13');
+            const dsmResult = await this.#dsmSvc.analyse({
+              plan: p2Ref,
+              world: compiled.world,
+              worlds: scenarioWorlds,
+              coas: ['R1', 'R2', 'R3'],
+              commitments: this.#fx.commitments.map((c) => refFor(c.logical_id)),
+              questions: [...(k11Ref ? [k11Ref] : []), ...(k13Ref ? [k13Ref] : [])],
+              engine_version: ENGINE_VERSION,
+            });
+            if (!isRefusal(dsmResult)) {
+              stamps.dsm = dsmResult.stamp;
+              const kbIds = [...liveIds, 'K11', 'K13'];
+              const knowledgeById = Object.fromEntries(
+                kbIds.map((id) => [id, this.#latest(id)]).filter(([, ko]) => ko !== undefined),
+              ) as Record<string, KnowledgeObject>;
+              panels.push({
+                id: 'dsm',
+                tab: 'commander',
+                title: 'Commander · decisions in time (the DSM, derived — never tasked)',
+                html:
+                  componentLegend('dsmTable') +
+                  dsmTable(dsmResult, {
+                    knowledgeById,
+                    selectionNote:
+                      'no /select selection exists — derived for the viewer-chosen P2 (sweep-first); the absence of a commander selection is stated',
+                  }),
+                deps: new Set([
+                  `dsm:${dsmResult.stamp}`,
+                  p2Ref.content_hash,
+                  ...Object.values(scenarioWorlds).map((w) => w.content_hash),
+                ]),
+              });
+            }
           }
         }
       }
