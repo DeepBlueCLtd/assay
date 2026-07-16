@@ -21,7 +21,6 @@
  */
 import type {
   Band,
-  Comparator,
   Commitment,
   CommitmentVerdict,
   CompiledWorld,
@@ -38,7 +37,13 @@ import { TraceStore } from './trace.js';
 import { contentHash } from './canonical.js';
 import { validateInstance } from './validate.js';
 import { evaluateMetric, isSevered } from './metrics.js';
+import { marginBand, verdictFor } from './verdictMap.js';
 import type { KnowledgeOverride, Refusal, ScoreRequest, ScoreResult } from './seam.js';
+
+// Re-exported for back-compat: the pure mapping now lives in verdictMap.ts so the
+// verdict legend (SPEC-25) reads the SAME rule (note 13 §3). Tests and callers
+// that import from './score.js' are unaffected.
+export { marginBand, verdictFor } from './verdictMap.js';
 
 export class ScoreService {
   #store: ObjectStore;
@@ -186,34 +191,6 @@ export class ScoreService {
   #edge(from: string, to: string, stamp: string): TraceEdge {
     return { from_hash: from, to_hash: to, edge_type: 'scored_from', stamp, written_by: this.#writtenBy };
   }
-}
-
-/**
- * Reduce a commitment to a signed margin band `M`, oriented so satisfied ⟺
- * margin ≥ 0 (research note §3). `M.lo` is always the worst-case margin.
- */
-export function marginBand(comparator: Comparator, threshold: number, value: Band): Band {
-  switch (comparator) {
-    case 'at_most':
-    case 'by_step':
-      return { lo: threshold - value.hi, hi: threshold - value.lo, unit: value.unit };
-    case 'at_least':
-      return { lo: value.lo - threshold, hi: value.hi - threshold, unit: value.unit };
-    case 'never':
-      return { lo: -value.hi, hi: -value.lo, unit: value.unit };
-  }
-}
-
-/**
- * The four-stop verdict, by the SIGNS of the margin-band endpoints only — the
- * unique O-3-satisfying rule (research note §3). No interior cut exists, because
- * the band gives no honest interior point to cut at (DEC-15: no midpoint).
- */
-export function verdictFor(margin: Band): VerdictBand {
-  if (margin.hi < 0) return 'violated'; // best realisation already fails
-  if (margin.lo > 0) return 'robust'; // worst realisation satisfies with room
-  if (margin.lo === 0) return 'marginal'; // worst realisation exactly on the line
-  return 'tight'; // m_lo < 0 ≤ m_hi — the band straddles the line
 }
 
 const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);

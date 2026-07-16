@@ -10,6 +10,8 @@
  * surface stays clean until the reader asks.
  */
 
+import { verdictLegend } from './verdictLegend.js';
+
 export interface LegendEntry {
   /** The pill/marker name as it reads on the surface. */
   term: string;
@@ -37,7 +39,12 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
   verdict: {
     term: 'four-stop verdict (robust / marginal / tight / violated)',
     gloss:
-      'One colour language for how a plan meets a commitment, read off the signed margin band’s sign only. No decimals — the banded margin rides on hover, never as a headline (G2).',
+      'One colour language for how a plan meets a commitment, read off the signed margin band’s sign only. No decimals — the banded margin rides on hover, never as a headline (G2). Open the verdict legend for the full mapping (SPEC-25).',
+  },
+  verdict_legend: {
+    term: 'verdict legend (the mapping, laid open)',
+    gloss:
+      'The four-stop mapping made public, CRT-style: each verdict is a REGION of the signed-margin sign rule (robust m_lo>0 / marginal m_lo=0 / tight m_lo<0≤m_hi / violated m_hi<0), illustrated by the frozen oracle O-3 sweep — the verdict changes only at the band edges, never inside. A mapping, never a score (DEC-19); oracle-derived, never live (SPEC-25).',
   },
   tier: {
     term: 'tier chip (must / should / prefer)',
@@ -139,6 +146,21 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes — flags only, then humans decide (constitution).',
   },
+  puts_at_risk: {
+    term: 'puts at risk (verdict → verdict)',
+    gloss:
+      'A commitment this least-worst option DEGRADES short of violation, relative to the incumbent plan under the same world (e.g. robust → tight). Derived from verdict deltas by the reused scorer, never authored — the risk residue the sacrifice set (violated-only) would hide (SPEC-25). Distinct from "sacrificed": that is the violated set; this is worse-but-not-failed.',
+  },
+  challenge: {
+    term: 'challenge — key assumptions (leans on …)',
+    gloss:
+      'The computed sensitivity contributors for THIS verdict: the knowledge that, pushed to its band edge, flips it — single-source flags co-shown. A re-render of the sensitivity ranking (SPEC-11) scoped to one verdict; it ROUTES challenge to the knowledge row, it does not adjudicate it. "No single band-edge movement flips this" is itself assurance, never a blank (SPEC-25).',
+  },
+  role_menu: {
+    term: 'role actions (the legal verbs for this role)',
+    gloss:
+      'The write verbs C2 permits this role — J-2 collect/contest/resolve/supersede, planner compile/generate/relax/score, commander select/waive, observer none. Each is marked live-actionable, pipeline-automatic, or deferred (never a dead button faking a write, DEC-4). Menus reorganise what the seam already permits (DEC-33), never restrict; the observer tab exposes no write (SPEC-25).',
+  },
 };
 
 const esc = (s: string): string =>
@@ -169,19 +191,37 @@ export function legend(pillIds: string[], opts: { title?: string } = {}): string
 export const COMPONENT_PILLS: Record<string, string[]> = {
   s1Table: ['band', 'provenance', 'jipoe', 'waiver', 'blocks', 'refusal'],
   channelTrace: ['band', 'provenance', 'jipoe'],
-  s2Matrix: ['verdict'],
+  s2Matrix: ['verdict', 'verdict_legend'],
   handfulStrip: ['distinct'],
-  s3Cards: ['sacrifice', 'tier'],
-  scenarioStrip: ['verdict', 'scenario_collapse', 'worst_case', 'attention', 'band', 'provenance'],
+  s3Cards: ['sacrifice', 'puts_at_risk', 'tier', 'verdict_legend'],
+  scenarioStrip: ['verdict', 'verdict_legend', 'scenario_collapse', 'worst_case', 'attention', 'band', 'provenance'],
   refusalBanner: ['refusal'],
-  sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict'],
+  sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict', 'verdict_legend'],
   discriminationTable: ['separation', 'separation_class', 'operative_pair', 'collection_cost', 'band', 'provenance', 'weight_tiebreak'],
   stalenessFlags: ['invalidated'],
-  dsmTable: ['decision_point', 'ltiov_state', 'tripwire', 'separation_class', 'collection_cost', 'band', 'provenance', 'tier'],
+  dsmTable: ['decision_point', 'ltiov_state', 'tripwire', 'separation_class', 'collection_cost', 'band', 'provenance', 'tier', 'verdict_legend'],
 };
+
+/** Components whose surfaces render a four-stop verdict — the verdict legend is
+ *  reachable from each (SPEC-25 US1: "reachable from every surface that renders a
+ *  verdict"). */
+export const VERDICT_SURFACES = new Set([
+  's2Matrix',
+  's3Cards',
+  'scenarioStrip',
+  'sensitivityTable',
+  'dsmTable',
+  'challengePanel',
+]);
 
 /** Convenience: the legend for a named component. */
 export function componentLegend(component: string, title?: string): string {
   const pills = COMPONENT_PILLS[component] ?? [];
   return pills.length > 0 ? legend(pills, title ? { title } : {}) : '';
+}
+
+/** The verdict legend for a verdict-bearing component, else empty — the one act
+ *  that answers "why this word?" wherever a four-stop verdict renders (US1). */
+export function verdictLegendFor(component: string): string {
+  return VERDICT_SURFACES.has(component) ? verdictLegend() : '';
 }

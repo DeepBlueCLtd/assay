@@ -36,6 +36,18 @@ export class TraceStore {
   }
 
   /**
+   * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Edges are
+   * flat records; re-adding copies rebuilds the from/to indices. The clone shares
+   * no mutable state, so a shadow computation adds no edge to the committed graph
+   * (note 13 §2.2).
+   */
+  clone(): TraceStore {
+    const copy = new TraceStore();
+    for (const e of this.#edges) copy.add({ ...e });
+    return copy;
+  }
+
+  /**
    * Walk transitively from `start`. `forward` follows from→to; `backward`
    * follows to→from. Returns one chain per simple path to a terminal node.
    * `isKnown` (usually store.exists) marks whether the terminal is a real
