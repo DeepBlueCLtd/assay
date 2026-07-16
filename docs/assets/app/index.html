@@ -3192,7 +3192,7 @@
       }
       frontier = nextFrontier;
     }
-    return layers;
+    return { layers, truncated: frontier.length > 0 };
   }
   function buildDepGraph(focusHash, trace, store, maxDepth = 4) {
     const focusObj = store.get(focusHash);
@@ -3203,10 +3203,14 @@
       known: store.exists(focusHash),
       depth: 0
     };
+    const up = walkDirection(focusHash, "upstream", trace, store, maxDepth);
+    const down = walkDirection(focusHash, "downstream", trace, store, maxDepth);
     return {
       focus,
-      upstream: walkDirection(focusHash, "upstream", trace, store, maxDepth),
-      downstream: walkDirection(focusHash, "downstream", trace, store, maxDepth)
+      upstream: up.layers,
+      downstream: down.layers,
+      upstreamTruncated: up.truncated,
+      downstreamTruncated: down.truncated
     };
   }
   function nodeDetail(hash, trace, store, maxDepth = 4) {
@@ -3218,8 +3222,8 @@
       known: store.exists(hash),
       depth: 0
     };
-    const upLayers = walkDirection(hash, "upstream", trace, store, maxDepth);
-    const downLayers = walkDirection(hash, "downstream", trace, store, maxDepth);
+    const upLayers = walkDirection(hash, "upstream", trace, store, maxDepth).layers;
+    const downLayers = walkDirection(hash, "downstream", trace, store, maxDepth).layers;
     const groupByEdgeType = (layers) => {
       const result = [];
       for (const layer of layers) {
@@ -5276,9 +5280,18 @@ ${items}
   function arrow() {
     return '<div style="display:flex;align-items:center;padding:0 4px;color:#C8D2DA;font-size:16px">\u2192</div>';
   }
+  function deeperMarker(depth) {
+    return `<div class="assay-dep-deeper" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:96px;font-size:9.5px;color:#5B6B77;font-style:italic;text-align:center;line-height:1.3">\u22EF deeper chains<br>continue beyond<br>depth ${depth}</div>`;
+  }
   function depGraphRiver(graph) {
     const upLayers = [...graph.upstream].reverse();
+    const upDepth = graph.upstream.length;
+    const downDepth = graph.downstream.length;
     const parts = [];
+    if (graph.upstreamTruncated) {
+      parts.push(deeperMarker(upDepth));
+      parts.push(arrow());
+    }
     for (const layer of upLayers) {
       parts.push(layerColumn(layer));
       parts.push(arrow());
@@ -5290,6 +5303,10 @@ ${items}
     for (const layer of graph.downstream) {
       parts.push(arrow());
       parts.push(layerColumn(layer));
+    }
+    if (graph.downstreamTruncated) {
+      parts.push(arrow());
+      parts.push(deeperMarker(downDepth));
     }
     const totalNodes = graph.upstream.reduce((s, l) => s + l.nodes.length, 0) + 1 + graph.downstream.reduce((s, l) => s + l.nodes.length, 0);
     const totalEdges = graph.upstream.reduce((s, l) => s + l.edges.length, 0) + graph.downstream.reduce((s, l) => s + l.edges.length, 0);
