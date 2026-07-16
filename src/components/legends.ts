@@ -99,6 +99,16 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'The cost of collecting on this question, shown alongside discrimination value, never collapsed with it (DEC-19).',
   },
+  attention: {
+    term: 'likelihood layers (orders attention — never compiles)',
+    gloss:
+      'Adversary-COA likelihood bands (scenario weights) ordered by the interval order: one ranks above another only when the whole band sits above it. Overlapping bands render level — honestly unranked; a missing assessment renders unranked, never defaulted. The ordering directs attention and collection only (knowledge model §9): no verdict, score, or membership owes it anything.',
+  },
+  weight_tiebreak: {
+    term: 'tie broken by scenario weight (attention only)',
+    gloss:
+      'Two questions had exactly equal discrimination standing; the queue placed the one bearing on the more-likely scenario pair (interval order) first, and says so. Weight breaks ties only — it never overrides the primary discrimination ranking (DEC-18) and never touches a verdict.',
+  },
   invalidated: {
     term: 'invalidated artefact',
     gloss:
@@ -137,10 +147,10 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   s2Matrix: ['verdict'],
   handfulStrip: ['distinct'],
   s3Cards: ['sacrifice', 'tier'],
-  scenarioStrip: ['verdict', 'scenario_collapse', 'worst_case'],
+  scenarioStrip: ['verdict', 'scenario_collapse', 'worst_case', 'attention', 'band', 'provenance'],
   refusalBanner: ['refusal'],
   sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict'],
-  discriminationTable: ['separation', 'collection_cost', 'band'],
+  discriminationTable: ['separation', 'collection_cost', 'band', 'weight_tiebreak'],
   stalenessFlags: ['invalidated'],
 };
 

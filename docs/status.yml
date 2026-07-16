@@ -13,7 +13,7 @@
 #     the site polices its own optimism rather than trusting a human to.
 #   - Nothing here may show a capability the repository does not contain.
 
-updated: 2026-07-15
+updated: 2026-07-16
 current_stage: 7            # 0..7, the stage in flight
 current_stage_label: "Stage 6 built · Stage 7 next"
 gate_passed: false          # the spine-complete gate (SPEC-15)
@@ -97,6 +97,24 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-16
+    note: >-
+      SPEC-22 built (attention ordering — the scenario-weight firewall's positive half; review
+      §3.5/M11, addendum slice S-C): the register's claim that likelihood weights "order attention
+      and reporting, never compile" now has its visible half. The scenario strip gains an attention
+      block rendering the K14a–c likelihood bands under the INTERVAL ORDER (research note
+      11-attention.md, the DEC-11 gate): R1 (45–70%) ranks strictly above the level pair {R2, R3},
+      whose bands visibly overlap — the system refuses, in public, to rank what the bands don't
+      rank; no scalar sort key exists anywhere (DEC-15/19); provenance welded on, labelled "orders
+      attention — never compiles". The S1 collection queue may tie-break EXACTLY-equal
+      discrimination standings by the conservative pair lift of the same order — stated in the
+      rendering, never applied across overlap, never overriding DEC-18's primary ranking — composed
+      in the queue assembly around an untouched DiscriminationService. "Attention only" is
+      machine-checked: a K14 band edit changes zero stamps, verdicts, memberships, or relaxation
+      outputs while the attention block moves; import isolation between the attention/strip modules
+      and compile/score/dominance/relax is a source-level test. Register candidate concept §6.24
+      (the two-behaviour sharpening) flagged, awaiting the next batch. No schema change; no oracle,
+      verdict, or coverage-row change.
   - date: 2026-07-15
     note: >-
       SPEC-21's DEC-30 companions shipped (comms category — projections of shipped work, not

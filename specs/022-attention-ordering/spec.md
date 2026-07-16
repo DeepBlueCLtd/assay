@@ -1,10 +1,10 @@
 # Feature Specification: Attention ordering — the scenario-weight firewall's positive half (SPEC-22)
 
-**Feature Branch**: TBD at pickup (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `022-attention-ordering`)
+**Feature Branch**: `claude/spec-22-v0zm00` (spec authored on `claude/jipoe-c2-process-review-g4kwfn`; spec dir `022-attention-ordering`)
 
 **Created**: 2026-07-15
 
-**Status**: Draft — queued (implementation gates on the research note below)
+**Status**: Implemented 2026-07-16 (research note `docs/research/11-attention.md` authored first — DEC-11; register candidate concept §6.24 flagged — DEC-2)
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §3.5, mockup M11, addendum §10 slice S-C). The register's firewall language says scenario weights "**order attention and reporting**, and never compile into a constraint or cost." The negative half (never compiles) is exercised by K14 and test-asserted. The positive half has **no visible implementation anywhere**: no surface renders the K14 likelihood bands, and nothing orders by them. Doctrine (JP 2-01.3) *requires* a likelihood rank-ordering of adversary COAs as a J-2 product; ASSAY's honest answer — the ordering exists, is banded, is contestable, and influences attention, never arithmetic — is currently only half-shown. An SME will read "you hold likelihoods and do nothing with them" as a gap, not a discipline.
 
