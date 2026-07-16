@@ -58,10 +58,22 @@ function arrow(): string {
   return '<div style="display:flex;align-items:center;padding:0 4px;color:#C8D2DA;font-size:16px">→</div>';
 }
 
+// The graph is bounded at maxDepth, not exhausted — say so, never truncate
+// silently (research note 13 §5; G4 lifted to a view).
+function deeperMarker(depth: number): string {
+  return `<div class="assay-dep-deeper" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:96px;font-size:9.5px;color:#5B6B77;font-style:italic;text-align:center;line-height:1.3">⋯ deeper chains<br>continue beyond<br>depth ${depth}</div>`;
+}
+
 export function depGraphRiver(graph: DepGraph): string {
   const upLayers = [...graph.upstream].reverse();
+  const upDepth = graph.upstream.length;
+  const downDepth = graph.downstream.length;
   const parts: string[] = [];
 
+  if (graph.upstreamTruncated) {
+    parts.push(deeperMarker(upDepth));
+    parts.push(arrow());
+  }
   for (const layer of upLayers) {
     parts.push(layerColumn(layer));
     parts.push(arrow());
@@ -75,6 +87,10 @@ export function depGraphRiver(graph: DepGraph): string {
   for (const layer of graph.downstream) {
     parts.push(arrow());
     parts.push(layerColumn(layer));
+  }
+  if (graph.downstreamTruncated) {
+    parts.push(arrow());
+    parts.push(deeperMarker(downDepth));
   }
 
   const totalNodes = graph.upstream.reduce((s, l) => s + l.nodes.length, 0) +

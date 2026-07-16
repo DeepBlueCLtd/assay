@@ -120,6 +120,24 @@ describe('depGraph — buildDepGraph', () => {
     expect(knowledgeNodes.length).toBeGreaterThan(0);
   });
 
+  it('flags depth truncation when chains continue beyond maxDepth (G4, note 13 §5)', () => {
+    // K5 has multi-hop downstream chains (world → verdict → report); at depth 1
+    // reachable nodes remain beyond the cap, so the walk is bounded not exhausted.
+    const shallow = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 1);
+    expect(shallow.downstreamTruncated).toBe(true);
+    // At a depth deep enough to exhaust the frozen tableau, nothing is truncated.
+    const deep = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 12);
+    expect(deep.downstreamTruncated).toBe(false);
+    expect(deep.upstreamTruncated).toBe(false);
+  });
+
+  it('river renders the deeper-chains marker, never a silent truncation', () => {
+    const shallow = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 1);
+    expect(depGraphRiver(shallow)).toContain('deeper chains');
+    const deep = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store, 12);
+    expect(depGraphRiver(deep)).not.toContain('deeper chains');
+  });
+
   it('does not include the focus node in any layer', () => {
     const graph = buildDepGraph(rig.k5Hash, rig.svc.trace, rig.svc.store);
     const allLayerNodes = [
