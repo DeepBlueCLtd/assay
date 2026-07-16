@@ -357,6 +357,9 @@ export class AppState {
     const panels: Panel[] = [];
     const stamps: Snapshot['stamps'] = {};
     let firstPlanRef: Ref | undefined;
+    // SPEC-23: the live decision's verdict tensor conditions the
+    // discrimination ranking on the operative pairs (note 08 §7.1).
+    let liveTensor: ScenarioVerdictTensor | undefined;
 
     // Live knowledge id set: the survivor K12a once resolved, else the whole
     // contested pair (so the compile honestly refuses).
@@ -566,6 +569,7 @@ export class AppState {
           });
           if (!isRefusal(rr)) {
             stamps.robustness = rr.stamp;
+            liveTensor = rr.tensor;
             const planNames: Record<string, string> = {};
             for (const planRef of h.plans) {
               const plan = this.#svc.store.get(planRef.content_hash) as Plan;
@@ -679,6 +683,9 @@ export class AppState {
         const discResult = await this.#discriminationSvc.analyse({
           questions: [k11Ref, k13Ref],
           coas: ['R1', 'R2', 'R3'],
+          // Absent tensor (compile refused, no plans scored) falls back to
+          // all-pairs semantics with the fallback stated, never silent.
+          ...(liveTensor ? { tensor: liveTensor } : {}),
           engine_version: ENGINE_VERSION,
         });
         if (!isRefusal(discResult)) {
@@ -688,6 +695,13 @@ export class AppState {
           // HERE, around the untouched service — its ranking and stamp never
           // see a weight (research note 11-attention.md §3). Contested weights
           // order nothing until resolved.
+          //
+          // SPEC-23 composition: the standing is the FULL v2 sort key — in
+          // operative mode (operative_best, all-pairs best, could-discriminate
+          // count), else the all-pairs best alone. The weight reorders only
+          // within runs equal on the whole standing (it replaces the service's
+          // logical-id fallback, never its primary or secondary keys), so the
+          // operative-conditioned ranking (note 08 §7.1) is never overridden.
           const likelihoodBands = new Map<string, Band | undefined>();
           for (const coa of this.#fx.coas) {
             if (!coa.likelihood) continue;
@@ -695,24 +709,57 @@ export class AppState {
             if ((this.#svc.effectiveStatus(coa.likelihood) ?? ko?.status) === 'contested') continue;
             likelihoodBands.set(coa.logical_id, ko?.answer);
           }
-          const tieEntries: TieBreakEntry[] = discResult.ranking.map((e) => ({
-            question: e.question.logical_id,
-            best_separation: e.best_separation,
-            bestPairs: e.pairs
-              .filter((p) => p.separation.lo === e.best_separation.lo && p.separation.hi === e.best_separation.hi)
-              .map((p) => [p.coa_a, p.coa_b] as const),
-          }));
-          const tb = weightTieBreak(tieEntries, likelihoodBands);
+          const bandKey = (b?: Band): string => (b ? `${b.lo}|${b.hi}|${b.unit}` : '∅');
+          const couldCount = (e: (typeof discResult.ranking)[number]): number =>
+            e.pairs.filter((p) => p.operative && p.classification !== 'nested').length;
+          const standingKey = (e: (typeof discResult.ranking)[number]): string =>
+            discResult.mode === 'operative'
+              ? `${bandKey(e.operative_best)}·${bandKey(e.best_separation)}·${couldCount(e)}`
+              : bandKey(e.best_separation);
+          const toTieEntry = (e: (typeof discResult.ranking)[number]): TieBreakEntry => {
+            const standing = e.operative_best ?? e.best_separation;
+            return {
+              question: e.question.logical_id,
+              best_separation: e.best_separation,
+              bestPairs: e.pairs
+                .filter((p) => p.separation.lo === standing.lo && p.separation.hi === standing.hi)
+                .map((p) => [p.coa_a, p.coa_b] as const),
+            };
+          };
+          const order: string[] = [];
+          const statements = new Map<string, string>();
+          let i = 0;
+          while (i < discResult.ranking.length) {
+            let j = i + 1;
+            while (
+              j < discResult.ranking.length &&
+              standingKey(discResult.ranking[j]!) === standingKey(discResult.ranking[i]!)
+            )
+              j++;
+            const run = discResult.ranking.slice(i, j);
+            const tb = weightTieBreak(run.map(toTieEntry), likelihoodBands);
+            order.push(...tb.order);
+            for (const [q, s] of tb.statements) statements.set(q, s);
+            i = j;
+          }
           const entryById = new Map(discResult.ranking.map((e) => [e.question.logical_id, e]));
-          const queue = tb.order.map((q) => entryById.get(q)!);
+          const queue = order.map((q) => entryById.get(q)!);
           panels.push({
             id: 'discrimination',
             tab: 'j2',
             title: 'J-2 · discrimination ranking (thesis D)',
-            html: componentLegend('discriminationTable') + discriminationTable(queue, { tieBreaks: tb.statements }),
+            html:
+              componentLegend('discriminationTable') +
+              discriminationTable(queue, {
+                mode: discResult.mode,
+                ...(discResult.statement ? { statement: discResult.statement } : {}),
+                ...(discResult.operative ? { operative: discResult.operative } : {}),
+                tieBreaks: statements,
+              }),
             deps: new Set([
               `discrimination:${discResult.stamp}`,
-              `queue:${tb.order.join(',')}|${[...tb.statements.keys()].sort().join(',')}`,
+              ...(stamps.robustness ? [`robustness:${stamps.robustness}`] : []),
+              `queue:${order.join(',')}|${[...statements.keys()].sort().join(',')}`,
             ]),
           });
         }

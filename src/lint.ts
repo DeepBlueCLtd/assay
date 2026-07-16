@@ -50,6 +50,31 @@ export function jipoeStepLint(ko: KnowledgeObject): LintWarning[] {
   ];
 }
 
+/**
+ * SPEC-23 — missing ExpectedAnswer-provenance lint (research note 08, §7.3).
+ *
+ * An expected-answer band is somebody's assessment of what a COA would look
+ * like — red-cell COA templating, the JIPOE step-4 indicator product — and
+ * is owed a chip like every other assessment (G3 applies TO the matrix, not
+ * just through it). Warning-level like `missing_jipoe_step` (never a refusal;
+ * recalibrated after Checkpoint 1, DEC-27).
+ */
+export function expectedAnswerProvenanceLint(ko: KnowledgeObject): LintWarning[] {
+  if (!ko.expected_answers || ko.expected_answers.length === 0) return [];
+  const missing = ko.expected_answers.filter((ea) => ea.provenance === undefined);
+  if (missing.length === 0) return [];
+  const offending: Ref = { logical_id: ko.logical_id, content_hash: '' };
+  return [
+    {
+      code: 'missing_expected_answer_provenance',
+      offending,
+      message: `${ko.logical_id}: expected-answer row(s) ${missing
+        .map((ea) => ea.coa)
+        .join(', ')} carry no provenance — who says the COA would look like that? An expectation is an assessment, owed a chip like every other (research note 08, §7.3 amendment).`,
+    },
+  ];
+}
+
 export function confidenceLint(ko: KnowledgeObject): LintWarning[] {
   const prov = ko.provenance;
   if (!ko.answer || !prov) return []; // open questions and un-provenanced objects are exempt

@@ -1,7 +1,7 @@
 # ASSAY — Seam Contract
 
 **Founding doc 3** · REST shapes and semantics
-Status: draft for review · v0.5 · 2026-07-15 · v0.2 closed four gaps surfaced by the end-to-end walkthrough (`assay-walkthrough.md` §9): object listing (§2), delta publication on knowledge writes (§3), the select service (§11), and the `?since=seq` delta parameter harmonised with `assay-ui-design.md`. v0.3 added the propagation-honesty candidate invariant (§G, G6) and reclassified channel payload size as a mock-relevant risk (open item 2). v0.4 ratifies the v0.2 additions as ASSAY-DEC-24 and G6 as ASSAY-DEC-25 (register batch 3); §G is now six standing invariants. v0.5 (SPEC-21) documents the warning-level lints on knowledge writes (§3) and records `warnings?` on the write response and the delta envelope (§10) — warnings are never refusals.
+Status: draft for review · v0.6 · 2026-07-16 · v0.2 closed four gaps surfaced by the end-to-end walkthrough (`assay-walkthrough.md` §9): object listing (§2), delta publication on knowledge writes (§3), the select service (§11), and the `?since=seq` delta parameter harmonised with `assay-ui-design.md`. v0.3 added the propagation-honesty candidate invariant (§G, G6) and reclassified channel payload size as a mock-relevant risk (open item 2). v0.4 ratifies the v0.2 additions as ASSAY-DEC-24 and G6 as ASSAY-DEC-25 (register batch 3); §G is now six standing invariants. v0.5 (SPEC-21) documents the warning-level lints on knowledge writes (§3) and records `warnings?` on the write response and the delta envelope (§10) — warnings are never refusals. v0.6 (SPEC-23) conditions the discrimination response on the derived operative pairs, adds the three-way separation classification, and adds the `missing_expected_answer_provenance` lint (§3, §8).
 Authority: ASSAY-DEC-4 (mock behind seam; scorer honestly real), DEC-5 (store, services, trace graph, stamped deltas), DEC-10 (scorer independently callable), DEC-13 (invariants live here in §G while `assay-architecture.md` is deferred), DEC-24 (object listing §2, delta-on-every-knowledge-write §3, select service §11), DEC-25 (G6 propagation honesty), DEC-15/17/19/21 via the shapes they constrain.
 Companions: `assay-knowledge-model.md` (every payload shape named here is defined there), `assay-vignette.md` (the fixture instances), `assay-ui-design.md` §3 (which surface calls what), `assay-walkthrough.md` (the contract played end-to-end; its §9 logs changes it forces here).
 
@@ -56,7 +56,7 @@ GET  /knowledge/{id}/exposure                              → {chains: TraceCha
 
 Create/supersede enforce the encoding-discipline table (knowledge model §9) at write time: an `assumption` claiming `hard_constraint` is refused `encoding_violation`; `reported`/`assessed` claiming `hard_constraint` without a `waiver` is refused `waiver_required`. Supersession may cross lineages (K9 supersedes K5); the response's `stale` list is exactly the versions the edge staled.
 
-Create/supersede also run the warning-level lints (never refusals; research note 01 + amendment): `confidence_width_floor` (a suspiciously tight band for the stated confidence; `observed` exempt) and `missing_jipoe_step` (no originating JIPOE step named; `observed` **not** exempt — origin applies to facts too; SPEC-21). `warnings?: LintWarning[]` rides the write response and is recorded on the published delta (§10).
+Create/supersede also run the warning-level lints (never refusals; research note 01 + amendment): `confidence_width_floor` (a suspiciously tight band for the stated confidence; `observed` exempt), `missing_jipoe_step` (no originating JIPOE step named; `observed` **not** exempt — origin applies to facts too; SPEC-21), and `missing_expected_answer_provenance` (an event-matrix row without provenance — an expectation is an assessment, owed a chip like every other; research note 08 §7.3, SPEC-23). `warnings?: LintWarning[]` rides the write response and is recorded on the published delta (§10).
 
 Create, supersede, contest, and resolve each publish exactly one delta (§10). They are cross-surface writes in effect, not just in name: a contest blocks the planner's next compile (G5), a supersession stales verdicts on the planner's matrix — so each lands on the feed like any other seam-crossing act (clarified v0.2; walkthrough §9.4).
 
@@ -102,14 +102,17 @@ Called when the commitment set is unsatisfiable (or to ask "what would we give u
 ```
 POST /analyse/sensitivity      {plan: Ref, world: Ref, scenario: Ref}
      → {ranking: {knowledge: Ref, effect: Band, single_source: boolean}[], stamp}
-POST /analyse/discrimination   {questions?: Ref[], coas: Ref[]}
-     → {ranking: {question: Ref, separation: Band, cost: Band, pairs: [Ref, Ref][]}[], stamp}
+POST /analyse/discrimination   {questions?: Ref[], coas: Ref[], tensor?}
+     → {ranking: {question: Ref, pairs: {coa_a, coa_b, separation: Band, classification, operative?}[],
+                  best_separation: Band, operative_best?: Band, cost: Band, expected_answers}[],
+        mode: operative | all_pairs | degenerate, operative?: {pairs: {a, b, evidence}[], stamp},
+        statement?, stamp}
 POST /analyse/staleness        {changed: Ref}
      → {invalidated: {verdicts: Ref[], scores: Ref[], worlds: Ref[]}, chains: TraceChain[], stamp}
 ```
 
 - **Sensitivity**: re-scores at each answer's band edges via `knowledge_overrides`; ranks by verdict/score movement; carries the `single_source` flag through (thesis E — K8 tops this ranking in Meridian).
-- **Discrimination**: ranks open questions by separation of their `expected_answers` bands across the live COA set (DEC-18), reporting collection `cost` alongside — value and cost are shown, never collapsed into one number (K11 beats K13 on separation despite higher cost).
+- **Discrimination**: ranks open questions by separation of their `expected_answers` bands across the live COA set (DEC-18), reporting collection `cost` alongside — value and cost are shown, never collapsed into one number (K11 beats K13 on separation despite higher cost). Since SPEC-23 (research note 08 §7) the ranking leads with the **operative pairs** — derived from the supplied SPEC-10 tensor by verdict divergence only (no curation, no likelihood; the comparability guard runs before derivation, an incomparable tensor falls back to all-pairs, stated); each pair carries the three-way **classification** (`disjoint` / `partial` / `nested` — a nested pair can never single out the inner COA and is excluded from could-discriminate emphasis); degenerate states return `mode` + `statement`, never a fabricated pair; the v1 numeric separations are unchanged.
 - **Staleness**: transitive forward trace walk from the changed/superseded object; returns exactly the dependent artefacts and nothing else (thesis F — K9's arrival flags exactly the K5-dependent verdicts). Nothing recomputes automatically: flags, then humans decide (constitution, writes-are-events).
 
 ## 9. Trace

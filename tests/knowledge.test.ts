@@ -171,6 +171,26 @@ describe('SPEC-21 — a step-less knowledge write warns at write, never refuses'
     }
   });
 
+  it('an ExpectedAnswer authored without provenance draws the SPEC-23 warning on the response AND the delta', async () => {
+    const k = K('K11');
+    delete k.expected_answers![0]!.provenance;
+    const result = await svc.create(k);
+    expect(isRefusal(result)).toBe(false); // a warning is not a refusal — the write lands
+    if (!isRefusal(result)) {
+      expect(result.warnings?.some((w) => w.code === 'missing_expected_answer_provenance')).toBe(true);
+    }
+    const delta = svc.deltas.all[svc.deltas.size - 1]!;
+    expect(delta.warnings?.some((w) => w.code === 'missing_expected_answer_provenance')).toBe(true);
+  });
+
+  it('a provenance-carrying event matrix is silent — K11 as shipped draws no SPEC-23 warning', async () => {
+    const result = await svc.create(K('K11'));
+    expect(isRefusal(result)).toBe(false);
+    if (!isRefusal(result)) {
+      expect(result.warnings?.some((w) => w.code === 'missing_expected_answer_provenance')).toBeFalsy();
+    }
+  });
+
   it('a step-carrying create is silent; a step-less supersede carries the warning on its delta', async () => {
     const clean = await svc.create(K('K2'));
     if (!isRefusal(clean)) expect(clean.warnings).toBeUndefined();

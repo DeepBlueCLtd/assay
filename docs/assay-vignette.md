@@ -83,7 +83,9 @@ Expected answers for the open questions — the machine-readable basis of `/anal
 | Question | If R1 (Fortress) | If R2 (Strait Denial) | If R3/R3m (Withdrawal) | Discrimination |
 |---|---|---|---|---|
 | `K11` mines staged at quay (fraction of stock) | 0.0–0.2 | 0.7–1.0 | 0.5–0.9 | **Strong**: R1 vs R2 disjoint — one look answers the operative question |
-| `K13` HQ radio traffic (msgs/day) | 40–90 | 50–110 | 30–100 | **Weak**: bands nest and overlap; cheap but nearly uninformative |
+| `K13` HQ radio traffic (msgs/day) | 40–90 | 50–110 | 30–100 | **Weak**: bands nest and overlap; cheap but nearly uninformative (R1's band sits *inside* R3's — that pair can never confirm R1) |
+
+Each row of the matrix carries its own provenance (SPEC-23; register candidate concept §6.25): an expected answer is the **J-2 red cell's assessment** of what the COA would look like — K11's rows `assessed · moderate`, K13's `assessed · low` (the low confidence is visible in the width and overlap of the bands themselves), none single-source. The chip renders wherever an expected band renders.
 
 ## 6. Commitments (C1–C6)
 

@@ -9,7 +9,7 @@
  */
 import type { Ref } from './store.js';
 import type { TraceChain } from './trace.js';
-import type { Band, CommitmentVerdict, PlanScore, RelaxationReport, VerdictBand } from './generated/types.js';
+import type { Band, CommitmentVerdict, ExpectedAnswer, PlanScore, RelaxationReport, VerdictBand } from './generated/types.js';
 
 export type RefusalReason =
   | 'contested_knowledge'
@@ -28,7 +28,7 @@ export interface Refusal {
 
 /** A warning is not a refusal — the write still succeeds (research note 01). */
 export interface LintWarning {
-  code: 'confidence_width_floor' | 'missing_jipoe_step';
+  code: 'confidence_width_floor' | 'missing_jipoe_step' | 'missing_expected_answer_provenance';
   offending: Ref;
   message: string;
 }
@@ -192,28 +192,73 @@ export type SensitivityResult = SensitivitySuccess | Refusal;
  * SPEC-12 — discrimination movement types (seam §8, thesis D). COA-pair
  * separation over open questions' expected-answer bands (DEC-18). Cost and
  * value are shown alongside, never collapsed (DEC-19).
+ *
+ * SPEC-23 (v2, research note 08 §7): the ranking is conditioned on the
+ * OPERATIVE pairs — the scenario pairs the current plan-set's verdicts
+ * actually turn on, derived from the SPEC-10 tensor, never curated and never
+ * likelihood-weighted (the §9 firewall; K14 does not enter). Each pair also
+ * carries a three-way classification (disjoint / partial / nested) — additive
+ * over the v1 numbers, never a rescore.
  */
 export interface DiscriminationRequest {
   questions?: Ref[];
   coas: string[];
+  /** SPEC-23: the live decision's verdict tensor; absent ⇒ all-pairs v1 semantics, stated. */
+  tensor?: ScenarioVerdictTensor;
   engine_version: string;
 }
+
+/** Note 08 §7.2: nested = the inner COA has no exclusive region — no observation can single it out. */
+export type SeparationClass = 'disjoint' | 'partial' | 'nested';
 
 export interface CoaPairSeparation {
   coa_a: string;
   coa_b: string;
   separation: Band;
+  classification: SeparationClass;
+  /** True iff the pair is operative under the supplied tensor (mode 'operative' only). */
+  operative?: boolean;
+}
+
+/** One witness that a scenario pair is operative: a plan×commitment whose verdicts differ across it. */
+export interface OperativePairEvidence {
+  plan: string;
+  commitment: string;
+  verdict_a: VerdictBand;
+  verdict_b: VerdictBand;
+}
+
+export interface OperativePair {
+  a: string;
+  b: string;
+  evidence: OperativePairEvidence[];
+}
+
+/** Derived, seam-visible; a pure function of the tensor — no curation, no likelihood (note 08 §7.1). */
+export interface OperativePairs {
+  pairs: OperativePair[];
+  stamp: string;
 }
 
 export interface DiscriminationEntry {
   question: Ref;
   pairs: CoaPairSeparation[];
+  /** All-pairs best — v1 semantics, unchanged; context in operative mode (FR-002). */
   best_separation: Band;
+  /** Best separation over could-discriminate (non-nested) operative pairs; absent when none exists. */
+  operative_best?: Band;
   cost: Band;
+  /** The event-matrix rows the separations were read from, provenance included — chips render wherever expected bands render (G3, SPEC-23). */
+  expected_answers: ExpectedAnswer[];
 }
 
 export interface DiscriminationSuccess {
   ranking: DiscriminationEntry[];
+  /** How the ranking is conditioned; fallbacks and degenerate states are stated, never silent (FR-006). */
+  mode: 'operative' | 'all_pairs' | 'degenerate';
+  operative?: OperativePairs;
+  /** Render-ready honest statement for fallback/degenerate modes (and the every-pair-operative case). */
+  statement?: string;
   stamp: string;
 }
 

@@ -19,7 +19,7 @@ import { TraceStore, type TraceChain } from './trace.js';
 import { DeltaLog } from './deltas.js';
 import { validateInstance } from './validate.js';
 import { checkEncoding } from './encoding.js';
-import { confidenceLint, jipoeStepLint } from './lint.js';
+import { confidenceLint, expectedAnswerProvenanceLint, jipoeStepLint } from './lint.js';
 import { contentHash } from './canonical.js';
 import type { LintWarning, Refusal, WriteResult } from './seam.js';
 
@@ -206,7 +206,7 @@ export class KnowledgeService {
 
   /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
   #lints(ko: KnowledgeObject): LintWarning[] {
-    return [...confidenceLint(ko), ...jipoeStepLint(ko)];
+    return [...confidenceLint(ko), ...jipoeStepLint(ko), ...expectedAnswerProvenanceLint(ko)];
   }
 
   #latestHash(id: string): string | undefined {

@@ -186,6 +186,29 @@ describe('fixtures protect the coverage-matrix rows they exist for (vignette §7
     }
   });
 
+  it('SPEC-23 SC-004: every expected-answer row carries provenance with a named owner (G3 applies to the matrix)', () => {
+    for (const k of knowledge) {
+      for (const ea of k.expected_answers ?? []) {
+        expect(ea.provenance, `${k.logical_id} ${ea.coa} expected answer must carry provenance`).toBeDefined();
+        expect(ea.provenance!.owner).toBeTruthy();
+        expect(ea.provenance!.source_class).toBe('assessed'); // an expectation is an assessment, not fact
+      }
+    }
+    // The note-08 §7.3 assignments, pinned: K11 assessed·moderate, K13 assessed·low, both J-2 red cell.
+    const k11 = byId.get('K11')!;
+    const k13 = byId.get('K13')!;
+    for (const ea of k11.expected_answers!) {
+      expect(ea.provenance!.confidence).toBe('moderate');
+      expect(ea.provenance!.owner).toBe('J-2 red cell');
+      expect(ea.provenance!.single_source).toBe(false);
+    }
+    for (const ea of k13.expected_answers!) {
+      expect(ea.provenance!.confidence).toBe('low');
+      expect(ea.provenance!.owner).toBe('J-2 red cell');
+      expect(ea.provenance!.single_source).toBe(false);
+    }
+  });
+
   it('thesis E: K8 is single-source, waiver-carrying, hard_constraint', () => {
     const k8 = byId.get('K8')!;
     expect(k8.provenance?.single_source).toBe(true);

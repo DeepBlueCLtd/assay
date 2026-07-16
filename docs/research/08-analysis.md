@@ -174,6 +174,68 @@ The build plan says "S1 queues wired to all three." The S1 surface (J-2 / Refres
 
 Both queues refresh whenever the delta feed carries a re-score or re-compile (a new stamp changes the baseline, which changes the sensitivity ranking; a resolved contest or new answer changes the discrimination picture). The staleness walk runs on supersession/contest events and flags stale artefacts on S2; it does not produce its own queue — its output is flags on existing objects, not a new ranking.
 
+## 7. Amendment (2026-07-16, SPEC-23) — discrimination v2: the operative pair, the three-way classification, ExpectedAnswer provenance
+
+Per ASSAY-DEC-11, this amendment is the gate for SPEC-23 (`specs/023-discrimination-v2/`, review 2026-07-14 §3.4 / action B7 / slice S-E). It decides three things §3 left open: **(a)** how the ranking is conditioned on the scenario pair the live decision actually turns on, **(b)** how nested and partially-overlapping expected bands are told apart, and **(c)** what provenance an `ExpectedAnswer` carries. The §3 separation arithmetic is **not** reopened — every numeric separation v1 computes, v2 computes byte-identically; everything here is derivation, classification, and provenance around it.
+
+### 7.1 The operative pair — derived from the verdict tensor, never curated
+
+§3's ranking is pair-agnostic: `best_separation` is the best separation *anywhere* in the COA set. With more than two live COAs that misleads — a question that cleanly separates an inert pair (no live decision turns on it) outranks one that moderately separates the pair the decision is caught between (review §3.4). The fix is to condition the ranking on the **operative pairs**, and the honesty constraint is that the conditioning must itself be *computed*: a hand-picked "pair that matters" would be exactly the authored-artefact failure the horizon note names.
+
+**The derivation rule.** The input is the SPEC-10 scenario verdict tensor (plans × commitments × scenarios), the one object in the system that already records what the live decision turns on. A scenario pair `(S_i, S_j)` is **operative** iff some plan `p` and commitment `c` in the current set have differing verdicts across it — `V(p,c,S_i) ≠ V(p,c,S_j)` on the four-stop scale. The witnesses `(p, c, V_i, V_j)` are carried as the pair's **evidence** and rendered with the ranking ("operative: R1↔R2 — P1's C1/C2 turn on it"). The derivation reads verdicts only:
+
+- **No curation** — no request field lets a caller nominate a pair; the set is a pure function of the tensor.
+- **No likelihood** — K14's scenario weights never enter the derivation or the ranking (the §9 firewall; attention tie-breaks, if the register ever blesses any, belong to the queue layer above, never to the separation computation).
+- **Scenario-set inheritance** — the tensor's scenario set is SPEC-10's (R3m is a relaxation excursion, not a robustness scenario, and cannot appear); the derivation is then **restricted to the requested COA vocabulary** (DEC-18's event matrix is keyed by adversary COAs — a divergence against the BASE world is real evidence about the *plan* but no `expected_answers` row exists for BASE by construction, so a pair with a non-COA member can never rank a question and is not emitted).
+- **Comparability guard first** — a tensor whose worlds have mixed stamp lineages (`stamps_compatible: false`) is greyed, never silently conditioned: the derivation declines and the ranking falls back to all-pairs semantics with the reason stated.
+
+**Degenerate states, decided** (each renders its honest statement; nothing is ranked that the inputs cannot support):
+
+| state | behaviour |
+|---|---|
+| no tensor supplied (no plans scored yet) | all-pairs v1 semantics; "no live decision — showing all-pairs separation" |
+| tensor incomparable (`stamps_compatible: false`) | all-pairs v1 semantics; the incomparability stated |
+| fewer than two requested COAs in the tensor's scenario set | nothing to discriminate; empty ranking with "one scenario live — nothing to discriminate" |
+| tensor valid, no verdict divergence anywhere | operative set is empty — the plans' verdicts do not turn on scenario identity; all-pairs shown, stated |
+| every pair operative | v2 degenerates gracefully to v1 over the operative subset; stated |
+
+**Ranking semantics.** In operative mode the ranking **leads** with `operative_best` — the best separation over operative pairs **that could discriminate** (disjoint or partial, §7.2; a nested pair is excluded from could-discriminate emphasis even when operative, because no observation can settle it in the inner COA's favour). All-pairs `best_separation` stays on every entry as context, and cost stays a separate band, never collapsed (DEC-19). Sort order: `operative_best` descending (lo, then hi — v1's own comparator, restricted); a question with no could-discriminate operative pair carries no `operative_best` and sorts after every question that has one, ordered among themselves by all-pairs best; residual ties break by count of could-discriminate operative pairs, then by `logical_id` — stated, content-neutral, deterministic (G1).
+
+On Meridian this preserves the thesis-D exhibit (K11's operative R1↔R2 separation is the disjoint `[0.5, 0.5]` gap; K13's best operative separation is negative — K11 still ranks first) while fixing the pathology: a constructed question that separates only the inert `{R1,R3}` strongly outranks a moderate `{R1,R2}` separator under v1 and drops below it under v2. That constructed case is the discriminating test between the two semantics and is pinned in the suite.
+
+### 7.2 The three-way classification — disjoint / partial / nested
+
+§3 scores every overlapping pair with one negative number. Two epistemically different situations share it (review §3.4): a **partially overlapping** pair can still be settled by a lucky observation; a **nested** pair cannot be settled in the inner COA's favour by any observation at all. The J-2's tasking decision differs between them, so the classification becomes a first-class, rendered predicate — **additive over the v1 numbers, never a rescore**.
+
+For expected-answer bands `E_A`, `E_B` (closed intervals, DEC-15 — no interior, no distribution):
+
+- **disjoint** — `hi_A < lo_B` or `hi_B < lo_A`. Any observation landing in either band settles the pair. Numeric separation positive (v1, unchanged).
+- **nested** — one band contains the other (`lo_A ≤ lo_B ∧ hi_B ≤ hi_A`, or vice versa; identical bands are the mutual case). The inner COA has **no exclusive region**: no possible observation is consistent with the inner and not the outer, so the question can never single out the inner COA — at best a fluke outside the inner band points to the outer. Tasking this question to *confirm* the inner COA is impossible, which is what "cannot discriminate" means on the surface; the legend carries the precise one-sidedness so the rendered shorthand never overclaims. Excluded from could-discriminate emphasis and tie-breaks.
+- **partial** — overlapping, neither containing the other. Each COA keeps an exclusive region; an observation outside the shared region settles the pair **either way** ("weak — could discriminate").
+
+**The boundary, stated** (mirroring O-3's band-edge discipline): bands touching at exactly one endpoint (`hi_A = lo_B`) classify as **partial** — the shared region is the single touching value, both exclusive regions exist, and the v1 numeric separation is already `0` there (the overlap branch with zero width; not reopened). Containment that shares an endpoint (`lo_A = lo_B ∧ hi_B < hi_A`) is **nested** — the inner band still has no exclusive region, which is the property the classification is tracking.
+
+On the frozen matrix: K11 — R1/R2 disjoint, R1/R3 disjoint, R2/R3 partial. K13 — R1/R2 partial, R2/R3 partial, **R1/R3 nested** (`[40,90] ⊂ [30,100]`): the cheap question is not merely weak on that pair, it is structurally unable to confirm R1 against R3, and the surface now says so instead of showing a second negative number.
+
+### 7.3 ExpectedAnswer provenance — the event matrix is an assessment
+
+An expected-answer band is somebody's judgement of what a COA would look like if it were the truth — red-cell COA templating, the JIPOE step-4 indicator product. It is an *assessment*, and until now the only major assessed content in the system without a chip (review §3.4, seconding the knowledge model's own §12 open item). G3 applies **to** the matrix, not just through it: the discrimination ranking is only as honest as the expectations it reads.
+
+**Shape: the existing `Provenance`, whole.** The stated-subset option (knowledge model §12) is rejected — every field is load-bearing here and a third provenance dialect would be its own dishonesty:
+
+- `source_class` — an expectation templated from doctrine + orbat is `assessed`; one relayed from an allied red team is `reported`; the distinction already carries meaning everywhere else (DEC-14) and the compile firewall vocabulary must not fork.
+- `confidence` — how strongly the red cell holds the template; K13's wide, overlapping expectations *should* read differently from K11's confident disjoint ones.
+- `owner` — where the trace terminates (G3): "who says the COA would look like that?" now has a named answer.
+- `single_source` — JP 2-01.3 ch. IV's deception concern applies with special force to expected-answer templating: indicators are precisely what a deceiver shapes, and an uncorroborated template is the D&D entry point. The red flag must be available on the matrix row.
+
+The slot is **optional in the schema** (a hard requirement would refuse legacy and exploratory writes, which is not this slice's call to make) and disciplined by lint: a knowledge write whose `expected_answers` rows lack provenance draws a warning-level **`missing_expected_answer_provenance`** lint — same posture as `missing_jipoe_step` (warning on the write response and the published delta, never a refusal, recalibrated after Checkpoint 1 / DEC-27). The chip renders wherever an expected band renders, in the standard form ("assessed · moderate — assessment, not fact · owner: …").
+
+**Fixture assignments** (Meridian; the matrix rows are red-cell products): K11's three expectations — `assessed · moderate`, owner **J-2 red cell**, not single-source (templated from mine-warfare doctrine against the garrison orbat). K13's three — `assessed · low`, owner **J-2 red cell**, not single-source (traffic-analysis baseline; the low confidence is visible in the width and overlap of the bands themselves). This is a schema change and a **register candidate** (concept §6.25, flagged not asserted, touching DEC-18/DEC-9); the operative-pair conditioning rule is likewise flagged (concept §6.26, touching DEC-18's "never asserted" discipline). Neither is ratified by this note or by SPEC-23.
+
+### 7.4 What v2 does NOT change
+
+No new metric (SC/FR: the classification is a geometric predicate over existing band pairs; the separation arithmetic is untouched and byte-identical). No new engine (the derivation is a fold over the existing tensor — DEC-10 posture). No scenario weights anywhere (§9 firewall; FR-007). No change to sensitivity (§1) or staleness (§4). The `DiscriminationEntry` gains fields; nothing existing is removed or renumbered, and v1 consumers keep reading `best_separation` with v1 semantics.
+
 ## What we will do differently
 
 1. **Sensitivity is a one-at-a-time perturbation loop over the scorer** (DEC-10: scorer in a loop), not Monte Carlo, not gradient, not Sobol. The tornado ranking is deterministic, requires no distributional assumption (DEC-15), and uses the existing `knowledge_overrides` hook. The ranking is by verdict-change count; the `single_source` flag is co-displayed, not a weighting factor.

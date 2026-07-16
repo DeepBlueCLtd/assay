@@ -99,6 +99,16 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'The cost of collecting on this question, shown alongside discrimination value, never collapsed with it (DEC-19).',
   },
+  separation_class: {
+    term: 'separation class (✓ discriminates / ~ could discriminate / ✕ cannot discriminate)',
+    gloss:
+      'What an observation could settle for this COA pair. Disjoint (✓): any observation in either expected band settles it. Partial overlap (~): a lucky observation outside the shared region settles it either way. Nested (✕): the inner COA has no exclusive region — no observation can ever single it out, at best a fluke outside the inner band points to the outer; tasking to confirm the inner COA is impossible (SPEC-23).',
+  },
+  operative_pair: {
+    term: 'operative pair (A↔B)',
+    gloss:
+      'A scenario pair the live decision actually turns on: some plan and commitment in the current set have differing verdicts across it. Derived from the verdict tensor — computed from verdict divergence only, never hand-picked and never likelihood-weighted (K14 does not enter; SPEC-23). The ranking leads with these pairs; all-pairs separation stays as context.',
+  },
   attention: {
     term: 'likelihood layers (orders attention — never compiles)',
     gloss:
@@ -150,7 +160,7 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   scenarioStrip: ['verdict', 'scenario_collapse', 'worst_case', 'attention', 'band', 'provenance'],
   refusalBanner: ['refusal'],
   sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict'],
-  discriminationTable: ['separation', 'collection_cost', 'band', 'weight_tiebreak'],
+  discriminationTable: ['separation', 'separation_class', 'operative_pair', 'collection_cost', 'band', 'provenance', 'weight_tiebreak'],
   stalenessFlags: ['invalidated'],
 };
 

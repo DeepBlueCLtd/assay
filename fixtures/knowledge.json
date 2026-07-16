@@ -205,9 +205,42 @@
     "criticality": "critical",
     "status": "open",
     "expected_answers": [
-      { "coa": "R1", "band": { "lo": 0.0, "hi": 0.2, "unit": "fraction of stock staged" } },
-      { "coa": "R2", "band": { "lo": 0.7, "hi": 1.0, "unit": "fraction of stock staged" } },
-      { "coa": "R3", "band": { "lo": 0.5, "hi": 0.9, "unit": "fraction of stock staged" } }
+      {
+        "coa": "R1",
+        "band": { "lo": 0.0, "hi": 0.2, "unit": "fraction of stock staged" },
+        "provenance": {
+          "source_class": "assessed",
+          "confidence": "moderate",
+          "owner": "J-2 red cell",
+          "single_source": false,
+          "collected_at": 2,
+          "note": "COA template: under Fortress Halcyon the mines stay in bunkers — templated from mine-warfare doctrine against the garrison orbat (SPEC-23)."
+        }
+      },
+      {
+        "coa": "R2",
+        "band": { "lo": 0.7, "hi": 1.0, "unit": "fraction of stock staged" },
+        "provenance": {
+          "source_class": "assessed",
+          "confidence": "moderate",
+          "owner": "J-2 red cell",
+          "single_source": false,
+          "collected_at": 2,
+          "note": "COA template: Strait Denial requires the stock staged at the quay before laying — templated from mine-warfare doctrine (SPEC-23)."
+        }
+      },
+      {
+        "coa": "R3",
+        "band": { "lo": 0.5, "hi": 0.9, "unit": "fraction of stock staged" },
+        "provenance": {
+          "source_class": "assessed",
+          "confidence": "moderate",
+          "owner": "J-2 red cell",
+          "single_source": false,
+          "collected_at": 2,
+          "note": "COA template: Delay & Demolish stages most of the stock for harbour denial — templated from mine-warfare doctrine (SPEC-23)."
+        }
+      }
     ],
     "collection": [
       {
@@ -265,9 +298,42 @@
     "criticality": "routine",
     "status": "open",
     "expected_answers": [
-      { "coa": "R1", "band": { "lo": 40, "hi": 90, "unit": "msgs/day" } },
-      { "coa": "R2", "band": { "lo": 50, "hi": 110, "unit": "msgs/day" } },
-      { "coa": "R3", "band": { "lo": 30, "hi": 100, "unit": "msgs/day" } }
+      {
+        "coa": "R1",
+        "band": { "lo": 40, "hi": 90, "unit": "msgs/day" },
+        "provenance": {
+          "source_class": "assessed",
+          "confidence": "low",
+          "owner": "J-2 red cell",
+          "single_source": false,
+          "collected_at": 2,
+          "note": "Traffic-analysis baseline; the low confidence is visible in the width and overlap of the expected bands themselves (SPEC-23)."
+        }
+      },
+      {
+        "coa": "R2",
+        "band": { "lo": 50, "hi": 110, "unit": "msgs/day" },
+        "provenance": {
+          "source_class": "assessed",
+          "confidence": "low",
+          "owner": "J-2 red cell",
+          "single_source": false,
+          "collected_at": 2,
+          "note": "Traffic-analysis baseline; mine-laying coordination adds some HQ traffic but the envelope overlaps R1's (SPEC-23)."
+        }
+      },
+      {
+        "coa": "R3",
+        "band": { "lo": 30, "hi": 100, "unit": "msgs/day" },
+        "provenance": {
+          "source_class": "assessed",
+          "confidence": "low",
+          "owner": "J-2 red cell",
+          "single_source": false,
+          "collected_at": 2,
+          "note": "Traffic-analysis baseline; withdrawal-and-demolition traffic spans nearly the whole envelope (SPEC-23)."
+        }
+      }
     ],
     "collection": [
       {
