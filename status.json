@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-15",
+  "updated": "2026-07-16",
   "current_stage": 7,
   "current_stage_label": "Stage 6 built · Stage 7 next",
   "gate_passed": false,
@@ -112,6 +112,10 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-16",
+      "note": "SPEC-22 built (attention ordering — the scenario-weight firewall's positive half; review §3.5/M11, addendum slice S-C): the register's claim that likelihood weights \"order attention and reporting, never compile\" now has its visible half. The scenario strip gains an attention block rendering the K14a–c likelihood bands under the INTERVAL ORDER (research note 11-attention.md, the DEC-11 gate): R1 (45–70%) ranks strictly above the level pair {R2, R3}, whose bands visibly overlap — the system refuses, in public, to rank what the bands don't rank; no scalar sort key exists anywhere (DEC-15/19); provenance welded on, labelled \"orders attention — never compiles\". The S1 collection queue may tie-break EXACTLY-equal discrimination standings by the conservative pair lift of the same order — stated in the rendering, never applied across overlap, never overriding DEC-18's primary ranking — composed in the queue assembly around an untouched DiscriminationService. \"Attention only\" is machine-checked: a K14 band edit changes zero stamps, verdicts, memberships, or relaxation outputs while the attention block moves; import isolation between the attention/strip modules and compile/score/dominance/relax is a source-level test. Register candidate concept §6.24 (the two-behaviour sharpening) flagged, awaiting the next batch. No schema change; no oracle, verdict, or coverage-row change."
+    },
     {
       "date": "2026-07-15",
       "note": "SPEC-21's DEC-30 companions shipped (comms category — projections of shipped work, not spec features; review actions A1/A2/A6): the SME-facing doctrine page (\"ASSAY ↔ doctrine\", site doctrine.html, linked from a Home card) carrying the review §4.1 crosswalk — which JIPOE/JPP products ASSAY computes and how faithfully, its step column now machine-audited by SPEC-21 — and the §4.4 divergence register, the five deliberate departures from written doctrine each defended up front (no weighted COA matrix, no scenario-probability arithmetic, no reaction dynamics, no civil-harm quantification, no execution model); the citation- hardening pass over research notes 02/03/05/08 naming the prior art the inventions sit in (Cooke & Halsey / Orda & Rom for time-dependent cost; Dubois & Prade, Ben-Haim, Fishburn for the four-stop verdict; Bainomugisha et al. and Hermans et al. for the glow; Fishburn and Troffaes for band-separation discrimination) plus the two date corrections (Savage 1951 in note 06; Lipkus & Hollands 1999 in note 09); and the README status fix — the public face no longer says \"implementation has not started\" about a repository with seven built stages."
