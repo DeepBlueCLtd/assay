@@ -70,4 +70,18 @@ export class ObjectStore {
   get size(): number {
     return this.#byHash.size;
   }
+
+  /**
+   * A byte-faithful, independent copy of the store (SPEC-25 US2, the shadow
+   * fork). Entries hold only a canonical string plus scalars, so a shallow copy
+   * of each entry is a full copy; the clone shares no mutable state with the
+   * original, so writing to the clone never touches the committed store (the
+   * preview's "nothing persisted" guarantee, note 14 §2.2).
+   */
+  clone(): ObjectStore {
+    const copy = new ObjectStore();
+    for (const [hash, entry] of this.#byHash) copy.#byHash.set(hash, { ...entry });
+    for (const [id, lineage] of this.#lineages) copy.#lineages.set(id, [...lineage]);
+    return copy;
+  }
 }
