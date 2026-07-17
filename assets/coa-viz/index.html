@@ -696,7 +696,7 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
   }
 
   // src/store.ts
-  var ObjectStore = class {
+  var ObjectStore = class _ObjectStore {
     #byHash = /* @__PURE__ */ new Map();
     #lineages = /* @__PURE__ */ new Map();
     // logical_id → hashes, insertion order
@@ -738,10 +738,23 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     get size() {
       return this.#byHash.size;
     }
+    /**
+     * A byte-faithful, independent copy of the store (SPEC-25 US2, the shadow
+     * fork). Entries hold only a canonical string plus scalars, so a shallow copy
+     * of each entry is a full copy; the clone shares no mutable state with the
+     * original, so writing to the clone never touches the committed store (the
+     * preview's "nothing persisted" guarantee, note 14 §2.2).
+     */
+    clone() {
+      const copy = new _ObjectStore();
+      for (const [hash, entry] of this.#byHash) copy.#byHash.set(hash, { ...entry });
+      for (const [id, lineage] of this.#lineages) copy.#lineages.set(id, [...lineage]);
+      return copy;
+    }
   };
 
   // src/trace.ts
-  var TraceStore = class {
+  var TraceStore = class _TraceStore {
     #edges = [];
     #byFrom = /* @__PURE__ */ new Map();
     #byTo = /* @__PURE__ */ new Map();
@@ -756,6 +769,17 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     }
     get edges() {
       return this.#edges;
+    }
+    /**
+     * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Edges are
+     * flat records; re-adding copies rebuilds the from/to indices. The clone shares
+     * no mutable state, so a shadow computation adds no edge to the committed graph
+     * (note 14 §2.2).
+     */
+    clone() {
+      const copy = new _TraceStore();
+      for (const e of this.#edges) copy.add({ ...e });
+      return copy;
     }
     /**
      * Walk transitively from `start`. `forward` follows from→to; `backward`
@@ -800,7 +824,7 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
 
   // src/deltas.ts
   var FIXED_EPOCH = "1970-01-01T00:00:00.000Z";
-  var DeltaLog = class {
+  var DeltaLog = class _DeltaLog {
     #deltas = [];
     #seq = 0;
     #clock;
@@ -831,6 +855,18 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     }
     get all() {
       return this.#deltas;
+    }
+    /**
+     * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Deltas are
+     * flat envelopes; the clone carries the same clock and `seq` so a shadow write
+     * publishes the next seq exactly as a commit would — yet onto the clone's own
+     * array, never the committed feed (note 14 §2.2).
+     */
+    clone() {
+      const copy = new _DeltaLog(this.#clock);
+      copy.#deltas = this.#deltas.map((d) => ({ ...d }));
+      copy.#seq = this.#seq;
+      return copy;
     }
   };
 
@@ -1519,6 +1555,25 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     return { lo: val.lo > 0 ? 1 : 0, hi: val.hi > 0 ? 1 : 0, unit };
   }
 
+  // src/verdictMap.ts
+  function marginBand(comparator, threshold, value) {
+    switch (comparator) {
+      case "at_most":
+      case "by_step":
+        return { lo: threshold - value.hi, hi: threshold - value.lo, unit: value.unit };
+      case "at_least":
+        return { lo: value.lo - threshold, hi: value.hi - threshold, unit: value.unit };
+      case "never":
+        return { lo: -value.hi, hi: -value.lo, unit: value.unit };
+    }
+  }
+  function verdictFor(margin) {
+    if (margin.hi < 0) return "violated";
+    if (margin.lo > 0) return "robust";
+    if (margin.lo === 0) return "marginal";
+    return "tight";
+  }
+
   // src/score.ts
   var ScoreService = class {
     #store;
@@ -1638,23 +1693,6 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
       return { from_hash: from, to_hash: to, edge_type: "scored_from", stamp, written_by: this.#writtenBy };
     }
   };
-  function marginBand(comparator, threshold, value) {
-    switch (comparator) {
-      case "at_most":
-      case "by_step":
-        return { lo: threshold - value.hi, hi: threshold - value.lo, unit: value.unit };
-      case "at_least":
-        return { lo: value.lo - threshold, hi: value.hi - threshold, unit: value.unit };
-      case "never":
-        return { lo: -value.hi, hi: -value.lo, unit: value.unit };
-    }
-  }
-  function verdictFor(margin) {
-    if (margin.hi < 0) return "violated";
-    if (margin.lo > 0) return "robust";
-    if (margin.lo === 0) return "marginal";
-    return "tight";
-  }
   var cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
   var refusal2 = (reason, offending, explanation) => ({
     refused: true,
