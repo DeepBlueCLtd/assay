@@ -1,5 +1,5 @@
 /**
- * SPEC-25 — app-level legibility exhibits (research note 13 §8).
+ * SPEC-25 — app-level legibility exhibits (research note 14 §8).
  *
  * US1: the verdict legend is reachable from every surface that renders a verdict.
  * US3: the R3m cards carry the derived at-risk basis and numbered, trace-linked

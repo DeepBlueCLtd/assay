@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US4 — the challenge affordance (research note 13 §5).
+ * SPEC-25 US4 — the challenge affordance (research note 14 §5).
  *
  * Challenge re-renders the SPEC-11 sensitivity ranking scoped to a verdict:
  * the knowledge that, pushed to its band edge, flips it. No new compute (the

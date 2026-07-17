@@ -1,11 +1,11 @@
 # Tasks: Verdict legibility & the argument surface (SPEC-25)
 
-Dependency-ordered. `[P]` = parallelisable. **Gate**: research note `docs/research/13-legibility.md` present (DEC-11, US2's gate) and concept §6 items 29/30 flagged — Phase A produces both; US2 (Phase C) does not start until Phase A lands. US1/3/4/5 build on the note-09 presentation audit already banked.
+Dependency-ordered. `[P]` = parallelisable. **Gate**: research note `docs/research/14-legibility.md` present (DEC-11, US2's gate) and concept §6 items 30/31 flagged — Phase A produces both; US2 (Phase C) does not start until Phase A lands. US1/3/4/5 build on the note-09 presentation audit already banked.
 
 ## Phase A — research note & register candidates (the DEC-11 gate for US2)
 
-- [X] **T01** Author `docs/research/13-legibility.md`: the shadow-state preview contract and its five binding rules (same services/firewall; nothing persisted/no delta/no stamp mutation; previewed diff ≡ post-commit glow set byte-for-byte; ghost banded/uncommitted; pre-figures the glow set); the fork-is-cheap enabling property (immutability); the refusal-as-preview edge cases; and the audit trail for why US1/3/4/5 are register-neutral presentation (the CRT/Into-the-Breach/Red-Teaming-Handbook literatures; the incumbent-P1 at-risk basis; the sensitivity-projection challenge; the role→verb map).
-- [X] **T02** Flag concept §6 items 29 (the consequence-preview interaction class) and 30 (per-role action menus as a standing shell element); **do not assert** either (DEC-2).
+- [X] **T01** Author `docs/research/14-legibility.md`: the shadow-state preview contract and its five binding rules (same services/firewall; nothing persisted/no delta/no stamp mutation; previewed diff ≡ post-commit glow set byte-for-byte; ghost banded/uncommitted; pre-figures the glow set); the fork-is-cheap enabling property (immutability); the refusal-as-preview edge cases; and the audit trail for why US1/3/4/5 are register-neutral presentation (the CRT/Into-the-Breach/Red-Teaming-Handbook literatures; the incumbent-P1 at-risk basis; the sensitivity-projection challenge; the role→verb map).
+- [X] **T02** Flag concept §6 items 30 (the consequence-preview interaction class) and 31 (per-role action menus as a standing shell element); **do not assert** either (DEC-2).
 
 ## Phase B — US1 the public verdict legend (register-neutral; oracle-derived)
 

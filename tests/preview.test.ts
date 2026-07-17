@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US2 — consequence preview: the ghost diff (research note 13 §2).
+ * SPEC-25 US2 — consequence preview: the ghost diff (research note 14 §2).
  *
  * The core exhibit: a preview runs the REAL pipeline over a byte-faithful shadow,
  * so the previewed diff equals the post-commit glow set element-for-element (rule

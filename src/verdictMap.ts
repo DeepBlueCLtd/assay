@@ -1,5 +1,5 @@
 /**
- * SPEC-07 mapping, extracted pure (SPEC-25 / note 13 §3).
+ * SPEC-07 mapping, extracted pure (SPEC-25 / note 14 §3).
  *
  * The signed-margin-band reduction and the four-stop verdict rule live here as
  * pure functions over generated types alone — no store, no service, no I/O — so

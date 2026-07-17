@@ -101,7 +101,7 @@ updates:
     note: >-
       SPEC-25 built (verdict legibility & the argument surface; review §3.1/§3.3, mockups
       M3/M4/M8/M10, addendum slice S-F): five legibility moves over machinery ASSAY already
-      has. Research note 13-legibility.md (DEC-11 gate for US2) decides the consequence-preview
+      has. Research note 14-legibility.md (DEC-11 gate for US2) decides the consequence-preview
       contract — a preview is the real pipeline run over a byte-faithful shadow of the store,
       never an estimate (DEC-10): the previewed diff equals the post-commit glow set
       element-for-element (G1/DEC-34), the shadow persists nothing, emits no delta, mutates no
@@ -117,7 +117,7 @@ updates:
       action menus (US5 — each role's legal write verbs marked live / runs-on-recompute /
       not-yet-built, observer read-only, menus reorganise never restrict). No schema change, no
       seam change, no new scalar (DEC-19); 523 tests, typecheck clean. Register candidates
-      concept §6.29/§6.30 flagged, awaiting the next batch.
+      concept §6.30/§6.31 flagged, awaiting the next batch.
   - date: 2026-07-16
     note: >-
       SPEC-24 built (the Decision Support Matrix surface — decisions in time; review §4.2/M1/B1,

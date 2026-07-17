@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US1 — the public verdict legend (research note 13 §3).
+ * SPEC-25 US1 — the public verdict legend (research note 14 §3).
  *
  * The four-stop mapping laid open, oracle-derived: the legend renders the four
  * regions of the signed-margin sign rule and illustrates the honesty property

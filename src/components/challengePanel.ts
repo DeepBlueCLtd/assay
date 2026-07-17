@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US4 — the challenge affordance (research note `13-legibility.md` §5).
+ * SPEC-25 US4 — the challenge affordance (research note `14-legibility.md` §5).
  *
  * "Challenge" on a verdict re-renders the SPEC-11 sensitivity ranking RESTRICTED
  * to that verdict: the knowledge whose band-edge perturbation flips it, with

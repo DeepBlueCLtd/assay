@@ -173,7 +173,7 @@ export class AppState {
    * Wire one KnowledgeService's store/trace into a fresh instance of every real
    * service (shared by `seed()` and `fork()`). The forked shadow gets the SAME
    * service code over a CLONED store, so a preview runs the real pipeline over a
-   * byte-faithful copy (SPEC-25 US2, note 13 §2).
+   * byte-faithful copy (SPEC-25 US2, note 14 §2).
    */
   #wireServices(svc: KnowledgeService): void {
     this.#svc = svc;

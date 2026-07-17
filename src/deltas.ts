@@ -62,7 +62,7 @@ export class DeltaLog {
    * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Deltas are
    * flat envelopes; the clone carries the same clock and `seq` so a shadow write
    * publishes the next seq exactly as a commit would — yet onto the clone's own
-   * array, never the committed feed (note 13 §2.2).
+   * array, never the committed feed (note 14 §2.2).
    */
   clone(): DeltaLog {
     const copy = new DeltaLog(this.#clock);

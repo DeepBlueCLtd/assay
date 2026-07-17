@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US3 — the S3 least-worst cards v2 (research note 13 §4).
+ * SPEC-25 US3 — the S3 least-worst cards v2 (research note 14 §4).
  *
  * The "puts at risk" line and numbered reasons render correctly when residue
  * exists (constructed here, since Meridian's candidates are Pareto-clean). The

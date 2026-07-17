@@ -41,7 +41,7 @@ import { marginBand, verdictFor } from './verdictMap.js';
 import type { KnowledgeOverride, Refusal, ScoreRequest, ScoreResult } from './seam.js';
 
 // Re-exported for back-compat: the pure mapping now lives in verdictMap.ts so the
-// verdict legend (SPEC-25) reads the SAME rule (note 13 §3). Tests and callers
+// verdict legend (SPEC-25) reads the SAME rule (note 14 §3). Tests and callers
 // that import from './score.js' are unaffected.
 export { marginBand, verdictFor } from './verdictMap.js';
 

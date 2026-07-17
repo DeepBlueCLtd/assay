@@ -1,6 +1,6 @@
 /**
  * SPEC-25 US5 — the per-role action menu (pure renderer; research note
- * `13-legibility.md` §6).
+ * `14-legibility.md` §6).
  *
  * Renders one tab's legal write verbs from the `ROLE_VERBS` source of truth, each
  * marked live / pipeline-automatic / deferred so C2 role separation reads off the

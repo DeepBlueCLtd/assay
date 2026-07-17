@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US5 — per-role action menus (research note 13 §6).
+ * SPEC-25 US5 — per-role action menus (research note 14 §6).
  *
  * Each tab's menu equals its documented legal write set; observer exposes no
  * write; deferred/automatic verbs are labelled, never faked; nothing silently

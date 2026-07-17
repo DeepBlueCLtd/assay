@@ -39,7 +39,7 @@ export class TraceStore {
    * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Edges are
    * flat records; re-adding copies rebuilds the from/to indices. The clone shares
    * no mutable state, so a shadow computation adds no edge to the committed graph
-   * (note 13 §2.2).
+   * (note 14 §2.2).
    */
   clone(): TraceStore {
     const copy = new TraceStore();

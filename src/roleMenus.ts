@@ -1,6 +1,6 @@
 /**
  * SPEC-25 US5 — per-role action menus: C2 role separation made legible
- * (research note `13-legibility.md` §6).
+ * (research note `14-legibility.md` §6).
  *
  * The single source of truth for "who may do what": each tab's LEGAL write verbs,
  * from the walkthrough's role assignments. The shell arranges what the seam
@@ -12,7 +12,7 @@
  * (DEC-4): `live` — a wired control on the surface; `auto` — run by the live
  * pipeline on every recompute (not a button); `deferred` — a legal verb not yet
  * built (labelled, never a dead button pretending to work). Register-neutral iff
- * pure re-arrangement (concept §6.30, flagged not asserted, DEC-2).
+ * pure re-arrangement (concept §6.31, flagged not asserted, DEC-2).
  */
 import type { TabId } from './app/state.js';
 

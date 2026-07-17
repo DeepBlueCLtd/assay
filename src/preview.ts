@@ -1,6 +1,6 @@
 /**
  * SPEC-25 US2 — consequence preview: the ghost diff (research note
- * `13-legibility.md` §2, the DEC-11 subject).
+ * `14-legibility.md` §2, the DEC-11 subject).
  *
  * "What would this write change, before I commit it?" — answered by running the
  * REAL pipeline over a byte-faithful SHADOW of the committed store (`AppState.fork`),
@@ -19,7 +19,7 @@
  *
  * This is a thin CLIENT-SIDE orchestrator (no seam change): it composes the
  * existing service calls over the cloned store. `PreviewState` is app-layer only —
- * never stored, never stamped (concept §6.29, flagged not asserted, DEC-2).
+ * never stored, never stamped (concept §6.30, flagged not asserted, DEC-2).
  */
 import type { AppState, Snapshot } from './app/state.js';
 import { changedGlowUnits, type SignatureMap } from './app/glow.js';

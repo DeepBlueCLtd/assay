@@ -1,11 +1,11 @@
 # Implementation Plan: Verdict legibility & the argument surface (SPEC-25)
 
-**Spec**: `specs/025-verdict-legibility/spec.md` · **Research note**: `docs/research/13-legibility.md` (**DEC-11 gate for US2 — authored first**; decides the shadow-state preview contract, its five binding rules, the fork-is-cheap enabling property, the refusal-as-preview edge cases, and records why US1/3/4/5 are register-neutral presentation) · **Register**: concept §6 items 29 (the consequence-preview interaction class — a new *read*, honesty rule "previewed = computed, never estimated") and 30 (per-role action menus as a standing shell element — a DEC-32-class finding, register-neutral iff pure re-arrangement); both flagged, not asserted (DEC-2)
+**Spec**: `specs/025-verdict-legibility/spec.md` · **Research note**: `docs/research/14-legibility.md` (**DEC-11 gate for US2 — authored first**; decides the shadow-state preview contract, its five binding rules, the fork-is-cheap enabling property, the refusal-as-preview edge cases, and records why US1/3/4/5 are register-neutral presentation) · **Register**: concept §6 items 30 (the consequence-preview interaction class — a new *read*, honesty rule "previewed = computed, never estimated") and 31 (per-role action menus as a standing shell element — a DEC-32-class finding, register-neutral iff pure re-arrangement); both flagged, not asserted (DEC-2)
 
 ## Shape — the note decides US2, the code carries; US1/3/4/5 project banked output
 
 ```
-Phase A  note 13 + concept §6.29/§6.30              ── the preview contract; the four register-neutral projections recorded
+Phase A  note 14 + concept §6.30/§6.31              ── the preview contract; the four register-neutral projections recorded
    ▼
 Phase B  US1 verdict legend (pure, oracle-derived)  ── src/components/verdictLegend.ts + legends.ts key; reachable everywhere a verdict renders
    ▼
@@ -16,7 +16,7 @@ Phase D  US3 cards v2  ·  US4 challenge  ·  US5 menus ── projections over 
 Phase E  gallery + tests + batch propagation + verify
 ```
 
-Nothing in B–E asserts a register decision; both candidates are **flagged** (§6.29/§6.30). US2 does not start before the note lands (DEC-11); US1/3/4/5 build on the note-09 presentation audit already banked.
+Nothing in B–E asserts a register decision; both candidates are **flagged** (§6.30/§6.31). US2 does not start before the note lands (DEC-11); US1/3/4/5 build on the note-09 presentation audit already banked.
 
 ## The load-bearing facts
 
@@ -65,4 +65,4 @@ Nothing in B–E asserts a register decision; both candidates are **flagged** (�
 - **`/select`** — the commander's `select` verb is named-but-unbuilt; the menu labels it deferred; the DSM's "no selection exists" statement stands.
 - **Seam-level `POST /preview`** — a later candidate if a second consumer appears; v1 previews client-side.
 - **Composed multi-arm preview** — one armed act at a time (note §2.3); two-edit attribution deferred.
-- **Register ratification** of §6.29/§6.30 (next batch).
+- **Register ratification** of §6.30/§6.31 (next batch).

@@ -76,7 +76,7 @@ export class ObjectStore {
    * fork). Entries hold only a canonical string plus scalars, so a shallow copy
    * of each entry is a full copy; the clone shares no mutable state with the
    * original, so writing to the clone never touches the committed store (the
-   * preview's "nothing persisted" guarantee, note 13 §2.2).
+   * preview's "nothing persisted" guarantee, note 14 §2.2).
    */
   clone(): ObjectStore {
     const copy = new ObjectStore();

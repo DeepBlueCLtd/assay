@@ -1,5 +1,5 @@
 /**
- * SPEC-25 US1 — the public verdict legend (research note `13-legibility.md` §3).
+ * SPEC-25 US1 — the public verdict legend (research note `14-legibility.md` §3).
  *
  * The four-stop verdict mapping laid open, CRT-style (the hex-wargame Combat
  * Results Table: the mapping from inputs to outcome on the rulebook page, never a
