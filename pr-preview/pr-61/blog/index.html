@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<!--
+  ASSAY — Blog & updates index (comms plan §6, §9).
+
+  Hand-authored, self-contained, static — the same discipline as the Home page:
+  inline CSS, no external fonts/scripts/CDNs, so it serves from GitHub Pages and
+  works offline. build-site.ts copies docs/blog/ into the published site verbatim.
+
+  This is the durable written record of the updates feed; a milestone entry that
+  warrants it grows into a full article under posts/, each carrying a working
+  embed of the slice it reports (never a screenshot). The backlog of articles
+  still owed by landed stages lives in backlog.md (dev-facing, not published).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASSAY — Blog &amp; updates</title>
+<meta name="description" content="Dated updates and milestone articles for ASSAY, each with a working embed of the slice it reports.">
+<style>
+  :root { color-scheme: light dark;
+    --ink:#1B2732; --ink-soft:#33414D; --muted:#5B6B77; --page:#EDF0F2; --panel:#FCFDFD;
+    --panel-2:#F1F3F5; --line:#D8DFE4; --line-soft:#E4E9ED;
+    --band-ink:#9A6A14; --band-fill:#F7EDD8; --band-line:#E7D3A6;
+    --robust-ink:#14655F; --robust-fill:#E2EFEA; --robust-line:#BFDCD3;
+    --blue-ink:#3E5D8A; --blue-fill:#E6ECF6; --blue-line:#C8D5EA;
+    --shadow:0 1px 2px rgba(27,39,50,.05),0 8px 24px rgba(27,39,50,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  @media (prefers-color-scheme: dark){ :root{
+    --ink:#E7ECF0; --ink-soft:#C4CED6; --muted:#93A2AE; --page:#10171D; --panel:#17212A;
+    --panel-2:#131C24; --line:#2A3945; --line-soft:#222E38;
+    --band-ink:#E0B457; --band-fill:#2E2513; --band-line:#4A3C1C;
+    --robust-ink:#63C3B6; --robust-fill:#122824; --robust-line:#1F3F39;
+    --blue-ink:#8FB0DE; --blue-fill:#182333; --blue-line:#2A3A52;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:var(--blue-ink); }
+  .wrap { max-width:820px; margin:0 auto; padding:0 24px; }
+  header.top { background:var(--panel); border-bottom:1px solid var(--line); }
+  header.top .wrap { padding:34px 24px 30px; }
+  .home { font-family:var(--mono); font-size:12px; color:var(--muted); text-decoration:none; }
+  .home:hover { color:var(--blue-ink); }
+  h1 { font-size:30px; letter-spacing:-.02em; margin:14px 0 6px; }
+  .lede { color:var(--muted); max-width:60ch; margin:0; }
+  section { padding:36px 0; }
+  .kicker { font-family:var(--mono); font-size:11px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 14px; }
+
+  .article { display:block; text-decoration:none; color:inherit; background:var(--panel);
+    border:1px solid var(--line); border-radius:12px; padding:20px 22px; box-shadow:var(--shadow);
+    transition:transform .1s ease, border-color .1s ease; margin-bottom:16px; }
+  .article:hover { transform:translateY(-2px); border-color:var(--blue-line); }
+  .article .meta { font-family:var(--mono); font-size:11px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .chip { padding:2px 9px; border-radius:999px; border:1px solid var(--band-line);
+    background:var(--band-fill); color:var(--band-ink); }
+  .article h2 { font-size:19px; letter-spacing:-.01em; margin:9px 0 6px; }
+  .article p { margin:0; font-size:14.5px; color:var(--muted); }
+  .article .go { color:var(--blue-ink); font-size:14px; margin-top:10px; display:inline-block; }
+
+  .feed { list-style:none; margin:0; padding:0; border-top:1px solid var(--line-soft); }
+  .feed li { display:grid; grid-template-columns:96px 1fr; gap:16px; padding:12px 2px;
+    border-bottom:1px solid var(--line-soft); align-items:baseline; }
+  @media (max-width:560px){ .feed li { grid-template-columns:1fr; gap:2px; } }
+  .feed .d { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .feed .n { font-size:14.5px; color:var(--ink-soft); }
+  .feed .n a { font-weight:600; }
+
+  footer { border-top:1px solid var(--line); background:var(--panel); margin-top:24px; }
+  footer .wrap { padding:24px; color:var(--muted); font-size:13.5px; display:flex;
+    flex-wrap:wrap; gap:10px 20px; justify-content:space-between; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="home" href="../">&larr; ASSAY home</a>
+    <h1>Blog &amp; updates</h1>
+    <p class="lede">
+      Dated notes as the build moves, newest first. Where a milestone warrants it, the note grows
+      into an article that walks through what the slice actually does — with a <em>working</em>
+      embed of the new component or algorithm, running on Meridian fixtures. Never a screenshot.
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="kicker">Articles</p>
+    <a class="article" href="posts/2026-07-15-where-the-plan-meets-the-water.html">
+      <div class="meta">
+        <span>2026-07-15</span>
+        <span class="chip">live component</span>
+        <span>SPEC-19 · endorsed &amp; promoted (ASSAY-DEC-36)</span>
+      </div>
+      <h2>Where the plan meets the water</h2>
+      <p>The COA made spatial and temporal: routes over banded channel surfaces (split fills, never
+         a heat stop), validity and task windows on one clock, and an exposure staircase that shows
+         <em>where and when</em> C4's dwell was banked. Drag a waypoint and the verdict re-scores
+         through the real in-browser pipeline. SME-endorsed and promoted the same day into the live
+         demonstrator as the <b>Spatial &middot; COA</b> tab.</p>
+      <span class="go">Read &amp; play &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-14-qa-to-coa.html">
+      <div class="meta">
+        <span>2026-07-14</span>
+        <span class="chip">live component</span>
+        <span>SPEC-18</span>
+      </div>
+      <h2>From Q&amp;A to COA: where a banded answer reaches the verdict</h2>
+      <p>Three knowledge items, three fates &mdash; a band that propagates into a verdict and widens
+         it as it widens (K6), one a geometric metric is right not to read (K3), and one whose region
+         the route never touches (K7). Drag the K6 slider and watch propagation honesty happen live.</p>
+      <span class="go">Read &amp; play &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-14-what-to-verify-next.html">
+      <div class="meta">
+        <span>2026-07-14</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-11 / SPEC-12 / SPEC-13</span>
+      </div>
+      <h2>What to verify next</h2>
+      <p>Three analysis loops &mdash; sensitivity, discrimination, staleness &mdash; that close the
+         JIPOE cycle: which belief is load-bearing, which question would separate the COAs, which
+         artefact is stale.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-14-dont-plan-on-most-likely.html">
+      <div class="meta">
+        <span>2026-07-14</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-10</span>
+      </div>
+      <h2>Don&rsquo;t plan on most-likely</h2>
+      <p>Score every plan against every adversary COA. The favourite collapses under the scenario
+         it wasn&rsquo;t designed for &mdash; and the scenario strip shows exactly where.</p>
+      <span class="go">Read &amp; play &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-13-the-seam-goes-live.html">
+      <div class="meta">
+        <span>2026-07-13</span>
+        <span class="chip">interactive</span>
+        <span>SPEC-16</span>
+      </div>
+      <h2>The seam goes live</h2>
+      <p>The first interactive ASSAY surface — resolve a live contest and watch the real pipeline
+         recompute across four role tabs, with a "glow" that draws propagation honesty (G6) where
+         you're looking. The whole demonstrator plays inside the article.</p>
+      <span class="go">Read &amp; play &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-13-least-worst.html">
+      <div class="meta">
+        <span>2026-07-13</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-09</span>
+      </div>
+      <h2>Least-worst: choosing what to sacrifice</h2>
+      <p>When no plan can satisfy every commitment, ASSAY shows the commander what each sacrifice
+         costs — never silently dropping a constraint.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-13-verdict-playground.html">
+      <div class="meta">
+        <span>2026-07-13</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-07</span>
+      </div>
+      <h2>The verdict playground: four stops, no decimals</h2>
+      <p>Move a commitment threshold across a banded score — the verdict flips only at band edges,
+         because the four-stop mapping uses signs only.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-13-band-pill.html">
+      <div class="meta">
+        <span>2026-07-13</span>
+        <span class="chip">live component</span>
+        <span>SPEC-05 / SPEC-14</span>
+      </div>
+      <h2>The band pill: why a range is more honest than a number</h2>
+      <p>The demonstrator's signature component, and the discipline behind it — drag the real
+         shipped component and watch a false-precision scalar become an honest band.</p>
+      <span class="go">Read &amp; play &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-12-stamp-determinism.html">
+      <div class="meta">
+        <span>2026-07-12</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-06</span>
+      </div>
+      <h2>Stamp determinism: compile twice, get the same answer</h2>
+      <p>Recompile the same knowledge twice — the stamp is byte-identical. Change one item and
+         watch it shift, because the stamp hashes inputs, not surfaces.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-12-provenance-chip.html">
+      <div class="meta">
+        <span>2026-07-12</span>
+        <span class="chip">live component</span>
+        <span>SPEC-05 / SPEC-14</span>
+      </div>
+      <h2>The provenance chip &amp; the K10 refusal</h2>
+      <p>Mandatory markings that ride with every assessed value, and a refusal that shows
+         discipline — not an error.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-11-trace-walk.html">
+      <div class="meta">
+        <span>2026-07-11</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-02</span>
+      </div>
+      <h2>Trace walk: every output traces back to named knowledge</h2>
+      <p>Click a node in the trace graph — see its forward and backward closure light up. The
+         skeleton that makes every ASSAY output attributable.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+    <a class="article" href="posts/2026-07-11-content-addressing.html">
+      <div class="meta">
+        <span>2026-07-11</span>
+        <span class="chip">illustrative widget</span>
+        <span>SPEC-01</span>
+      </div>
+      <h2>Content addressing: identity is a hash</h2>
+      <p>Edit a small object, watch its hash change. Immutability by construction — the foundation
+         of every honesty invariant above it.</p>
+      <span class="go">Read &rarr;</span>
+    </a>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="kicker">The updates feed</p>
+    <ul class="feed">
+      <li><span class="d">2026-07-15</span><span class="n">Register batch 6 ratified (ASSAY-DEC-36): the SME checkpoint <b>endorsed</b> the SPEC-19 spatial/temporal UI model (comms &sect;12; findings ledger ASSAY-FIND-7), and the surface is promoted into the <a href="../assets/app/index.html">live demonstrator</a> as a fifth shared <b>Spatial &middot; COA</b> tab over the same store &mdash; the map refuses while K12 is contested and appears, glowing, on resolve.</span></li>
+      <li><span class="d">2026-07-15</span><span class="n">SPEC-19 built &mdash; the spatial &amp; temporal COA visualisation: research note <code>10-spatial-temporal.md</code> (the banded-surface and temporal-window rules), a reviewable <a href="../coa-viz.html">map + timeline mockup</a> over the real fixtures with live drag-to-recompute, and <a href="posts/2026-07-15-where-the-plan-meets-the-water.html">its article</a>. SME review invited (comms &sect;12) before the surface hardens.</span></li>
+      <li><span class="d">2026-07-14</span><span class="n">A build-time question &mdash; <em>is the system really reading the banded Q&amp;A when it scores COAs?</em> &mdash; traced end-to-end and answered: <a href="posts/2026-07-14-qa-to-coa.html">from Q&amp;A to COA</a> (SPEC-18), a three-panel live embed of the K3/K6/K7 taxonomy.</span></li>
+      <li><span class="d">2026-07-14</span><span class="n">Stage 5 &amp; 6 blog articles shipped: <a href="posts/2026-07-14-dont-plan-on-most-likely.html">don&rsquo;t plan on most-likely</a> (scenario robustness, thesis C) and <a href="posts/2026-07-14-what-to-verify-next.html">what to verify next</a> (sensitivity, discrimination, staleness &mdash; theses D, E, F).</span></li>
+      <li><span class="d">2026-07-14</span><span class="n">Blog backlog cleared — six owed articles from Stages 0–4 shipped: <a href="posts/2026-07-12-provenance-chip.html">provenance chip</a>, <a href="posts/2026-07-13-verdict-playground.html">verdict playground</a>, <a href="posts/2026-07-13-least-worst.html">least-worst explorer</a>, <a href="posts/2026-07-12-stamp-determinism.html">stamp determinism</a>, <a href="posts/2026-07-11-content-addressing.html">content addressing</a>, <a href="posts/2026-07-11-trace-walk.html">trace walk</a>.</span></li>
+      <li><span class="d">2026-07-13</span><span class="n">The seam goes live — the published app becomes a live in-browser SPA running the real pipeline across four role tabs, with a propagation "glow" (SPEC-16). <a href="posts/2026-07-13-the-seam-goes-live.html">Play it</a>.</span></li>
+      <li><span class="d">2026-07-13</span><span class="n">Communications scaffold landed — a single <code>status.yml</code> source of truth, the blog and standalone-embed pipeline, and the first article (<a href="posts/2026-07-13-band-pill.html">the band pill</a>, live).</span></li>
+      <li><span class="d">2026-07-13</span><span class="n">Stage 4 built — least-worst relaxation over the mined-water infeasibility (thesis B live). SPEC-09 implemented.</span></li>
+      <li><span class="d">2026-07-13</span><span class="n">Stage 3 built — the four-stop banded scorer and the generated handful (SPEC-07, SPEC-08).</span></li>
+      <li><span class="d">2026-07-12</span><span class="n">Stage 2 built — compile to a stamped world of sparse channels (SPEC-06).</span></li>
+      <li><span class="d">2026-07-12</span><span class="n">Register batch 3 ratified (ASSAY-DEC-22…27); the walkthrough and findings ledger join the canonical set.</span></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>ASSAY — a docs-first demonstrator. <a href="https://github.com/DeepBlueCLtd/assay">github.com/DeepBlueCLtd/assay</a></span>
+    <span>MIT © 2026 Deep Blue C Technology Ltd</span>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASSAY ↔ doctrine — the crosswalk and the divergence register</title>
+<!--
+  Communications artefact (ASSAY-DEC-30 category — a projection of shipped work,
+  not a spec-kit feature). Source: JIPOE/C2 process review
+  docs/reviews/2026-07-14-jipoe-c2-process-review.md §4.1 (crosswalk, action W1)
+  and §4.4 (divergence register, action A1). Shipped alongside SPEC-21 (JIPOE
+  anchoring), which makes the step column of the crosswalk machine-auditable.
+
+  Purpose (review W1): hand this page to SMEs BEFORE free exploration — the
+  crosswalk opens the conversation ("ASSAY computes the products you already
+  owe"), and the register converts every doctrinal "wait, where's the—" from
+  ambush into statement.
+-->
+<style>
+  :root {
+    --ink: #1B2732; --muted: #5B6B77; --line: #E4E9ED; --panel: #FCFDFD; --bg: #F7F9FA;
+    --blue-ink: #3E5D8A; --blue-line: #C8D5EA; --blue-bg: #E6ECF6;
+    --amber-ink: #9A6A14; --amber-bg: #F7EDD8; --amber-line: #E7D3A6;
+    --green-ink: #14655F; --green-bg: #E2EFEA; --green-line: #BFDCD3;
+    --red-ink: #A33131; --red-bg: #F8E2E2; --red-line: #EFC6C6;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+  .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--blue-ink); margin: 0 0 6px; }
+  h1 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 10px; }
+  h2 { font-size: 21px; letter-spacing: -.01em; margin: 44px 0 10px; }
+  p.lede { color: var(--muted); font-size: 16.5px; max-width: 62ch; margin: 0 0 8px; }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 10.5px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.doc  { color: var(--blue-ink);  background: var(--blue-bg);  border: 1px solid var(--blue-line); }
+  .pill.strong  { color: var(--green-ink); background: var(--green-bg); border: 1px solid var(--green-line); }
+  .pill.partial { color: var(--amber-ink); background: var(--amber-bg); border: 1px solid var(--amber-line); }
+  .pill.gap     { color: var(--red-ink);   background: var(--red-bg);   border: 1px solid var(--red-line); }
+  .pill.div     { color: var(--blue-ink);  background: var(--blue-bg);  border: 1px solid var(--blue-line); }
+  .note { font-size: 13px; color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; }
+  .tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13.5px; }
+  th { text-align: left; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+       color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: var(--mono); font-size: 12.5px; background: var(--blue-bg); border-radius: 3px; padding: 1px 4px; }
+  .dv { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
+  .dv h3 { margin: 0 0 6px; font-size: 16px; }
+  .dv .row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; font-size: 13.5px; margin: 6px 0; }
+  .dv .lbl { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding-top: 2px; }
+  @media (max-width: 620px) { .dv .row { grid-template-columns: 1fr; gap: 2px; } }
+  footer { margin-top: 56px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+  a { color: var(--blue-ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="kicker">Communications artefact · DEC-30 · 2026-07-15</p>
+  <h1>ASSAY ↔ doctrine</h1>
+  <p class="lede">
+    Two things an SME should have in hand before exploring the demonstrator: the
+    <b>crosswalk</b> — which JIPOE and joint-planning products ASSAY computes, and how faithfully —
+    and the <b>divergence register</b> — the small number of places ASSAY departs from written
+    doctrine <em>on purpose</em>, each with its defence stated up front.
+  </p>
+  <p class="note">
+    <b>Read the crosswalk first.</b> ASSAY is best understood not as a claim to be doubted but as an
+    automation of products the staff already owes: MCOO, event matrix, synchronisation record,
+    running estimate, the CCIR loop. Where a row says <span class="pill gap">gap</span>, the gap is
+    admitted and tracked; where the register says <span class="pill div">divergence</span>, the
+    departure is deliberate and defended. Nothing here is discovered by exploring — it is stated.
+  </p>
+
+  <h2>1 · The crosswalk — what maps, what's absent</h2>
+  <p class="lede" style="font-size:14.5px">
+    Sources: JP 2-01.3 (JIPOE), ATP 2-01.3, JP 5-0, FM 5-0. Since SPEC-21, the step mapping is
+    <b>machine-carried</b>: every Meridian knowledge object names its originating JIPOE step on its
+    provenance chip (<code>jipoe_step</code>), pinned by a fixture test — the "doctrinally shaped"
+    claim is auditable, not asserted.
+  </p>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>JIPOE / JPP artefact</th><th>ASSAY analogue</th><th>Fidelity</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Step 1 — define/bound the OE; significant characteristics; gaps → collection requirements</td>
+        <td>Absent — the demonstrator starts at "here are the fourteen questions that matter" (forward derivation is the horizon programme, issue #43)</td>
+        <td><span class="pill gap">gap — admitted</span></td>
+      </tr>
+      <tr>
+        <td>Step 2 — describe effects; MCOO overlays, mobility classes; weather</td>
+        <td>Sparse channels (<code>default</code> + <code>RegionOverride</code>, DEC-29), explicitly derived from MCOO doctrine; K5/K9 weather with validity windows</td>
+        <td><span class="pill strong">strong</span></td>
+      </tr>
+      <tr>
+        <td>Step 3 — evaluate adversary; ORBAT, capabilities; HVT list; COG analysis</td>
+        <td>Red ORBAT is vignette prose, not typed objects; no HVT/COG shapes — a deliberate deferral (thesis G), stated here rather than discovered</td>
+        <td><span class="pill partial">partial — by design</span></td>
+      </tr>
+      <tr>
+        <td>Step 4 — adversary COAs; situation/event templates; event matrix; MLCOA/MDCOA</td>
+        <td>R1–R3 as first-class <code>ScenarioCOA</code>s; <code>expected_answers</code> = the event matrix (DEC-18); minimax = the MDCOA discipline generalised</td>
+        <td><span class="pill strong">strong on products</span> — hand-authored on derivation (#43)</td>
+      </tr>
+      <tr>
+        <td>Indicators / NAIs / collection</td>
+        <td>Open questions with <code>collection</code> options, banded cost, <code>earliest_result</code>; the discrimination ranking</td>
+        <td><span class="pill strong">strong conceptually</span> — NAI geography untyped ("where to look" is textual)</td>
+      </tr>
+      <tr>
+        <td>PIR / CCIR tied to decisions</td>
+        <td>A committed decision re-prioritises verification of the knowledge under it — the CCIR loop, computed (walkthrough beat 5)</td>
+        <td><span class="pill strong">strong</span> — the single best C2 moment in the system</td>
+      </tr>
+      <tr>
+        <td><b>Decision support template / matrix</b> (DP × NAI × TAI × LTIOV)</td>
+        <td>Ingredients all present (commitments, verdicts, validity windows, <code>earliest_result</code>, discrimination); the assembled artefact is absent</td>
+        <td><span class="pill gap">the gap most worth closing</span> — queued as SPEC-24</td>
+      </tr>
+      <tr>
+        <td>COA validity: feasible / acceptable / suitable / <b>distinguishable</b> / complete</td>
+        <td>Hard constraints / commitments / C1-as-mission / <b>the handful + <code>distinct_because</code></b> / completeness not addressed (plans are routes + windows, DEC-20)</td>
+        <td><span class="pill strong">strong</span> — distinguishability operationalised, the criterion staffs most often fake</td>
+      </tr>
+      <tr>
+        <td>COA analysis — wargaming (action–reaction–counteraction)</td>
+        <td>Absent; the scorer evaluates static compiled worlds. ASSAY should <em>instrument</em> the wargame, not replace it</td>
+        <td><span class="pill gap">gap with an honest bridge</span></td>
+      </tr>
+      <tr>
+        <td>COA comparison — weighted decision matrix</td>
+        <td>Deliberately deleted; replaced by the verdict matrix + banded non-domination + stated tie-breaks</td>
+        <td><span class="pill div">divergence №1 — defended below</span></td>
+      </tr>
+      <tr>
+        <td>Synchronization matrix / wargame worksheet</td>
+        <td>The verdict matrix + delta log <em>are</em> a computed, always-current synchronisation record</td>
+        <td><span class="pill strong">strong</span> — previously unclaimed; claimed here</td>
+      </tr>
+      <tr>
+        <td>Running estimates</td>
+        <td>Staleness flags = the machine-checkable running estimate: is the plan still valid, and exactly where not</td>
+        <td><span class="pill strong">strong; novel</span> — doctrine has no mechanism linking a specific stale fact to specific verdicts</td>
+      </tr>
+      <tr>
+        <td>Assessment (MOE/MOP), execution</td>
+        <td>Out of scope — no execution model</td>
+        <td><span class="pill div">divergence №5 — stated</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>2 · The divergence register — deliberate departures, defended</h2>
+  <p class="lede" style="font-size:14.5px">
+    ASSAY departs from written doctrine in five places. Each departure is a decision with a defence,
+    recorded here so it is a statement, never a discovery.
+  </p>
+
+  <div class="dv">
+    <h3>№1 — No weighted COA decision matrix</h3>
+    <div class="row"><div class="lbl">Doctrine says</div><div>JP 5-0 offers the weighted matrix as a sample COA-comparison technique.</div></div>
+    <div class="row"><div class="lbl">ASSAY does</div><div>No numeric weights exist anywhere (ASSAY-DEC-19). Comparison is the honest verdict matrix, banded non-domination for the handful, and tie-breaks stated in prose.</div></div>
+    <div class="row"><div class="lbl">Defence</div><div>The MCDM-critique literature has never rehabilitated the technique: subjective weights project false rigour, ordinal scales get treated as cardinal, winners flip under tiny weight changes, and naturalistic-decision-making evidence shows the matrix is routinely back-filled to justify a choice already made. ASSAY delivers the matrix's legitimate function — organised comparison, <code>distinct_because</code> — without the illegitimate one.</div></div>
+  </div>
+
+  <div class="dv">
+    <h3>№2 — No scenario-probability arithmetic</h3>
+    <div class="row"><div class="lbl">Doctrine says</div><div>Rank-order adversary COAs by likelihood; planning often proceeds MLCOA-first.</div></div>
+    <div class="row"><div class="lbl">ASSAY does</div><div>Holds the likelihood ordering as banded knowledge (K14a–c, <code>scenario_weight</code>) and <b>refuses to compute with it</b>: weights order attention and reporting, never compile into constraint or cost. Robustness is worst-case (minimax) across the COA set — the MDCOA discipline — never a weighted blend.</div></div>
+    <div class="row"><div class="lbl">Defence</div><div>Aligns with the most-dangerous-COA requirement, with robust decision-making / assumption-based planning / info-gap methods, and with ICD 203 / PHIA's stance that likelihood is a human judgement. ASSAY leaves the judgement where doctrine puts it — with the analyst and the commander.</div></div>
+  </div>
+
+  <div class="dv">
+    <h3>№3 — No adversarial reaction dynamics</h3>
+    <div class="row"><div class="lbl">Doctrine says</div><div>COA analysis is the wargame: action, reaction, counteraction.</div></div>
+    <div class="row"><div class="lbl">ASSAY does</div><div>Supports COA <em>comparison</em> honestly over static compiled worlds; it does not simulate a reacting adversary.</div></div>
+    <div class="row"><div class="lbl">Defence</div><div>The wargame remains a human activity ASSAY should <em>instrument</em> — honest adjudication support, traceable verdicts on demand — not replace. A computed reactive red (thesis H) is deliberately deferred until the human-in-the-loop version has taught the project what it wants.</div></div>
+  </div>
+
+  <div class="dv">
+    <h3>№4 — No civil-harm quantification</h3>
+    <div class="row"><div class="lbl">Doctrine says</div><div>Acceptability weighs cost against advantage; LOAC proportionality weighs anticipated harm.</div></div>
+    <div class="row"><div class="lbl">ASSAY does</div><div>C3 is a geometric red line — does FE-FALCON fire into the populated district — never a weighted harm metric (ASSAY-DEC-35). The civil-population band (K3) is compiled and displayed but no verdict arithmetic reads it.</div></div>
+    <div class="row"><div class="lbl">Defence</div><div>Whether firing into 55,000 people is "worse" than 5,000 is a commander's value judgement the system refuses to pre-compute (DEC-19). The <em>system</em> declines the weighing; the commander is not spared it — the trade is surfaced, banded, and left on the commander's desk, which is exactly where JP 5-0's acceptability criterion puts it.</div></div>
+  </div>
+
+  <div class="dv">
+    <h3>№5 — No execution or assessment model</h3>
+    <div class="row"><div class="lbl">Doctrine says</div><div>Planning continues into execution: MOEs, MOPs, assessment working groups.</div></div>
+    <div class="row"><div class="lbl">ASSAY does</div><div>Stops at plan selection with a recorded rationale. No execution model, no MOE/MOP shapes.</div></div>
+    <div class="row"><div class="lbl">Defence</div><div>Scope, stated: the demonstrator's theses concern knowledge → compile → score → analyse. The staleness machinery (thesis F) is the seed a future assessment loop would grow from.</div></div>
+  </div>
+
+  <p class="note">
+    <b>Mission-command-compatible automation.</b> The common thread: ASSAY accelerates the
+    auditable parts — compile, score, trace, staleness, at machine speed — and refuses to
+    accelerate the judgement parts — likelihood, value trade-offs, selection, at commander speed.
+    The refusal posture is a C2 position, not an anti-automation one.
+  </p>
+
+  <footer>
+    Derived from the JIPOE/C2 process review (2026-07-14, §4.1 and §4.4; actions W1/A1) —
+    <a href="https://github.com/DeepBlueCLtd/assay/blob/main/docs/reviews/2026-07-14-jipoe-c2-process-review.md">full review in the repository</a>.
+    Doctrinal sources: JP 2-01.3 <em>Joint Intelligence Preparation of the Operational Environment</em>;
+    ATP 2-01.3; JP 5-0 <em>Joint Planning</em>; FM 5-0; ICD 203 <em>Analytic Standards</em>.
+    Register decisions cited: ASSAY-DEC-18, DEC-19, DEC-20, DEC-29, DEC-35; SPEC-21 (JIPOE anchoring).
+    <br><br>
+    <b>Fiction, deliberately:</b> every named example is the engineered Meridian Archipelago vignette
+    (ASSAY-DEC-8); no real operational picture sits behind any surface.
+  </footer>
+
+</div>
+</body>
+</html>
