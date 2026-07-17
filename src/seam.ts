@@ -44,7 +44,11 @@ export interface Delta {
   seq: number; // monotonic; the feed's ordering key
   actor: string;
   role: string;
-  op: 'create' | 'supersede' | 'contest' | 'resolve';
+  // `refused` records a write attempt the firewall declined (SPEC-26 T03/DEC-5
+  // coverage): the attempt is part of the record, so the cursor has a position
+  // for it, but no object is written and no edge added (state is unchanged from
+  // the prior seq). A value on the existing union — the Delta shape is unchanged.
+  op: 'create' | 'supersede' | 'contest' | 'resolve' | 'refused';
   refs: Ref[];
   stamp?: string;
   warnings?: LintWarning[]; // lint warnings the write drew (SPEC-21); envelope, outside content addressing

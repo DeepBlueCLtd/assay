@@ -70,4 +70,17 @@ export class DeltaLog {
     copy.#seq = this.#seq;
     return copy;
   }
+
+  /**
+   * A byte-faithful copy holding only deltas with `seq <= uptoSeq` (SPEC-26 —
+   * the state-at-seq feed). The delta log is the seq spine (DEC-5); truncating
+   * it to a cursor is the honest "what had been recorded by then" — the feed the
+   * reconstructed observer panel renders (note 15 §2).
+   */
+  sliceClone(uptoSeq: number): DeltaLog {
+    const copy = new DeltaLog(this.#clock);
+    copy.#deltas = this.#deltas.filter((d) => d.seq <= uptoSeq).map((d) => ({ ...d }));
+    copy.#seq = Math.max(0, Math.min(this.#seq, uptoSeq));
+    return copy;
+  }
 }

@@ -76,7 +76,14 @@ export class KnowledgeService {
     this.#assertValid(ko);
 
     const refusal = checkEncoding(ko);
-    if (refusal) return refusal; // persist nothing (FR-002)
+    if (refusal) {
+      // Persist nothing (FR-002) — but the ATTEMPT is part of the record
+      // (SPEC-26 §3, DEC-5 coverage): publish a `refused` delta naming the
+      // attempted object, so the decision-history scrubber has a cursor
+      // position for it. No object written, no edge added — state is unchanged.
+      await this.#publishRefused('create', ko);
+      return refusal;
+    }
 
     const hash = await contentHash(ko as unknown as Record<string, unknown>);
     const isNew = !this.#store.exists(hash);
@@ -103,7 +110,11 @@ export class KnowledgeService {
     this.#assertValid(next);
 
     const refusal = checkEncoding(next);
-    if (refusal) return refusal;
+    if (refusal) {
+      // The refused write-attempt is a recorded cursor position (SPEC-26 §3).
+      await this.#publishRefused('supersede', next, priorId);
+      return refusal;
+    }
 
     const priorHash = this.#latestHash(priorId);
     if (!priorHash) {
@@ -207,6 +218,28 @@ export class KnowledgeService {
   /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
   #lints(ko: KnowledgeObject): LintWarning[] {
     return [...confidenceLint(ko), ...jipoeStepLint(ko), ...expectedAnswerProvenanceLint(ko)];
+  }
+
+  /**
+   * SPEC-26 §3 (DEC-5 coverage) — record a refused write-attempt as a `refused`
+   * delta: the attempted op and refs (the object that would have been written,
+   * plus the prior version on a supersede). No object is stored and no edge is
+   * added, so `state(seq)` equals `state(seq-1)` — the attempt is a scrubbable
+   * position, not a state change. The Delta shape is unchanged; `refused` is a
+   * value on the existing `op` union.
+   */
+  async #publishRefused(
+    op: 'create' | 'supersede',
+    attempted: KnowledgeObject,
+    priorId?: string,
+  ): Promise<void> {
+    const hash = await contentHash(attempted as unknown as Record<string, unknown>);
+    const refs: Ref[] = [{ logical_id: attempted.logical_id, content_hash: hash }];
+    if (priorId) {
+      const priorHash = this.#latestHash(priorId);
+      refs.push({ logical_id: priorId, content_hash: priorHash ?? '' });
+    }
+    this.#deltas.publish({ op: 'refused', refs, actor: this.#actor, role: this.#role });
   }
 
   #latestHash(id: string): string | undefined {

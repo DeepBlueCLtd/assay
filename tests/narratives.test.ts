@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   NARRATIVES,
@@ -6,8 +7,22 @@ import {
   type Narrative,
   type NarrativeBeat,
 } from '../src/narratives.js';
+import type { Commitment, KnowledgeObject, Plan, ScenarioCOA, VignetteConfig } from '../src/generated/types.js';
+import { AppState, type Fixtures } from '../src/app/state.js';
 
 const VALID_TABS = new Set(['j2', 'planner', 'commander', 'observer']);
+
+const load = <T>(name: string): T[] =>
+  JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8')) as T[];
+const fixtures = (): Fixtures => ({
+  knowledge: load<KnowledgeObject>('knowledge'),
+  coas: load<ScenarioCOA>('coas'),
+  commitments: load<Commitment>('commitments'),
+  plans: load<Plan>('plans'),
+  config: JSON.parse(
+    readFileSync(new URL('../fixtures/vignette-config.json', import.meta.url), 'utf8'),
+  ) as VignetteConfig,
+});
 
 describe('narrative definitions (Stage 7, note 09)', () => {
   it('there are exactly five narratives matching concept §1', () => {
@@ -176,4 +191,59 @@ describe('doctrinal quotes (note 09 §4, principle 5)', () => {
       }
     }
   });
+});
+
+// ---- SPEC-26 (DEC-39): narratives are scrub paths into the canonical record ----
+
+/** The beat→seq oracle table (note 15 §4) — pins each waypoint into the
+ *  canonical heartbeat so a drift is a test failure, not a silent re-scripting. */
+const BEAT_SEQS: Record<string, number[]> = {
+  j2: [20, 20, 20, 20, 20],
+  planner: [20, 20, 20, 20],
+  commander: [20, 20, 20, 20],
+  bridge: [20, 21, 21, 21],
+  remit: [18, 19, 20, 20, 21],
+};
+
+describe('narratives-as-scrub-paths (SPEC-26 US2, SC-002)', () => {
+  it('the bespoke `action` field is gone from every beat (structural)', () => {
+    for (const n of NARRATIVES) {
+      for (const beat of n.beats) {
+        expect('action' in beat, `${n.id} beat "${beat.title}" still carries an action`).toBe(false);
+      }
+    }
+  });
+
+  it('every beat is a waypoint carrying a seq into the record', () => {
+    for (const n of NARRATIVES) {
+      for (const beat of n.beats) {
+        expect(typeof beat.seq, `${n.id} beat "${beat.title}" has no seq`).toBe('number');
+        expect(beat.seq).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it('the beat→seq oracle table pins each waypoint', () => {
+    for (const [id, seqs] of Object.entries(BEAT_SEQS)) {
+      const n = narrativeById(id)!;
+      expect(n.beats.map((b) => b.seq), `${id} waypoint seqs drifted`).toEqual(seqs);
+    }
+  });
+
+  it("every beat's rendered state equals reconstructAt(beat.seq) — no bespoke state (AS-1)", async () => {
+    const app = new AppState(fixtures());
+    await app.seedCanonical();
+    for (const n of NARRATIVES) {
+      for (const beat of n.beats) {
+        expect(beat.seq).toBeLessThanOrEqual(app.historyMaxSeq);
+        const snap = await app.reconstructAt(beat.seq);
+        // The beat's tab has at least one panel in the reconstructed belief-state,
+        // so the presenter's raised tab is never blank at that waypoint.
+        expect(
+          snap.panels.some((p) => p.tab === beat.tab),
+          `${n.id} beat "${beat.title}" (seq ${beat.seq}) has no panel on tab ${beat.tab}`,
+        ).toBe(true);
+      }
+    }
+  }, 30000);
 });

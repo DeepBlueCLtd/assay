@@ -156,6 +156,16 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'The computed sensitivity contributors for THIS verdict: the knowledge that, pushed to its band edge, flips it — single-source flags co-shown. A re-render of the sensitivity ranking (SPEC-11) scoped to one verdict; it ROUTES challenge to the knowledge row, it does not adjudicate it. "No single band-edge movement flips this" is itself assurance, never a blank (SPEC-25).',
   },
+  replay: {
+    term: 'replay — “replaying seq n of N — record, not present”',
+    gloss:
+      'The decision-history scrubber shows a PAST belief-state, reconstructed byte-for-byte from the delta log (state at seq n = the fold of deltas 1…n, G1) — not the live present. Refusals, staleness flags, stamps and verdicts re-derive; nothing unrecorded plays, no wall clock is resurrected (FIND-4). Writes are disabled in the past; new live deltas surface as an “M new” count, never a silent jump (SPEC-26).',
+  },
+  recursive_trace: {
+    term: 'recursive trace (depth-capped, counted remainder)',
+    gloss:
+      'The one-hop “informs / influenced by” menu expanded in place to a stated depth of 3 (Cowan 2001), each hop labelled from the trace graph itself — the edge type, plus a fixed operation gloss for computation edges (band materialisation, interval evaluation), never an invented “why”. Dead ends render as dead ends at every depth (G3); at the cap, “N more — open full trace” hands off to the full dependency graph — bounded, counted, escapable, never a silent stop (G4, SPEC-26).',
+  },
   role_menu: {
     term: 'role actions (the legal verbs for this role)',
     gloss:

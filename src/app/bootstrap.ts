@@ -17,7 +17,10 @@ import { mountShell } from './shell.js';
 async function main(): Promise<void> {
   const fx = { knowledge, coas, commitments, config, plans } as unknown as Fixtures;
   const app = new AppState(fx);
-  await app.seed();
+  // The canonical heartbeat (SPEC-26) — the ONE recorded history the scrubber
+  // replays and the five narratives scrub through (DEC-39). The live head lands
+  // at the end of the heartbeat; the decision-history slider reaches any past.
+  await app.seedCanonical();
   const root = (document.getElementById('app') ?? document.body) as HTMLElement;
   mountShell(root, app);
 }
