@@ -754,7 +754,7 @@
   }
 
   // src/store.ts
-  var ObjectStore = class {
+  var ObjectStore = class _ObjectStore {
     #byHash = /* @__PURE__ */ new Map();
     #lineages = /* @__PURE__ */ new Map();
     // logical_id → hashes, insertion order
@@ -796,10 +796,23 @@
     get size() {
       return this.#byHash.size;
     }
+    /**
+     * A byte-faithful, independent copy of the store (SPEC-25 US2, the shadow
+     * fork). Entries hold only a canonical string plus scalars, so a shallow copy
+     * of each entry is a full copy; the clone shares no mutable state with the
+     * original, so writing to the clone never touches the committed store (the
+     * preview's "nothing persisted" guarantee, note 14 §2.2).
+     */
+    clone() {
+      const copy = new _ObjectStore();
+      for (const [hash, entry] of this.#byHash) copy.#byHash.set(hash, { ...entry });
+      for (const [id, lineage] of this.#lineages) copy.#lineages.set(id, [...lineage]);
+      return copy;
+    }
   };
 
   // src/trace.ts
-  var TraceStore = class {
+  var TraceStore = class _TraceStore {
     #edges = [];
     #byFrom = /* @__PURE__ */ new Map();
     #byTo = /* @__PURE__ */ new Map();
@@ -814,6 +827,17 @@
     }
     get edges() {
       return this.#edges;
+    }
+    /**
+     * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Edges are
+     * flat records; re-adding copies rebuilds the from/to indices. The clone shares
+     * no mutable state, so a shadow computation adds no edge to the committed graph
+     * (note 14 §2.2).
+     */
+    clone() {
+      const copy = new _TraceStore();
+      for (const e of this.#edges) copy.add({ ...e });
+      return copy;
     }
     /**
      * Walk transitively from `start`. `forward` follows from→to; `backward`
@@ -858,7 +882,7 @@
 
   // src/deltas.ts
   var FIXED_EPOCH = "1970-01-01T00:00:00.000Z";
-  var DeltaLog = class {
+  var DeltaLog = class _DeltaLog {
     #deltas = [];
     #seq = 0;
     #clock;
@@ -889,6 +913,18 @@
     }
     get all() {
       return this.#deltas;
+    }
+    /**
+     * A byte-faithful, independent copy (SPEC-25 US2, the shadow fork). Deltas are
+     * flat envelopes; the clone carries the same clock and `seq` so a shadow write
+     * publishes the next seq exactly as a commit would — yet onto the clone's own
+     * array, never the committed feed (note 14 §2.2).
+     */
+    clone() {
+      const copy = new _DeltaLog(this.#clock);
+      copy.#deltas = this.#deltas.map((d) => ({ ...d }));
+      copy.#seq = this.#seq;
+      return copy;
     }
   };
 
@@ -1593,6 +1629,36 @@
     return { lo: val.lo > 0 ? 1 : 0, hi: val.hi > 0 ? 1 : 0, unit };
   }
 
+  // src/verdictMap.ts
+  function marginBand(comparator, threshold, value) {
+    switch (comparator) {
+      case "at_most":
+      case "by_step":
+        return { lo: threshold - value.hi, hi: threshold - value.lo, unit: value.unit };
+      case "at_least":
+        return { lo: value.lo - threshold, hi: value.hi - threshold, unit: value.unit };
+      case "never":
+        return { lo: -value.hi, hi: -value.lo, unit: value.unit };
+    }
+  }
+  function verdictFor(margin) {
+    if (margin.hi < 0) return "violated";
+    if (margin.lo > 0) return "robust";
+    if (margin.lo === 0) return "marginal";
+    return "tight";
+  }
+  var ORACLE_O3 = {
+    value: { lo: 9, hi: 13, unit: "step" },
+    comparator: "at_most",
+    sweep: [8, 9, 10, 11, 12, 13, 14]
+  };
+  function oracleO3Sweep() {
+    return ORACLE_O3.sweep.map((threshold) => {
+      const margin = marginBand(ORACLE_O3.comparator, threshold, ORACLE_O3.value);
+      return { threshold, margin, verdict: verdictFor(margin) };
+    });
+  }
+
   // src/score.ts
   var ScoreService = class {
     #store;
@@ -1712,23 +1778,6 @@
       return { from_hash: from, to_hash: to, edge_type: "scored_from", stamp, written_by: this.#writtenBy };
     }
   };
-  function marginBand(comparator, threshold, value) {
-    switch (comparator) {
-      case "at_most":
-      case "by_step":
-        return { lo: threshold - value.hi, hi: threshold - value.lo, unit: value.unit };
-      case "at_least":
-        return { lo: value.lo - threshold, hi: value.hi - threshold, unit: value.unit };
-      case "never":
-        return { lo: -value.hi, hi: -value.lo, unit: value.unit };
-    }
-  }
-  function verdictFor(margin) {
-    if (margin.hi < 0) return "violated";
-    if (margin.lo > 0) return "robust";
-    if (margin.lo === 0) return "marginal";
-    return "tight";
-  }
   var cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
   var refusal2 = (reason, offending, explanation) => ({
     refused: true,
@@ -3848,12 +3897,31 @@ ${items}
       <span style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:${tint}">${esc10(c.tier)}</span>
     </span>`;
   }
-  function s3Cards(cards, tie_break) {
+  function atRiskChip(d) {
+    return `<span data-logical-id="${esc10(d.logical_id)}" style="display:inline-flex;gap:6px;align-items:baseline;border:1px dashed #C46A1E;border-radius:4px;padding:2px 8px;background:#FBF3E8">
+      <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#8A5212">${esc10(d.logical_id)}</span>
+      <span style="font-family:ui-monospace,monospace;font-size:10px;color:#8A5212">${esc10(d.from)} \u2192 ${esc10(d.to)}</span>
+    </span>`;
+  }
+  function s3Cards(cards, tie_break, opts = {}) {
     const items = cards.map((card, i) => {
       const chips = card.sacrificed.map(chip4).join("\n      ");
-      const statements = card.sacrificed.map((c) => `<li style="margin:0">gives up: <b>${esc10(c.statement)}</b> <span style="color:#8A97A0">(${esc10(c.logical_id)})</span></li>`).join("\n        ");
+      const atRisk = card.at_risk ?? [];
+      const atRiskLine = atRisk.length > 0 ? `<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
+      <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#8A5212;font-weight:700">puts at risk</span>
+      ${atRisk.map(atRiskChip).join("\n      ")}
+    </div>` : "";
+      const reasons = [
+        ...card.sacrificed.map(
+          (c) => `<li data-logical-id="${esc10(c.logical_id)}" style="margin:0">gives up: <b>${esc10(c.statement)}</b> <span style="color:#8A97A0">(${esc10(c.logical_id)})</span></li>`
+        ),
+        ...atRisk.map(
+          (d) => `<li data-logical-id="${esc10(d.logical_id)}" style="margin:0">slips <b>${esc10(d.from)} \u2192 ${esc10(d.to)}</b> on <b>${esc10(d.statement)}</b> <span style="color:#8A97A0">(${esc10(d.logical_id)} \u2014 a risk, not a sacrifice)</span></li>`
+        )
+      ].join("\n        ");
       const glowId = `card:${[...card.candidate.sacrificed].sort().join(",")}`;
-      const sig = `${i}|${card.candidate.narrative}|${card.sacrificed.map((c) => `${c.logical_id}:${c.tier}`).join(",")}`;
+      const atRiskSig = atRisk.map((d) => `${d.logical_id}:${d.from}>${d.to}`).join(",");
+      const sig = `${i}|${card.candidate.narrative}|${card.sacrificed.map((c) => `${c.logical_id}:${c.tier}`).join(",")}|risk:${atRiskSig}`;
       return `<li data-logical-id="${esc10(card.candidate.plan)}" data-glow-id="${esc10(glowId)}" data-glow-sig="${esc10(sig)}" style="margin:0;padding:12px 14px;border:1px solid #D8DFE4;border-radius:6px;background:#FCFDFD;list-style:none">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
       <span style="font-family:ui-monospace,monospace;font-size:11px;color:#8A97A0">least-worst #${i + 1}</span>
@@ -3861,16 +3929,19 @@ ${items}
       ${chips}
     </div>
     <div style="font-size:12.5px;color:#33424E;margin-bottom:6px">${esc10(card.candidate.narrative)}</div>
-    <ul style="margin:0;padding-left:18px;font-size:11.5px;color:#5B6B77">
-        ${statements}
-    </ul>
+    ${atRiskLine}
+    <ol style="margin:0;padding-left:18px;font-size:11.5px;color:#5B6B77">
+        ${reasons}
+    </ol>
   </li>`;
     }).join("\n");
+    const basis = opts.atRiskBasis ? `<p style="margin:8px 2px 0;font-size:11px;color:#8A97A0"><b>\u201CPuts at risk\u201D basis \u2014</b> ${esc10(opts.atRiskBasis)}. Derived from verdict deltas, never authored; <b>sacrificed</b> still means exactly the violated set (SPEC-09 unchanged).</p>` : "";
     const tie = tie_break ? `<p style="margin:8px 2px 0;font-size:11px;color:#8A97A0"><b>Tie-break \u2014</b> ${esc10(tie_break)}</p>` : "";
     return `<div class="assay-s3-cards">
   <ul style="display:grid;gap:10px;margin:0;padding:0">
 ${items}
   </ul>
+  ${basis}
   ${tie}
 </div>`;
   }
@@ -4348,6 +4419,72 @@ ${items}
 </table></div>`;
   }
 
+  // src/components/verdictLegend.ts
+  var esc16 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var STOP5 = {
+    robust: {
+      bg: "#1E6B3A",
+      label: "robust",
+      condition: "m_lo > 0",
+      gloss: "the worst case still satisfies, with room \u2014 above the band, decisively fine"
+    },
+    marginal: {
+      bg: "#7A6A12",
+      label: "marginal",
+      condition: "m_lo = 0 \u2264 m_hi",
+      gloss: "the worst case sits exactly on the line \u2014 the boundary verdict"
+    },
+    tight: {
+      bg: "#9A5212",
+      label: "tight",
+      condition: "m_lo < 0 \u2264 m_hi",
+      gloss: "the band straddles the line \u2014 neither definitely fine nor definitely failed"
+    },
+    violated: {
+      bg: "#8A2020",
+      label: "violated",
+      condition: "m_hi < 0",
+      gloss: "even the best case already fails \u2014 below the band, decisively failed"
+    }
+  };
+  var ORDER = ["violated", "tight", "marginal", "robust"];
+  function regionRows() {
+    return ORDER.map((v) => {
+      const s = STOP5[v];
+      return `<tr>
+      <td style="padding:4px 8px"><span style="display:inline-block;min-width:66px;padding:2px 8px;border-radius:11px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;background:${s.bg};color:#fff;text-align:center">${s.label}</span></td>
+      <td style="padding:4px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#1B2732;white-space:nowrap">${esc16(s.condition)}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#5B6B77">${esc16(s.gloss)}</td>
+    </tr>`;
+    }).join("");
+  }
+  function sweepCells() {
+    return oracleO3Sweep().map(({ threshold, verdict }) => {
+      const s = STOP5[verdict];
+      const edge = threshold === ORACLE_O3.value.lo || threshold === ORACLE_O3.value.hi;
+      return `<td style="padding:3px 5px;text-align:center;border:1px solid #E4E9ED${edge ? ";outline:2px solid #1B2732;outline-offset:-2px" : ""}">
+        <div style="font-family:ui-monospace,monospace;font-size:10px;color:#5B6B77">T=${threshold}${edge ? " \u25C6" : ""}</div>
+        <div style="margin-top:2px"><span style="display:inline-block;padding:1px 5px;border-radius:8px;font-family:ui-monospace,monospace;font-size:9.5px;font-weight:700;background:${s.bg};color:#fff">${s.label}</span></div>
+      </td>`;
+    }).join("");
+  }
+  function verdictLegend(opts = {}) {
+    const v = ORACLE_O3.value;
+    return `<details class="assay-verdict-legend" ${opts.open ? "open" : ""} style="margin:8px 0;border:1px solid #C8D2DA;border-radius:6px;padding:6px 12px;background:#FBFCFD">
+  <summary style="cursor:pointer;font-size:11.5px;color:#1B2732;font-weight:700">Verdict legend \u2014 how a margin band becomes one of four words (the mapping, laid open)</summary>
+  <div style="margin-top:8px">
+    <p style="font-size:11.5px;color:#33424E;margin:0 0 6px">A commitment reduces to a <b>signed margin band</b> \u2014 satisfied when the margin is \u2265 0, its low endpoint the worst case. The four-stop verdict is read off the <b>signs of that band's endpoints only</b> \u2014 no midpoint, no interior cut, no score (DEC-15/19). It is a lookup, like a wargame's Combat Results Table: inspectable, never a hidden judgement.</p>
+    <table style="border-collapse:collapse;width:100%;margin-bottom:10px">
+      <thead><tr style="text-align:left;color:#5B6B77;font-size:10px;text-transform:uppercase;letter-spacing:.04em"><th style="padding:0 8px 4px">verdict</th><th style="padding:0 8px 4px">when</th><th style="padding:0 8px 4px">meaning</th></tr></thead>
+      <tbody>${regionRows()}</tbody>
+    </table>
+    <p style="font-size:11.5px;color:#33424E;margin:0 0 5px">The mapping's honesty property, shown not asserted \u2014 the frozen oracle <b>O-3</b> sweep: <span style="font-family:ui-monospace,monospace">strait_open_step [${v.lo},${v.hi}]</span> against <span style="font-family:ui-monospace,monospace">at_most&nbsp;T</span>, T swept ${ORACLE_O3.sweep[0]}\u2192${ORACLE_O3.sweep[ORACLE_O3.sweep.length - 1]}. The verdict changes <b>only at the band edges ${v.lo} and ${v.hi}</b> (\u25C6), never strictly inside:</p>
+    <table style="border-collapse:collapse;margin-bottom:8px"><tbody><tr>${sweepCells()}</tr></tbody></table>
+    <p style="font-size:10.5px;color:#8091A0;margin:0"><b>Footnote \u2014</b> <span style="font-family:ui-monospace,monospace">marginal</span> fires only when the worst-case margin sits <i>exactly</i> on the line (m_lo = 0) \u2014 a coincidence of band edge and threshold that, in a continuous domain, is <b>measure-zero</b>. It is the boundary verdict at the upper band edge, never an interior transition. The illustration derives from the frozen O-3 constants, not live data \u2014 a change to it is a register/oracle matter.</p>
+  </div>
+</details>`;
+  }
+
   // src/components/legends.ts
   var PILL_LEGEND = {
     band: {
@@ -4364,7 +4501,11 @@ ${items}
     },
     verdict: {
       term: "four-stop verdict (robust / marginal / tight / violated)",
-      gloss: "One colour language for how a plan meets a commitment, read off the signed margin band\u2019s sign only. No decimals \u2014 the banded margin rides on hover, never as a headline (G2)."
+      gloss: "One colour language for how a plan meets a commitment, read off the signed margin band\u2019s sign only. No decimals \u2014 the banded margin rides on hover, never as a headline (G2). Open the verdict legend for the full mapping (SPEC-25)."
+    },
+    verdict_legend: {
+      term: "verdict legend (the mapping, laid open)",
+      gloss: "The four-stop mapping made public, CRT-style: each verdict is a REGION of the signed-margin sign rule (robust m_lo>0 / marginal m_lo=0 / tight m_lo<0\u2264m_hi / violated m_hi<0), illustrated by the frozen oracle O-3 sweep \u2014 the verdict changes only at the band edges, never inside. A mapping, never a score (DEC-19); oracle-derived, never live (SPEC-25)."
     },
     tier: {
       term: "tier chip (must / should / prefer)",
@@ -4445,18 +4586,30 @@ ${items}
     invalidated: {
       term: "invalidated artefact",
       gloss: "A downstream artefact (world, verdict, or score) flagged stale by a transitive trace walk from a changed knowledge object. Nothing recomputes \u2014 flags only, then humans decide (constitution)."
+    },
+    puts_at_risk: {
+      term: "puts at risk (verdict \u2192 verdict)",
+      gloss: 'A commitment this least-worst option DEGRADES short of violation, relative to the incumbent plan under the same world (e.g. robust \u2192 tight). Derived from verdict deltas by the reused scorer, never authored \u2014 the risk residue the sacrifice set (violated-only) would hide (SPEC-25). Distinct from "sacrificed": that is the violated set; this is worse-but-not-failed.'
+    },
+    challenge: {
+      term: "challenge \u2014 key assumptions (leans on \u2026)",
+      gloss: 'The computed sensitivity contributors for THIS verdict: the knowledge that, pushed to its band edge, flips it \u2014 single-source flags co-shown. A re-render of the sensitivity ranking (SPEC-11) scoped to one verdict; it ROUTES challenge to the knowledge row, it does not adjudicate it. "No single band-edge movement flips this" is itself assurance, never a blank (SPEC-25).'
+    },
+    role_menu: {
+      term: "role actions (the legal verbs for this role)",
+      gloss: "The write verbs C2 permits this role \u2014 J-2 collect/contest/resolve/supersede, planner compile/generate/relax/score, commander select/waive, observer none. Each is marked live-actionable, pipeline-automatic, or deferred (never a dead button faking a write, DEC-4). Menus reorganise what the seam already permits (DEC-33), never restrict; the observer tab exposes no write (SPEC-25)."
     }
   };
-  var esc16 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc17 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function legend(pillIds, opts = {}) {
     const title = opts.title ?? "What the pills mean";
     const rows = pillIds.map((id) => PILL_LEGEND[id]).filter((e) => e !== void 0).map(
-      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc16(
+      (e) => `<div style="margin:6px 0"><span style="font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;color:#1B2732">${esc17(
         e.term
-      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc16(e.gloss)}</div></div>`
+      )}</span><div style="font-size:11.5px;color:#5B6B77;margin-top:2px">${esc17(e.gloss)}</div></div>`
     ).join("");
     return `<details class="assay-legend" style="margin:8px 0;border:1px dashed #C8D2DA;border-radius:6px;padding:4px 10px;background:#F7F9FA">
-  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc16(
+  <summary style="cursor:pointer;font-size:11px;color:#3E5D8A;font-weight:600">Key \u2014 ${esc17(
       title
     )}</summary>
   <div style="margin-top:6px">${rows}</div>
@@ -4465,19 +4618,30 @@ ${items}
   var COMPONENT_PILLS = {
     s1Table: ["band", "provenance", "jipoe", "waiver", "blocks", "refusal"],
     channelTrace: ["band", "provenance", "jipoe"],
-    s2Matrix: ["verdict"],
+    s2Matrix: ["verdict", "verdict_legend"],
     handfulStrip: ["distinct"],
-    s3Cards: ["sacrifice", "tier"],
-    scenarioStrip: ["verdict", "scenario_collapse", "worst_case", "attention", "band", "provenance"],
+    s3Cards: ["sacrifice", "puts_at_risk", "tier", "verdict_legend"],
+    scenarioStrip: ["verdict", "verdict_legend", "scenario_collapse", "worst_case", "attention", "band", "provenance"],
     refusalBanner: ["refusal"],
-    sensitivityTable: ["sensitivity", "single_source_flag", "verdict"],
+    sensitivityTable: ["sensitivity", "single_source_flag", "verdict", "verdict_legend"],
     discriminationTable: ["separation", "separation_class", "operative_pair", "collection_cost", "band", "provenance", "weight_tiebreak"],
     stalenessFlags: ["invalidated"],
-    dsmTable: ["decision_point", "ltiov_state", "tripwire", "separation_class", "collection_cost", "band", "provenance", "tier"]
+    dsmTable: ["decision_point", "ltiov_state", "tripwire", "separation_class", "collection_cost", "band", "provenance", "tier", "verdict_legend"]
   };
+  var VERDICT_SURFACES = /* @__PURE__ */ new Set([
+    "s2Matrix",
+    "s3Cards",
+    "scenarioStrip",
+    "sensitivityTable",
+    "dsmTable",
+    "challengePanel"
+  ]);
   function componentLegend(component, title) {
     const pills = COMPONENT_PILLS[component] ?? [];
     return pills.length > 0 ? legend(pills, title ? { title } : {}) : "";
+  }
+  function verdictLegendFor(component) {
+    return VERDICT_SURFACES.has(component) ? verdictLegend() : "";
   }
 
   // src/engine.ts
@@ -4487,7 +4651,8 @@ ${items}
   var BASE = ["K1", "K2", "K3", "K4", "K6", "K7", "K8", "K9"];
   var COMMITMENT_IDS = ["C1", "C2", "C3", "C4", "C5", "C6"];
   var refFor = (id) => ({ logical_id: id, content_hash: "" });
-  var AppState = class {
+  var GOODNESS_RANK = { robust: 0, marginal: 1, tight: 2, violated: 3 };
+  var AppState = class _AppState {
     #fx;
     #kById;
     #commitmentById;
@@ -4532,6 +4697,15 @@ ${items}
       for (const coa of this.#fx.coas) await svc.store.put(coa);
       for (const c of this.#fx.commitments)
         await svc.store.put(c);
+      this.#wireServices(svc);
+    }
+    /**
+     * Wire one KnowledgeService's store/trace into a fresh instance of every real
+     * service (shared by `seed()` and `fork()`). The forked shadow gets the SAME
+     * service code over a CLONED store, so a preview runs the real pipeline over a
+     * byte-faithful copy (SPEC-25 US2, note 14 §2).
+     */
+    #wireServices(svc) {
       this.#svc = svc;
       this.#compiler = new CompileService({ knowledge: svc });
       this.#scorer = new ScoreService({
@@ -4576,6 +4750,26 @@ ${items}
         config: this.#fx.config,
         robustness: this.#robustnessSvc
       });
+    }
+    /**
+     * A shadow of this state — a byte-faithful clone of the store/trace/delta log
+     * with fresh services wired over the clone (SPEC-25 US2). Applying an armed act
+     * to the fork runs the REAL pipeline (same firewall, same gates) but touches
+     * NOTHING on this instance: no persistence, no delta, no stamp mutation (note
+     * 13 §2). The preview orchestrator (`src/preview.ts`) drives this; commit runs
+     * the same act on `this`, cancel discards the fork.
+     */
+    fork() {
+      const svc = new KnowledgeService({
+        store: this.#svc.store.clone(),
+        trace: this.#svc.trace.clone(),
+        deltas: this.#svc.deltas.clone()
+      });
+      const shadow = new _AppState(this.#fx);
+      shadow.#wireServices(svc);
+      shadow.#resolved = this.#resolved;
+      shadow.#step = this.#step;
+      return shadow;
     }
     get store() {
       return this.#svc.store;
@@ -4857,7 +5051,7 @@ ${items}
               id: "coaverdicts",
               tab: "coa",
               title: "Spatial \xB7 the canned P1/P2, re-scored live (the planner matrix scores the generated handful)",
-              html: `${s2Matrix(COMMITMENT_IDS, coaMatrix)}<div style="margin-top:8px">${c4Details.join("")}</div>`,
+              html: `${verdictLegendFor("s2Matrix")}${s2Matrix(COMMITMENT_IDS, coaMatrix)}<div style="margin-top:8px">${c4Details.join("")}</div>`,
               deps: coaDeps
             }
           );
@@ -4901,7 +5095,7 @@ ${items}
             id: "matrix",
             tab: "planner",
             title: "Planner \xB7 the honest matrix",
-            html: componentLegend("s2Matrix") + s2Matrix(COMMITMENT_IDS, matrixRows),
+            html: componentLegend("s2Matrix") + verdictLegendFor("s2Matrix") + s2Matrix(COMMITMENT_IDS, matrixRows),
             deps: matrixDeps
           });
           const scenarioWorlds = { BASE: compiled.world };
@@ -4950,7 +5144,7 @@ ${items}
                 id: "scenarios",
                 tab: "commander",
                 title: "Commander \xB7 scenario robustness (thesis C)",
-                html: componentLegend("scenarioStrip") + scenarioStrip(rr.tensor, { planNames, likelihoods }),
+                html: componentLegend("scenarioStrip") + verdictLegendFor("scenarioStrip") + scenarioStrip(rr.tensor, { planNames, likelihoods }),
                 deps: stripDeps
               });
             }
@@ -4977,7 +5171,7 @@ ${items}
                   id: "dsm",
                   tab: "commander",
                   title: "Commander \xB7 decisions in time (the DSM, derived \u2014 never tasked)",
-                  html: componentLegend("dsmTable") + dsmTable(dsmResult, {
+                  html: componentLegend("dsmTable") + verdictLegendFor("dsmTable") + dsmTable(dsmResult, {
                     knowledgeById: knowledgeById2,
                     selectionNote: "no /select selection exists \u2014 derived for the viewer-chosen P2 (sweep-first); the absence of a commander selection is stated"
                   }),
@@ -5016,21 +5210,26 @@ ${items}
         });
         if (!isRefusal(rr)) {
           stamps.relax = rr.stamp;
-          const cards = rr.report.candidates.map((candidate) => ({
-            candidate,
-            sacrificed: candidate.sacrificed.map((id) => {
+          const { incumbent, atRiskBasis } = await this.#incumbentUnderR3m(r3m.world);
+          const cards = [];
+          for (const candidate of rr.report.candidates) {
+            const sacrificed = candidate.sacrificed.map((id) => {
               const c = this.#commitmentById.get(id);
               return { logical_id: id, tier: c.tier, statement: c.statement };
-            })
-          }));
+            });
+            const at_risk = incumbent ? await this.#atRiskFor(candidate.plan, candidate.sacrificed, incumbent, r3m.world) : [];
+            cards.push({ candidate, sacrificed, ...at_risk.length > 0 ? { at_risk } : {} });
+          }
+          const riskDigest = cards.map((c) => `${c.candidate.plan}:${(c.at_risk ?? []).map((d) => `${d.logical_id}${d.from}>${d.to}`).join("+")}`).join("|");
           panels.push({
             id: "cards",
             tab: "commander",
             title: "Commander \xB7 least-worst, never silence (R3m)",
-            html: componentLegend("s3Cards") + s3Cards(cards, rr.report.tie_break),
+            html: componentLegend("s3Cards") + verdictLegendFor("s3Cards") + s3Cards(cards, rr.report.tie_break, { atRiskBasis }),
             deps: /* @__PURE__ */ new Set([
               r3m.world.content_hash,
               `relax:${rr.stamp}`,
+              `risk:${riskDigest}`,
               ...rr.report.candidates.map((c) => `plan:${c.plan}`)
             ])
           });
@@ -5049,7 +5248,7 @@ ${items}
             id: "sensitivity",
             tab: "j2",
             title: "J-2 \xB7 sensitivity ranking (thesis E)",
-            html: componentLegend("sensitivityTable") + sensitivityTable(sensResult.ranking),
+            html: componentLegend("sensitivityTable") + verdictLegendFor("sensitivityTable") + sensitivityTable(sensResult.ranking),
             deps: /* @__PURE__ */ new Set([`sensitivity:${sensResult.stamp}`])
           });
         }
@@ -5170,6 +5369,43 @@ ${items}
         influences: label(influences(this.#svc.trace, hash, known))
       };
     }
+    /**
+     * SPEC-25 US4 — challenge a verdict: re-render the SPEC-11 sensitivity ranking
+     * scoped to the (plan, commitment). Runs the SAME sensitivity call the panel
+     * runs (same inputs ⇒ same stamp, G1), then projects the ranking onto the
+     * challenged commitment's index (the scorer's canonical commitment order). No
+     * new compute. Returns undefined when there is nothing to challenge (the world
+     * refuses, an un-scored plan/commitment) — the affordance is absent, not erroring.
+     */
+    async challenge(planId, commitmentId) {
+      const liveIds = this.#resolved ? [...BASE, "K12a"] : [...BASE, "K12a", "K12b"];
+      const compiled = await this.#compiler.compile({
+        knowledge: liveIds.map(refFor),
+        config: this.#fx.config,
+        engine_version: ENGINE_VERSION
+      });
+      if (isRefusal(compiled)) return void 0;
+      const planRef = this.#latestRef(planId);
+      if (!planRef) return void 0;
+      const order = this.#fx.commitments.map((c) => c.logical_id).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+      const idx = order.indexOf(commitmentId);
+      if (idx < 0) return void 0;
+      const sens = await this.#sensitivitySvc.analyse({
+        plan: planRef,
+        world: compiled.world,
+        scenario: "BASE",
+        engine_version: ENGINE_VERSION
+      });
+      if (isRefusal(sens)) return void 0;
+      const contributors = sens.ranking.filter((r) => r.baseline_verdicts[idx] !== r.perturbed_verdicts[idx]).map((r) => ({
+        knowledge: r.knowledge.logical_id,
+        single_source: r.single_source,
+        from: r.baseline_verdicts[idx],
+        to: r.perturbed_verdicts[idx]
+      }));
+      const verdict = sens.ranking[0]?.baseline_verdicts[idx] ?? "unknown";
+      return { plan: planId, commitment: commitmentId, verdict, contributors, stamp: sens.stamp };
+    }
     /** Full transitive dependency graph around an item (issue #24). */
     depGraph(logicalId, maxDepth = 4) {
       const hash = this.#latestHash(logicalId);
@@ -5211,6 +5447,58 @@ ${items}
     #verdictKey(v) {
       return `verdict:${v.plan}:${v.commitment}:${v.verdict}`;
     }
+    /** SPEC-25 US3 — the stated incumbent for the "puts at risk" line: P1 scored
+     *  under R3m (apples to apples with the relax candidates). Returns the incumbent
+     *  verdict-by-commitment map plus a render-ready basis sentence; a stated
+     *  absence (never a silent empty line) when P1 cannot be scored. */
+    async #incumbentUnderR3m(world) {
+      if (!(this.#fx.plans ?? []).some((p) => p.logical_id === "P1")) {
+        return { atRiskBasis: "no incumbent plan available \u2014 at-risk basis stated absent" };
+      }
+      const { ref } = this.latestPlan("P1");
+      const scored = await this.#scorer.score({
+        plan: ref,
+        world,
+        scenario: "R3m",
+        engine_version: ENGINE_VERSION
+      });
+      if (isRefusal(scored)) {
+        return {
+          atRiskBasis: `incumbent P1 could not be scored under R3m (${scored.reason}) \u2014 at-risk basis stated absent`
+        };
+      }
+      return {
+        incumbent: new Map(scored.verdicts.map((v) => [v.commitment, v.verdict])),
+        atRiskBasis: "vs the incumbent P1 (strait-early), scored under R3m"
+      };
+    }
+    /** SPEC-25 US3 — derive the "puts at risk" degradations for one candidate:
+     *  non-sacrificed commitments whose R3m verdict is worse than the incumbent's,
+     *  short of violation. Computed by the reused scorer, never authored. */
+    async #atRiskFor(planId, sacrificed, incumbent, world) {
+      const ref = this.#latestRef(planId);
+      if (!ref) return [];
+      const scored = await this.#scorer.score({
+        plan: ref,
+        world,
+        scenario: "R3m",
+        engine_version: ENGINE_VERSION
+      });
+      if (isRefusal(scored)) return [];
+      const sacrificedSet = new Set(sacrificed);
+      const out = [];
+      for (const v of scored.verdicts) {
+        if (sacrificedSet.has(v.commitment)) continue;
+        const from = incumbent.get(v.commitment);
+        if (!from) continue;
+        if (v.verdict !== "violated" && GOODNESS_RANK[v.verdict] > GOODNESS_RANK[from]) {
+          const c = this.#commitmentById.get(v.commitment);
+          out.push({ logical_id: v.commitment, from, to: v.verdict, statement: c?.statement ?? v.commitment });
+        }
+      }
+      out.sort((a, b) => a.logical_id < b.logical_id ? -1 : a.logical_id > b.logical_id ? 1 : 0);
+      return out;
+    }
     #deltaFeed(deltas) {
       const rows = deltas.slice().reverse().map(
         (d) => `<tr data-glow-id="delta:${d.seq}" data-glow-sig="${d.op}:${d.refs.map((r) => r.logical_id).join(",")}" style="border-top:1px solid #E4E9ED"><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">#${d.seq}</td><td style="padding:5px 8px;font-size:12px">${d.op}</td><td style="padding:5px 8px;font-size:11px;color:#3E5D8A">${d.role} \xB7 ${d.actor}</td><td style="padding:5px 8px;font-family:ui-monospace,monospace;font-size:11px;color:#5B6B77">${d.refs.map((r) => r.logical_id).join(", ")}</td></tr>`
@@ -5238,7 +5526,7 @@ ${items}
   }
 
   // src/components/depGraphRiver.ts
-  var esc17 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc18 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var NODE_STYLE = {
     knowledge: { bg: "#2E5C8A", fg: "#FFFFFF" },
     world: { bg: "#3B7A57", fg: "#FFFFFF" },
@@ -5252,7 +5540,7 @@ ${items}
     const border = opts.focus ? "border:2px solid #1B2732;" : "border:1px solid transparent;";
     const opacity = node.known ? "" : "opacity:0.6;";
     const deadEnd = node.known ? "" : " (dead end \u2014 G3)";
-    return `<div class="assay-dep-node" data-dep-hash="${esc17(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc17(node.hash)}${esc17(deadEnd)}">${esc17(node.label)}</div>`;
+    return `<div class="assay-dep-node" data-dep-hash="${esc18(node.hash)}" style="display:inline-block;padding:4px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:10.5px;font-weight:600;background:${style.bg};color:${style.fg};${border}${opacity}margin:3px 2px;cursor:pointer;white-space:nowrap" title="${esc18(node.hash)}${esc18(deadEnd)}">${esc18(node.label)}</div>`;
   }
   var MAX_VISIBLE_PER_LAYER = 5;
   function typeSummary(nodes) {
@@ -5317,7 +5605,7 @@ ${items}
   }
 
   // src/components/depGraphSidebar.ts
-  var esc18 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc19 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var TYPE_COLOUR = {
     knowledge: "#2E5C8A",
     world: "#3B7A57",
@@ -5329,23 +5617,23 @@ ${items}
   function nodeChip2(node) {
     const colour = TYPE_COLOUR[node.type];
     const opacity = node.known ? "" : "opacity:0.6;";
-    return `<span class="assay-dep-node" data-dep-hash="${esc18(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc18(node.hash)}">${esc18(node.label)}</span>`;
+    return `<span class="assay-dep-node" data-dep-hash="${esc19(node.hash)}" style="display:inline-block;padding:2px 7px;border-radius:8px;font-family:ui-monospace,monospace;font-size:10px;font-weight:600;background:${colour};color:#fff;${opacity}margin:2px 2px;cursor:pointer" title="${esc19(node.hash)}">${esc19(node.label)}</span>`;
   }
   function directionSection(title, groups) {
     if (groups.length === 0) {
       return `<div style="margin:8px 0">
-      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc18(title)}</div>
+      <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc19(title)}</div>
       <div style="font-size:11px;color:#5B6B77">\u2014 none \u2014</div>
     </div>`;
     }
     const rows = groups.map(
       (g) => `<div style="margin:4px 0;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED">
-          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc18(g.edgeType)}</div>
+          <div style="font-size:9.5px;color:#5B6B77;margin-bottom:2px">depth ${g.depth} \xB7 ${esc19(g.edgeType)}</div>
           <div style="display:flex;flex-wrap:wrap;gap:2px">${g.nodes.map((n) => nodeChip2(n)).join("")}</div>
         </div>`
     ).join("");
     return `<div style="margin:8px 0">
-    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc18(title)}</div>
+    <div style="font-size:10.5px;font-weight:700;color:#3A4A56;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${esc19(title)}</div>
     ${rows}
   </div>`;
   }
@@ -5353,10 +5641,10 @@ ${items}
     const typeColour = TYPE_COLOUR[detail.node.type];
     return `<div class="assay-dep-sidebar">
   <div style="margin-bottom:8px">
-    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc18(detail.node.label)}</span>
-    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc18(detail.node.type)}</span>
+    <span style="display:inline-block;padding:3px 9px;border-radius:10px;font-family:ui-monospace,monospace;font-size:11px;font-weight:700;background:${typeColour};color:#fff">${esc19(detail.node.label)}</span>
+    <span style="font-size:10px;color:#5B6B77;margin-left:6px">${esc19(detail.node.type)}</span>
   </div>
-  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc18(detail.metadata)}</div>
+  <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#1B2732;padding:4px 8px;background:#F7F9FA;border-radius:4px;border:1px solid #E0E8ED;margin-bottom:8px">${esc19(detail.metadata)}</div>
   ${directionSection("Upstream (depends on)", detail.upstream)}
   ${directionSection("Downstream (feeds into)", detail.downstream)}
 </div>`;
@@ -5539,6 +5827,183 @@ ${items}
     }
   ];
 
+  // src/preview.ts
+  function sigMapOf(snap) {
+    const m = /* @__PURE__ */ new Map();
+    const re = /data-glow-id="([^"]*)" data-glow-sig="([^"]*)"/g;
+    for (const p of snap.panels) {
+      let match;
+      while ((match = re.exec(p.html)) !== null) m.set(match[1], match[2]);
+    }
+    return m;
+  }
+  var isVerdictUnit = (id) => id.startsWith("v:");
+  async function applyArmedAct(app, act) {
+    switch (act.kind) {
+      case "resolve":
+        app.resolveK12();
+        return;
+      case "reopen":
+        app.contestK12();
+        return;
+      case "band-edit":
+        await app.editBand(act.id, act.band);
+        return;
+      case "waypoint-move":
+        await app.moveWaypoint(act.plan, act.element, act.legIndex, act.x, act.y);
+        return;
+      case "window-shift":
+        await app.shiftWindow(act.plan, act.element, act.legIndex, act.delta);
+        return;
+    }
+  }
+  function describeArmedAct(act) {
+    switch (act.kind) {
+      case "resolve":
+        return "resolve the K12 contest";
+      case "reopen":
+        return "re-open the K12 contest";
+      case "band-edit":
+        return `supersede ${act.id} \u2192 [${act.band.lo}, ${act.band.hi}] ${act.band.unit}`;
+      case "waypoint-move":
+        return `move ${act.plan} \xB7 ${act.element} leg ${act.legIndex} \u2192 (${act.x}, ${act.y})`;
+      case "window-shift":
+        return `shift ${act.plan} \xB7 ${act.element} leg ${act.legIndex} by ${act.delta} step(s)`;
+    }
+  }
+  async function previewAct(app, act) {
+    const shadow = app.fork();
+    await applyArmedAct(shadow, act);
+    const committed = await app.snapshot();
+    const shadowSnap = await shadow.snapshot();
+    const before = sigMapOf(committed);
+    const after = sigMapOf(shadowSnap);
+    const changed = changedGlowUnits(before, after);
+    const cells = [...changed].map((id) => {
+      const from = before.get(id);
+      const cell2 = { id, to: after.get(id) ?? "", verdict: isVerdictUnit(id) };
+      if (from !== void 0) cell2.from = from;
+      return cell2;
+    });
+    const result = { armed: act, changed, before, after, cells };
+    if (shadowSnap.notice?.kind === "refusal") result.refusal = shadowSnap.notice.html;
+    return result;
+  }
+  var esc20 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  function ghostSummary(result) {
+    const header = `<div style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#5B3B8C">Previewed \u2014 not applied \xB7 ${esc20(describeArmedAct(result.armed))}</div>`;
+    if (result.refusal) {
+      return `<div class="assay-ghost" style="border:1px dashed #B9A0E0;border-left:4px solid #5B3B8C;background:#F6F1FC;border-radius:6px;padding:10px 12px">
+      ${header}
+      <div style="margin-top:6px;font-size:11px;color:#5B3B8C">This write would refuse \u2014 arming teaches the firewall; nothing is committed.</div>
+      <div style="margin-top:6px">${result.refusal}</div>
+    </div>`;
+    }
+    const verdictCells = result.cells.filter((c) => c.verdict && c.from !== void 0 && c.from !== c.to);
+    const cellLines = verdictCells.length ? `<ul style="margin:6px 0 0;padding-left:18px;font-size:11px;color:#33424E">${verdictCells.map(
+      (c) => `<li style="font-family:ui-monospace,monospace">${esc20(c.id.replace(/^v:/, ""))}: <b>${esc20(c.from)}</b> \u2192 <b>${esc20(c.to)}</b></li>`
+    ).join("")}</ul>` : `<div style="margin-top:6px;font-size:11px;color:#5B6B77">No verdict cell changes word; ${result.changed.size} unit(s) would glow (rows, stamps, feed).</div>`;
+    return `<div class="assay-ghost" style="border:1px dashed #B9A0E0;border-left:4px solid #5B3B8C;background:#F6F1FC;border-radius:6px;padding:10px 12px">
+    ${header}
+    <div style="margin-top:4px;font-size:10.5px;color:#8091A0">On commit, exactly these ${result.changed.size} unit(s) will glow \u2014 the preview IS the glow set (G1/DEC-34).</div>
+    ${cellLines}
+  </div>`;
+  }
+
+  // src/roleMenus.ts
+  var ROLE_VERBS = {
+    j2: {
+      role: "J-2 (intelligence)",
+      verbs: [
+        { verb: "create", gloss: "author a new knowledge object (gated by the encoding firewall)", status: "auto" },
+        { verb: "contest", gloss: "dispute two irreconcilable answers \u2014 blocks compile until resolved (G5)", status: "live" },
+        { verb: "resolve", gloss: "lift a survivor from an open contest", status: "live" },
+        { verb: "supersede", gloss: "replace an assessed answer with a new immutable version (DEC-21)", status: "live" },
+        { verb: "collect-mark", gloss: "task collection against an open question \u2014 a human act with its own C6 consequences (KINGFISHER discipline)", status: "deferred" }
+      ]
+    },
+    planner: {
+      role: "J-3/5 (plans)",
+      verbs: [
+        { verb: "compile", gloss: "materialise the world from knowledge (refuses on contested \u2014 G5)", status: "auto" },
+        { verb: "generate-handful", gloss: "fan out a strategy-biased handful of distinct plans", status: "auto" },
+        { verb: "score", gloss: "run each plan through the scorer against the world", status: "auto" },
+        { verb: "relax", gloss: "turn an infeasible set into a least-worst frontier (G4)", status: "auto" }
+      ]
+    },
+    commander: {
+      role: "COMD",
+      verbs: [
+        { verb: "select", gloss: "commit to a plan (POST /select) \u2014 a human decision the system never makes for you", status: "deferred" },
+        { verb: "waive", gloss: "admit a value under an explicit, recorded waiver \u2014 the exception made visible, never laundered", status: "deferred" }
+      ]
+    },
+    observer: {
+      role: "OBSERVER / bridge",
+      verbs: []
+      // read and trace only — the bridge watches the seam, it never touches it
+    },
+    coa: {
+      role: "ALL ROLES (surface)",
+      surface: true,
+      verbs: [
+        { verb: "move-waypoint", gloss: "drag a route waypoint \u2014 authors a new Plan version (planner-class write), re-scored live (DEC-20/21)", status: "live" },
+        { verb: "shift-window", gloss: "shift a task window \u2014 authors a new Plan version; a planner-class write on the seam", status: "deferred" },
+        { verb: "scrub", gloss: "move the spatial clock \u2014 pure selection over the compiled world, no recompute (DEC-36c)", status: "live" }
+      ]
+    }
+  };
+
+  // src/components/roleMenu.ts
+  var esc21 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var STATUS = {
+    live: { label: "live", fg: "#1E6B3A", bg: "#E6F2EA", border: "#B7DCC4" },
+    auto: { label: "runs on recompute", fg: "#3E5D8A", bg: "#E8EEF6", border: "#C3D3E8" },
+    deferred: { label: "not yet built", fg: "#8A6A12", bg: "#F6EFDD", border: "#E4D3A6" }
+  };
+  function verbRow(v) {
+    const s = STATUS[v.status];
+    return `<div style="display:flex;gap:8px;align-items:baseline;padding:3px 0">
+    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732;min-width:118px">${esc21(v.verb)}</span>
+    <span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:8px;color:${s.fg};background:${s.bg};border:1px solid ${s.border};white-space:nowrap">${esc21(s.label)}</span>
+    <span style="font-size:11px;color:#5B6B77">${esc21(v.gloss)}</span>
+  </div>`;
+  }
+  function roleMenu(menu) {
+    const title = `Role actions \u2014 ${esc21(menu.role)}${menu.surface ? " \xB7 a surface, not a role" : ""}`;
+    const body = menu.verbs.length === 0 ? `<div style="font-size:11.5px;color:#5B6B77;margin-top:6px"><b>Read &amp; trace only.</b> This role exposes <b>no write verb</b> \u2014 the bridge watches the seam, it never touches it. That an observer may do nothing is the C2 point made legible (SPEC-25).</div>` : `<div style="margin-top:6px">${menu.verbs.map(verbRow).join("")}</div>
+         <div style="margin-top:6px;font-size:10px;color:#8091A0">Menus reorganise what the seam already permits (DEC-33) \u2014 never restrict. Every wired verb routes through the same honesty gates as before; deferred verbs are named, never faked (DEC-4).</div>`;
+    return `<details class="assay-role-menu" style="margin:8px 0;border:1px solid #C8D2DA;border-radius:6px;padding:6px 12px;background:#FBFCFD">
+  <summary style="cursor:pointer;font-size:11.5px;color:#1B2732;font-weight:700">${title}</summary>
+  ${body}
+</details>`;
+  }
+
+  // src/components/challengePanel.ts
+  var esc22 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var singleSourceFlag = () => `<span style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:700;color:#A33131;background:#F8E2E2;border:1px solid #EFC6C6;border-radius:3px;padding:1px 5px;margin-left:6px">single-source</span>`;
+  function contributorRow(c) {
+    return `<div data-logical-id="${esc22(c.knowledge)}" style="display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:11.5px">
+    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732;min-width:44px">${esc22(c.knowledge)}</span>
+    <span style="color:#5B6B77">pushed to its band edge, flips this verdict <b style="font-family:ui-monospace,monospace">${esc22(c.from)} \u2192 ${esc22(c.to)}</b></span>
+    ${c.single_source ? singleSourceFlag() : ""}
+  </div>`;
+  }
+  function challengePanel(result) {
+    const header = `<div style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">Challenge \xB7 ${esc22(result.plan)} \xB7 ${esc22(result.commitment)} (${esc22(result.verdict)}) \u2014 key assumptions</div>`;
+    if (result.contributors.length === 0) {
+      return `<div class="assay-challenge" style="border:1px solid #B7DCC4;border-left:4px solid #1E6B3A;background:#EFF6F1;border-radius:6px;padding:10px 12px">
+      ${header}
+      <div style="margin-top:6px;font-size:11.5px;color:#1E6B3A"><b>No single band-edge movement flips this verdict.</b> The verdict is robust to each assessment's stated uncertainty \u2014 itself assurance, not a gap.</div>
+    </div>`;
+    }
+    return `<div class="assay-challenge" style="border:1px solid #E4D3A6;border-left:4px solid #8A6A12;background:#FBF7EC;border-radius:6px;padding:10px 12px">
+    ${header}
+    <div style="margin-top:4px;font-size:10.5px;color:#8091A0">These items, each pushed to its band edge, change this verdict (a re-render of the sensitivity ranking, SPEC-11 \u2014 computed, never opined). Click one to open its knowledge row and challenge it there.</div>
+    <div style="margin-top:6px">${result.contributors.map(contributorRow).join("")}</div>
+  </div>`;
+  }
+
   // src/app/shell.ts
   var TABS = [
     { id: "j2", label: "J-2 workbench", role: "ROLE: J-2" },
@@ -5615,7 +6080,7 @@ ${items}
 [data-projection="wall"] .assay-panel{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 [data-projection="wall"] .assay-narrative-bar{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 `;
-  var esc19 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc23 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function mountShell(root, app) {
     const doc = root.ownerDocument;
     const style = doc.createElement("style");
@@ -5629,6 +6094,7 @@ ${items}
     <div id="assay-narrator"></div>
     <div class="assay-controls" id="assay-controls"></div>
     <div class="assay-notice" id="assay-notice"></div>
+    <div class="assay-ghost-mount" id="assay-ghost"></div>
     <div class="assay-tabbar" id="assay-tabbar"></div>
     <div id="assay-panels"></div>
   </div>`;
@@ -5636,6 +6102,7 @@ ${items}
     const panelsRoot = root.querySelector("#assay-panels");
     const controls = root.querySelector("#assay-controls");
     const noticeEl = root.querySelector("#assay-notice");
+    const ghostEl = root.querySelector("#assay-ghost");
     const narrativeBar = root.querySelector("#assay-narrative-bar");
     const narratorEl = root.querySelector("#assay-narrator");
     let activeTab = "j2";
@@ -5648,7 +6115,7 @@ ${items}
     <span class="label">Narrative:</span>
     <select id="assay-narrative-select">
       <option value="">\u2014 free exploration \u2014</option>
-      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc19(n.name)} (${esc19(n.audience)})</option>`).join("")}
+      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc23(n.name)} (${esc23(n.audience)})</option>`).join("")}
     </select>
     <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:auto">
       <input type="checkbox" id="assay-wall-toggle"> Wall projection
@@ -5698,19 +6165,19 @@ ${items}
       }
       const isCentrepiece = beatIndex === n.beats.length - 1;
       narratorEl.innerHTML = `<div class="assay-narrator">
-      <div class="beat-title">${esc19(beat.title)}</div>
-      <div class="beat-count">${esc19(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc19(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
-      <div class="presenter-note">${esc19(beat.presenterNote)}</div>
-      ${beat.doctrinalQuote ? `<div class="doctrine">${esc19(beat.doctrinalQuote)}</div>` : ""}
-      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc19(n.centrepiece)}</div>` : ""}
-      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc19(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
+      <div class="beat-title">${esc23(beat.title)}</div>
+      <div class="beat-count">${esc23(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc23(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
+      <div class="presenter-note">${esc23(beat.presenterNote)}</div>
+      ${beat.doctrinalQuote ? `<div class="doctrine">${esc23(beat.doctrinalQuote)}</div>` : ""}
+      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc23(n.centrepiece)}</div>` : ""}
+      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc23(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
       <div class="nav">
         <button id="assay-beat-prev" ${beatIndex === 0 ? "disabled" : ""}>\u25C0 Previous</button>
         <button id="assay-beat-next" ${beatIndex >= n.beats.length - 1 ? "disabled" : ""}>Next \u25B6</button>
       </div>
       <details class="principles" style="cursor:pointer">
         <summary>Scripting principles (note 09 \xA74)</summary>
-        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc19(p)}</div>`).join("")}
+        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc23(p)}</div>`).join("")}
       </details>
     </div>`;
       const prevBtn = root.querySelector("#assay-beat-prev");
@@ -5758,14 +6225,55 @@ ${items}
     <div style="flex:1;min-width:220px">
       <label for="assay-step">Spatial clock \u2014 step <b id="assay-step-label">${app.step}</b> (selection, no recompute)</label>
       <input type="range" id="assay-step" min="0" max="${app.grid.horizon_steps}" step="1" value="${app.step}" style="width:100%">
+    </div>
+    <div style="flex-basis:100%;border-top:1px dashed var(--line);padding-top:8px">
+      <label style="font-size:11px;color:#5B3B8C;display:inline-flex;align-items:center;gap:5px;font-weight:600">
+        <input type="checkbox" id="assay-preview-toggle"> Consequence preview \u2014 arm a write and see the ghost diff <b>before</b> committing (SPEC-25)
+      </label>
     </div>`;
-    root.querySelector("#assay-resolve").addEventListener("click", () => {
-      app.resolveK12();
+    const previewToggle = root.querySelector("#assay-preview-toggle");
+    let armed = null;
+    const previewArmed = () => previewToggle.checked;
+    async function arm(act) {
+      armed = act;
+      const result = await previewAct(app, act);
+      ghostEl.innerHTML = `${ghostSummary(result)}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="assay-btn" id="assay-ghost-commit">Commit this write</button>
+        <button class="assay-btn secondary" id="assay-ghost-cancel">Cancel \u2014 leave nothing</button>
+      </div>`;
+      root.querySelector("#assay-ghost-commit").addEventListener("click", () => {
+        void commitArmed();
+      });
+      root.querySelector("#assay-ghost-cancel").addEventListener("click", () => {
+        cancelArmed();
+      });
+    }
+    async function commitArmed() {
+      if (!armed) return;
+      const act = armed;
+      armed = null;
+      ghostEl.innerHTML = "";
+      await applyArmedAct(app, act);
       void rerender("j2");
+    }
+    function cancelArmed() {
+      armed = null;
+      ghostEl.innerHTML = "";
+    }
+    root.querySelector("#assay-resolve").addEventListener("click", () => {
+      if (previewArmed()) void arm({ kind: "resolve" });
+      else {
+        app.resolveK12();
+        void rerender("j2");
+      }
     });
     root.querySelector("#assay-reopen").addEventListener("click", () => {
-      app.contestK12();
-      void rerender("j2");
+      if (previewArmed()) void arm({ kind: "reopen" });
+      else {
+        app.contestK12();
+        void rerender("j2");
+      }
     });
     const stepInput = root.querySelector("#assay-step");
     stepInput.addEventListener("input", () => {
@@ -5780,7 +6288,8 @@ ${items}
       const hi = Number(root.querySelector("#assay-edit-hi").value);
       const unit = root.querySelector("#assay-edit-unit").value || "tonnes";
       if (Number.isFinite(lo) && Number.isFinite(hi)) {
-        void app.editBand(id, { lo, hi, unit }).then(() => rerender("j2"));
+        if (previewArmed()) void arm({ kind: "band-edit", id, band: { lo, hi, unit } });
+        else void app.editBand(id, { lo, hi, unit }).then(() => rerender("j2"));
       }
     });
     function syncTabs() {
@@ -5788,7 +6297,7 @@ ${items}
         const el2 = btn;
         el2.setAttribute("aria-selected", String(el2.dataset.tab === activeTab));
       }
-      for (const p of Array.from(panelsRoot.querySelectorAll(".assay-panel"))) {
+      for (const p of Array.from(panelsRoot.querySelectorAll(".assay-panel, .assay-role-menu-wrap"))) {
         const el2 = p;
         el2.style.display = el2.dataset.tab === activeTab ? "" : "none";
       }
@@ -5797,6 +6306,13 @@ ${items}
       const snap = await app.snapshot();
       noticeEl.innerHTML = snap.notice ? snap.notice.html : "";
       panelsRoot.innerHTML = "";
+      for (const t of TABS) {
+        const rm = doc.createElement("div");
+        rm.className = "assay-role-menu-wrap";
+        rm.dataset.tab = t.id;
+        rm.innerHTML = roleMenu(ROLE_VERBS[t.id]);
+        panelsRoot.appendChild(rm);
+      }
       for (const panel of snap.panels) {
         const el2 = doc.createElement("div");
         el2.className = "assay-panel";
@@ -5832,6 +6348,7 @@ ${items}
       prevSig = nextSig;
       firstRender = false;
       wireTraceChips();
+      wireChallenge();
       wireCoaDrag();
       syncTabs();
       if (doc.documentElement.getAttribute("data-projection") === "wall") {
@@ -5894,6 +6411,52 @@ ${items}
           void app.moveWaypoint(d.plan, d.element, d.leg, cell2.x, cell2.y).then(() => rerender("coa"));
         });
       }
+    }
+    let challengeEl = null;
+    function closeChallenge() {
+      if (challengeEl) {
+        challengeEl.remove();
+        challengeEl = null;
+      }
+    }
+    doc.addEventListener("click", closeChallenge);
+    function wireChallenge() {
+      for (const cell2 of Array.from(panelsRoot.querySelectorAll('td[data-glow-id^="v:"]'))) {
+        const glowId = cell2.dataset.glowId;
+        const parts = glowId.split(":");
+        if (parts.length < 3) continue;
+        const plan2 = parts[1];
+        const commitment = parts[2];
+        cell2.style.cursor = "help";
+        cell2.title = "Click to challenge \u2014 surface the assumptions this verdict leans on";
+        cell2.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          void openChallenge(plan2, commitment, ev);
+        });
+      }
+    }
+    async function openChallenge(plan2, commitment, ev) {
+      closeChallenge();
+      const result = await app.challenge(plan2, commitment);
+      if (!result) return;
+      challengeEl = doc.createElement("div");
+      challengeEl.className = "assay-menu";
+      challengeEl.style.maxWidth = "420px";
+      challengeEl.innerHTML = challengePanel(result);
+      for (const row of Array.from(challengeEl.querySelectorAll("[data-logical-id]"))) {
+        row.style.cursor = "pointer";
+        row.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeChallenge();
+          activeTab = "j2";
+          syncTabs();
+          flushPending();
+        });
+      }
+      challengeEl.style.left = `${ev.pageX + 6}px`;
+      challengeEl.style.top = `${ev.pageY + 6}px`;
+      challengeEl.addEventListener("click", (e) => e.stopPropagation());
+      doc.body.appendChild(challengeEl);
     }
     function wireTraceChips() {
       for (const cell2 of Array.from(panelsRoot.querySelectorAll("[data-logical-id]"))) {

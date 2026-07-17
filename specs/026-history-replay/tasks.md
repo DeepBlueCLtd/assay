@@ -2,12 +2,12 @@
 
 Dependency-ordered. `[P]` = parallelisable (different files, no incomplete-task dependency). Story labels map to `spec.md`: **[US1]** scrub the heartbeat (P1 🎯 exit), **[US2]** narratives as scrub paths (P2), **[US3]** recursive trace tooltips (P2).
 
-**Gate**: research note `docs/research/14-replay.md` present (DEC-11) and DEC-37/38/39 ratified (register batch 7) — Phase 1 is done; Phases 2+ build on it. No new engine (DEC-10), no schema change, no seam-contract shape change.
+**Gate**: research note `docs/research/15-replay.md` present (DEC-11) and DEC-37/38/39 ratified (register batch 7) — Phase 1 is done; Phases 2+ build on it. No new engine (DEC-10), no schema change, no seam-contract shape change.
 
 ## Phase 1 — Setup & gate (the DEC-11 + register gate) — DONE
 
-- [X] **T01** Author `docs/research/14-replay.md`: the state-at-seq fold rule (filter over the immutable store, byte-equal by G1), replayed refusals re-deriving, the narrative-runner unification onto `(seq, tab, note)` waypoints, the recursive-trace tooltip depth cap fixed at 3; AAR + event-sourcing framing; decision-time vs SPEC-19 world-time distinction; citations.
-- [X] **T02** Ratify DEC-37 (replay surface), DEC-38 (recursive-trace tooltip), DEC-39 (narratives-as-scrub-paths) in `docs/assay-register.md` (batch 7); strike through concept §6.30–6.32.
+- [X] **T01** Author `docs/research/15-replay.md`: the state-at-seq fold rule (filter over the immutable store, byte-equal by G1), replayed refusals re-deriving, the narrative-runner unification onto `(seq, tab, note)` waypoints, the recursive-trace tooltip depth cap fixed at 3; AAR + event-sourcing framing; decision-time vs SPEC-19 world-time distinction; citations.
+- [X] **T02** Ratify DEC-37 (replay surface), DEC-38 (recursive-trace tooltip), DEC-39 (narratives-as-scrub-paths) in `docs/assay-register.md` (batch 7); strike through concept §6.32–6.34.
 
 ## Phase 2 — Foundational (blocking prerequisites for US1 and US2)
 

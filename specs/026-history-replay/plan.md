@@ -1,11 +1,11 @@
 # Implementation Plan: History, replay & trace depth (SPEC-26)
 
-**Spec**: `specs/026-history-replay/spec.md` · **Research note**: `docs/research/14-replay.md` (**DEC-11 gate — authored first**; decides the state-at-seq reconstruction rule as the event-sourcing fold `state(n) = fold(deltas[1..n])` implemented as a filter over the immutable store, replayed refusals re-deriving from `state(n)`, the narrative-runner unification onto `(seq, tab, note)` scrub-path waypoints, and the recursive-trace tooltip depth cap fixed at 3) · **Register**: **ratified** — ASSAY-DEC-37 (the replay surface), DEC-38 (the recursive-trace tooltip), DEC-39 (narratives-as-scrub-paths), register batch 7. Binds DEC-5, DEC-21, DEC-17/FIND-4, DEC-34, DEC-23, DEC-32/36, G1/G3/G4/G6.
+**Spec**: `specs/026-history-replay/spec.md` · **Research note**: `docs/research/15-replay.md` (**DEC-11 gate — authored first**; decides the state-at-seq reconstruction rule as the event-sourcing fold `state(n) = fold(deltas[1..n])` implemented as a filter over the immutable store, replayed refusals re-deriving from `state(n)`, the narrative-runner unification onto `(seq, tab, note)` scrub-path waypoints, and the recursive-trace tooltip depth cap fixed at 3) · **Register**: **ratified** — ASSAY-DEC-37 (the replay surface), DEC-38 (the recursive-trace tooltip), DEC-39 (narratives-as-scrub-paths), register batch 7. Binds DEC-5, DEC-21, DEC-17/FIND-4, DEC-34, DEC-23, DEC-32/36, G1/G3/G4/G6.
 
 ## Shape — the record already exists; this slice reads it
 
 ```
-Phase A  note 14 + DEC-37/38/39 (ratified)                    ── fold rule, refusal replay, waypoints, tooltip cap 3
+Phase A  note 15 + DEC-37/38/39 (ratified)                    ── fold rule, refusal replay, waypoints, tooltip cap 3
    ▼
 Phase B  reconstruction (src/app/history.ts)                  ── HistoryIndex + storeViewAt(n)/traceViewAt(n) + reconstructAt(n)
    ▼                                                              (a filter over the append-only store; byte-equal to a fresh fold, G1)
@@ -28,7 +28,7 @@ Every phase is a projection over machinery that already crosses the seam (SPEC-0
 - **II — Banded honesty**: the slice renders no new assessed scalar; replayed surfaces render exactly what the live surfaces render (band pills, provenance chips, verdicts) because they *are* the same pure components fed the reconstructed state. PASS.
 - **III — Traceability terminates in named knowledge**: the recursive tooltip *is* a trace reading; it agrees byte-for-byte with `TraceStore.walk` and renders dead ends as dead ends at every depth (G3). No reconstructed edge; the walk reads the edges written at compute time. PASS.
 - **IV — Determinism & content addressing**: state-at-seq is a filter over the immutable content-addressed store (DEC-21); reconstruction at `n` is byte-equal to a fresh replay of deltas 1…n (G1), tested per heartbeat seq; no wall clock enters ordering (DEC-17/FIND-4). PASS.
-- **V — Research before implementation**: `docs/research/14-replay.md` landed first (DEC-11). PASS.
+- **V — Research before implementation**: `docs/research/15-replay.md` landed first (DEC-11). PASS.
 - **VI — Register supremacy**: DEC-37/38/39 ratified before this plan relies on them; the plan asserts no new decision. PASS.
 - **G1** reconstruction determinism (the P1 exit); **G3** tooltip dead ends + trace agreement (US3); **G4** the tooltip's counted remainder is no-silent-drop lifted to a view; **G6** cursor transitions re-fire the value-keyed glow, no under/over-report (US1 AS-2). **G2/G5** inherited unchanged (a replayed refusal *is* G5 re-rendered).
 
@@ -36,7 +36,7 @@ No violations; Complexity Tracking empty.
 
 ## Project structure
 
-Design artefacts: `plan.md` (this file), `tasks.md` (`/speckit.tasks`). Phase-0 research is `docs/research/14-replay.md` (repo convention — research lives under `docs/research/`, not a spec-local `research.md`). **No `data-model.md`**: no schema change (movement types only, listed below).
+Design artefacts: `plan.md` (this file), `tasks.md` (`/speckit.tasks`). Phase-0 research is `docs/research/15-replay.md` (repo convention — research lives under `docs/research/`, not a spec-local `research.md`). **No `data-model.md`**: no schema change (movement types only, listed below).
 
 Source (all app-layer + one pure component + one write-path coverage fix; the eight `src/components/*` stay pure, DEC-33/SPEC-14):
 
@@ -58,7 +58,7 @@ tests/{history,app-replay,narratives,recursiveTrace}.test.ts  # NEW/extended
 - **Deltas are the seq spine** (DEC-5): `DeltaLog` is monotonic `seq`, `.all` in order, `.since(seq)`. Object creation is derivable from delta `refs` (a hash's created-seq = the first delta whose refs name it). Trace edges are *not* in delta refs, so their created-seq is captured at write time as an append boundary (below) — derived, non-authoritative.
 - **`snapshot()` is pure over the store** (`state.ts`): it re-drives compile → score → handful → relax → robustness and returns per-panel view models with `data-glow-id`/`data-glow-sig`. Reconstruction reuses it unchanged, handed a **read-view** of the store filtered by created-seq — same objects in, same bytes out (G1).
 - **Refusals are a function of state, not stored events**: the seq-43 contest is a recorded delta; the compile *refusal banner* at seq 43 falls out of re-driving `snapshot()` over `state(43)` (contested ⇒ compile refuses, G5). No refusal is stored or replayed — it re-derives. This is why the P1 heartbeat exit needs **no** special refusal machinery.
-- **A refused *write attempt* is the one gap** (`knowledge.ts:79` — "persist nothing"): a refused create/supersede currently publishes no delta, so it is not a scrubbable position. Note 14 §3 authorises closing this as **DEC-5 coverage** (Phase C) — a `refused` delta with the attempted op + refs + the refusal reason in `warnings`, no object written; the Delta *shape* is unchanged, only its coverage. This satisfies FR-002 and the spec's "refusal-producing attempt" edge case.
+- **A refused *write attempt* is the one gap** (`knowledge.ts:79` — "persist nothing"): a refused create/supersede currently publishes no delta, so it is not a scrubbable position. Note 15 §3 authorises closing this as **DEC-5 coverage** (Phase C) — a `refused` delta with the attempted op + refs + the refusal reason in `warnings`, no object written; the Delta *shape* is unchanged, only its coverage. This satisfies FR-002 and the spec's "refusal-producing attempt" edge case.
 - **`depGraph.ts` already walks transitively** (note 13, DEC-47): `buildDepGraph` applies the `EDGE_ORIENTATION` reading depth-by-depth, cycle-guarded, `known:false` dead ends, symmetric `contests`. The tooltip is this walk **depth-capped at 3** — reuse, not a new walker (FR-007) — and it agrees with `TraceStore.walk` by construction because both read the same edges.
 - **The glow is reused verbatim** (DEC-34): a cursor move `n→m` diffs the reconstructed signature maps with the existing `changedGlowUnits(prev, next)`; a unit glows iff its displayed value moved — the live rule, replayed (US1 AS-2). No new glow logic.
 

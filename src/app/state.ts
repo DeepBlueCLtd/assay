@@ -53,14 +53,15 @@ import { channelTrace } from '../components/channelTrace.js';
 import { refusalBanner } from '../components/refusalBanner.js';
 import { s2Matrix, type S2Cell } from '../components/s2Matrix.js';
 import { handfulStrip, type HandfulStripRow } from '../components/handfulStrip.js';
-import { s3Cards, type S3Card } from '../components/s3Cards.js';
+import { s3Cards, type S3Card, type AtRiskDegradation } from '../components/s3Cards.js';
 import { scenarioStrip, type ScenarioLikelihood } from '../components/scenarioStrip.js';
 import { sensitivityTable } from '../components/sensitivityTable.js';
 import { discriminationTable } from '../components/discriminationTable.js';
 import { weightTieBreak, type TieBreakEntry } from '../attention.js';
 import { stalenessFlags } from '../components/stalenessFlags.js';
 import { dsmTable } from '../components/dsmTable.js';
-import { componentLegend } from '../components/legends.js';
+import type { ChallengeResult } from '../components/challengePanel.js';
+import { componentLegend, verdictLegendFor } from '../components/legends.js';
 import { ENGINE_VERSION } from '../engine.js';
 
 export type TabId = 'j2' | 'planner' | 'commander' | 'observer' | 'coa';
@@ -102,6 +103,12 @@ export interface MenuNeighbour {
 const BASE = ['K1', 'K2', 'K3', 'K4', 'K6', 'K7', 'K8', 'K9'];
 const COMMITMENT_IDS = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
 const refFor = (id: string): Ref => ({ logical_id: id, content_hash: '' });
+
+/** The four-stop satisfaction (goodness) order, best → worst — the order a
+ *  degradation is measured against for the SPEC-25 "puts at risk" line. Robust
+ *  fully satisfies; marginal sits on the line; tight straddles it; violated fails.
+ *  A higher rank is worse. */
+const GOODNESS_RANK: Record<string, number> = { robust: 0, marginal: 1, tight: 2, violated: 3 };
 
 export class AppState {
   #fx: Fixtures;
@@ -159,6 +166,16 @@ export class AppState {
     for (const c of this.#fx.commitments)
       await svc.store.put(c as unknown as Record<string, unknown>);
 
+    this.#wireServices(svc);
+  }
+
+  /**
+   * Wire one KnowledgeService's store/trace into a fresh instance of every real
+   * service (shared by `seed()` and `fork()`). The forked shadow gets the SAME
+   * service code over a CLONED store, so a preview runs the real pipeline over a
+   * byte-faithful copy (SPEC-25 US2, note 14 §2).
+   */
+  #wireServices(svc: KnowledgeService): void {
     this.#svc = svc;
     this.#compiler = new CompileService({ knowledge: svc });
     this.#scorer = new ScoreService({
@@ -203,6 +220,27 @@ export class AppState {
       config: this.#fx.config,
       robustness: this.#robustnessSvc,
     });
+  }
+
+  /**
+   * A shadow of this state — a byte-faithful clone of the store/trace/delta log
+   * with fresh services wired over the clone (SPEC-25 US2). Applying an armed act
+   * to the fork runs the REAL pipeline (same firewall, same gates) but touches
+   * NOTHING on this instance: no persistence, no delta, no stamp mutation (note
+   * 13 §2). The preview orchestrator (`src/preview.ts`) drives this; commit runs
+   * the same act on `this`, cancel discards the fork.
+   */
+  fork(): AppState {
+    const svc = new KnowledgeService({
+      store: this.#svc.store.clone(),
+      trace: this.#svc.trace.clone(),
+      deltas: this.#svc.deltas.clone(),
+    });
+    const shadow = new AppState(this.#fx);
+    shadow.#wireServices(svc);
+    shadow.#resolved = this.#resolved;
+    shadow.#step = this.#step;
+    return shadow;
   }
 
   get store(): ObjectStore {
@@ -518,7 +556,7 @@ export class AppState {
             id: 'coaverdicts',
             tab: 'coa',
             title: 'Spatial · the canned P1/P2, re-scored live (the planner matrix scores the generated handful)',
-            html: `${s2Matrix(COMMITMENT_IDS, coaMatrix)}<div style="margin-top:8px">${c4Details.join('')}</div>`,
+            html: `${verdictLegendFor('s2Matrix')}${s2Matrix(COMMITMENT_IDS, coaMatrix)}<div style="margin-top:8px">${c4Details.join('')}</div>`,
             deps: coaDeps,
           },
         );
@@ -564,7 +602,7 @@ export class AppState {
           id: 'matrix',
           tab: 'planner',
           title: 'Planner · the honest matrix',
-          html: componentLegend('s2Matrix') + s2Matrix(COMMITMENT_IDS, matrixRows),
+          html: componentLegend('s2Matrix') + verdictLegendFor('s2Matrix') + s2Matrix(COMMITMENT_IDS, matrixRows),
           deps: matrixDeps,
         });
 
@@ -619,7 +657,7 @@ export class AppState {
               id: 'scenarios',
               tab: 'commander',
               title: 'Commander · scenario robustness (thesis C)',
-              html: componentLegend('scenarioStrip') + scenarioStrip(rr.tensor, { planNames, likelihoods }),
+              html: componentLegend('scenarioStrip') + verdictLegendFor('scenarioStrip') + scenarioStrip(rr.tensor, { planNames, likelihoods }),
               deps: stripDeps,
             });
           }
@@ -657,6 +695,7 @@ export class AppState {
                 title: 'Commander · decisions in time (the DSM, derived — never tasked)',
                 html:
                   componentLegend('dsmTable') +
+                  verdictLegendFor('dsmTable') +
                   dsmTable(dsmResult, {
                     knowledgeById,
                     selectionNote:
@@ -699,21 +738,40 @@ export class AppState {
       });
       if (!isRefusal(rr)) {
         stamps.relax = rr.stamp;
-        const cards: S3Card[] = rr.report.candidates.map((candidate) => ({
-          candidate,
-          sacrificed: candidate.sacrificed.map((id) => {
+        // SPEC-25 US3 — the "puts at risk" line: verdict deltas vs the stated
+        // incumbent (P1 under R3m — apples to apples with the candidates), the
+        // residue the violated-only `sacrificed` set hides (review §3.3). Derived
+        // by the reused scorer, never authored; stated-absence when P1 cannot be
+        // scored, never a silent empty line.
+        const { incumbent, atRiskBasis } = await this.#incumbentUnderR3m(r3m.world);
+        const cards: S3Card[] = [];
+        for (const candidate of rr.report.candidates) {
+          const sacrificed = candidate.sacrificed.map((id) => {
             const c = this.#commitmentById.get(id)!;
             return { logical_id: id, tier: c.tier, statement: c.statement };
-          }),
-        }));
+          });
+          const at_risk = incumbent
+            ? await this.#atRiskFor(candidate.plan, candidate.sacrificed, incumbent, r3m.world)
+            : [];
+          cards.push({ candidate, sacrificed, ...(at_risk.length > 0 ? { at_risk } : {}) });
+        }
+        // The at-risk residue rides on the card glow via each card's sig; the
+        // panel deps carry a stable digest so the panel re-derives when it moves.
+        const riskDigest = cards
+          .map((c) => `${c.candidate.plan}:${(c.at_risk ?? []).map((d) => `${d.logical_id}${d.from}>${d.to}`).join('+')}`)
+          .join('|');
         panels.push({
           id: 'cards',
           tab: 'commander',
           title: 'Commander · least-worst, never silence (R3m)',
-          html: componentLegend('s3Cards') + s3Cards(cards, rr.report.tie_break),
+          html:
+            componentLegend('s3Cards') +
+            verdictLegendFor('s3Cards') +
+            s3Cards(cards, rr.report.tie_break, { atRiskBasis }),
           deps: new Set([
             r3m.world.content_hash,
             `relax:${rr.stamp}`,
+            `risk:${riskDigest}`,
             ...rr.report.candidates.map((c) => `plan:${c.plan}`),
           ]),
         });
@@ -734,7 +792,7 @@ export class AppState {
           id: 'sensitivity',
           tab: 'j2',
           title: 'J-2 · sensitivity ranking (thesis E)',
-          html: componentLegend('sensitivityTable') + sensitivityTable(sensResult.ranking),
+          html: componentLegend('sensitivityTable') + verdictLegendFor('sensitivityTable') + sensitivityTable(sensResult.ranking),
           deps: new Set([`sensitivity:${sensResult.stamp}`]),
         });
       }
@@ -889,6 +947,48 @@ export class AppState {
     };
   }
 
+  /**
+   * SPEC-25 US4 — challenge a verdict: re-render the SPEC-11 sensitivity ranking
+   * scoped to the (plan, commitment). Runs the SAME sensitivity call the panel
+   * runs (same inputs ⇒ same stamp, G1), then projects the ranking onto the
+   * challenged commitment's index (the scorer's canonical commitment order). No
+   * new compute. Returns undefined when there is nothing to challenge (the world
+   * refuses, an un-scored plan/commitment) — the affordance is absent, not erroring.
+   */
+  async challenge(planId: string, commitmentId: string): Promise<ChallengeResult | undefined> {
+    const liveIds = this.#resolved ? [...BASE, 'K12a'] : [...BASE, 'K12a', 'K12b'];
+    const compiled = await this.#compiler.compile({
+      knowledge: liveIds.map(refFor),
+      config: this.#fx.config,
+      engine_version: ENGINE_VERSION,
+    });
+    if (isRefusal(compiled)) return undefined; // nothing to challenge — the world refuses (G5)
+    const planRef = this.#latestRef(planId);
+    if (!planRef) return undefined;
+    const order = this.#fx.commitments.map((c) => c.logical_id).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    const idx = order.indexOf(commitmentId);
+    if (idx < 0) return undefined;
+    const sens = await this.#sensitivitySvc.analyse({
+      plan: planRef,
+      world: compiled.world,
+      scenario: 'BASE',
+      engine_version: ENGINE_VERSION,
+    });
+    if (isRefusal(sens)) return undefined;
+    const contributors = sens.ranking
+      .filter((r) => r.baseline_verdicts[idx] !== r.perturbed_verdicts[idx])
+      .map((r) => ({
+        knowledge: r.knowledge.logical_id,
+        single_source: r.single_source,
+        from: r.baseline_verdicts[idx]!,
+        to: r.perturbed_verdicts[idx]!,
+      }));
+    // The challenged verdict itself (baseline at the index of any ranking row —
+    // baselines are identical across rows, so the first ranking row carries it).
+    const verdict = sens.ranking[0]?.baseline_verdicts[idx] ?? 'unknown';
+    return { plan: planId, commitment: commitmentId, verdict, contributors, stamp: sens.stamp };
+  }
+
   /** Full transitive dependency graph around an item (issue #24). */
   depGraph(logicalId: string, maxDepth = 4): DepGraph | undefined {
     const hash = this.#latestHash(logicalId);
@@ -936,6 +1036,67 @@ export class AppState {
    *  here; its (plan, commitment, verdict) triple is its identity for glow). */
   #verdictKey(v: CommitmentVerdict): string {
     return `verdict:${v.plan}:${v.commitment}:${v.verdict}`;
+  }
+
+  /** SPEC-25 US3 — the stated incumbent for the "puts at risk" line: P1 scored
+   *  under R3m (apples to apples with the relax candidates). Returns the incumbent
+   *  verdict-by-commitment map plus a render-ready basis sentence; a stated
+   *  absence (never a silent empty line) when P1 cannot be scored. */
+  async #incumbentUnderR3m(
+    world: Ref,
+  ): Promise<{ incumbent?: Map<string, string>; atRiskBasis: string }> {
+    if (!(this.#fx.plans ?? []).some((p) => p.logical_id === 'P1')) {
+      return { atRiskBasis: 'no incumbent plan available — at-risk basis stated absent' };
+    }
+    const { ref } = this.latestPlan('P1');
+    const scored = await this.#scorer.score({
+      plan: ref,
+      world,
+      scenario: 'R3m',
+      engine_version: ENGINE_VERSION,
+    });
+    if (isRefusal(scored)) {
+      return {
+        atRiskBasis: `incumbent P1 could not be scored under R3m (${scored.reason}) — at-risk basis stated absent`,
+      };
+    }
+    return {
+      incumbent: new Map(scored.verdicts.map((v) => [v.commitment, v.verdict])),
+      atRiskBasis: 'vs the incumbent P1 (strait-early), scored under R3m',
+    };
+  }
+
+  /** SPEC-25 US3 — derive the "puts at risk" degradations for one candidate:
+   *  non-sacrificed commitments whose R3m verdict is worse than the incumbent's,
+   *  short of violation. Computed by the reused scorer, never authored. */
+  async #atRiskFor(
+    planId: string,
+    sacrificed: string[],
+    incumbent: Map<string, string>,
+    world: Ref,
+  ): Promise<AtRiskDegradation[]> {
+    const ref = this.#latestRef(planId);
+    if (!ref) return [];
+    const scored = await this.#scorer.score({
+      plan: ref,
+      world,
+      scenario: 'R3m',
+      engine_version: ENGINE_VERSION,
+    });
+    if (isRefusal(scored)) return [];
+    const sacrificedSet = new Set(sacrificed);
+    const out: AtRiskDegradation[] = [];
+    for (const v of scored.verdicts) {
+      if (sacrificedSet.has(v.commitment)) continue; // violated ⇒ sacrificed, not at-risk
+      const from = incumbent.get(v.commitment);
+      if (!from) continue;
+      if (v.verdict !== 'violated' && GOODNESS_RANK[v.verdict]! > GOODNESS_RANK[from]!) {
+        const c = this.#commitmentById.get(v.commitment);
+        out.push({ logical_id: v.commitment, from, to: v.verdict, statement: c?.statement ?? v.commitment });
+      }
+    }
+    out.sort((a, b) => (a.logical_id < b.logical_id ? -1 : a.logical_id > b.logical_id ? 1 : 0));
+    return out;
   }
 
   #deltaFeed(deltas: readonly Delta[]): string {

@@ -26,6 +26,10 @@ import { cellAtPixel, makeProjection } from '../mapProject.js';
 import { depGraphRiver } from '../components/depGraphRiver.js';
 import { depGraphSidebar } from '../components/depGraphSidebar.js';
 import { NARRATIVES, SCRIPTING_PRINCIPLES, type Narrative, type NarrativeBeat } from '../narratives.js';
+import { previewAct, applyArmedAct, ghostSummary, type ArmedAct } from '../preview.js';
+import { ROLE_VERBS } from '../roleMenus.js';
+import { roleMenu } from '../components/roleMenu.js';
+import { challengePanel } from '../components/challengePanel.js';
 
 const TABS: { id: TabId; label: string; role: string }[] = [
   { id: 'j2', label: 'J-2 workbench', role: 'ROLE: J-2' },
@@ -122,6 +126,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     <div id="assay-narrator"></div>
     <div class="assay-controls" id="assay-controls"></div>
     <div class="assay-notice" id="assay-notice"></div>
+    <div class="assay-ghost-mount" id="assay-ghost"></div>
     <div class="assay-tabbar" id="assay-tabbar"></div>
     <div id="assay-panels"></div>
   </div>`;
@@ -130,6 +135,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   const panelsRoot = root.querySelector('#assay-panels') as HTMLElement;
   const controls = root.querySelector('#assay-controls') as HTMLElement;
   const noticeEl = root.querySelector('#assay-notice') as HTMLElement;
+  const ghostEl = root.querySelector('#assay-ghost') as HTMLElement;
   const narrativeBar = root.querySelector('#assay-narrative-bar') as HTMLElement;
   const narratorEl = root.querySelector('#assay-narrator') as HTMLElement;
 
@@ -263,15 +269,63 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     <div style="flex:1;min-width:220px">
       <label for="assay-step">Spatial clock — step <b id="assay-step-label">${app.step}</b> (selection, no recompute)</label>
       <input type="range" id="assay-step" min="0" max="${app.grid.horizon_steps}" step="1" value="${app.step}" style="width:100%">
+    </div>
+    <div style="flex-basis:100%;border-top:1px dashed var(--line);padding-top:8px">
+      <label style="font-size:11px;color:#5B3B8C;display:inline-flex;align-items:center;gap:5px;font-weight:600">
+        <input type="checkbox" id="assay-preview-toggle"> Consequence preview — arm a write and see the ghost diff <b>before</b> committing (SPEC-25)
+      </label>
     </div>`;
 
-  (root.querySelector('#assay-resolve') as HTMLElement).addEventListener('click', () => {
-    app.resolveK12();
+  // ---- consequence preview (US2): arm → ghost diff → commit / cancel ----
+  const previewToggle = root.querySelector('#assay-preview-toggle') as HTMLInputElement;
+  let armed: ArmedAct | null = null;
+  const previewArmed = (): boolean => previewToggle.checked;
+
+  /** Arm an act: run the real pipeline over a shadow, show the ghost, offer commit/cancel. */
+  async function arm(act: ArmedAct): Promise<void> {
+    armed = act;
+    const result = await previewAct(app, act);
+    ghostEl.innerHTML = `${ghostSummary(result)}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="assay-btn" id="assay-ghost-commit">Commit this write</button>
+        <button class="assay-btn secondary" id="assay-ghost-cancel">Cancel — leave nothing</button>
+      </div>`;
+    (root.querySelector('#assay-ghost-commit') as HTMLElement).addEventListener('click', () => {
+      void commitArmed();
+    });
+    (root.querySelector('#assay-ghost-cancel') as HTMLElement).addEventListener('click', () => {
+      cancelArmed();
+    });
+  }
+
+  async function commitArmed(): Promise<void> {
+    if (!armed) return;
+    const act = armed;
+    armed = null;
+    ghostEl.innerHTML = '';
+    await applyArmedAct(app, act); // exactly the previewed act — the ghost becomes the glow
     void rerender('j2');
+  }
+
+  function cancelArmed(): void {
+    // Cancel leaves committed state byte-identical (the fork carried the act, discarded here).
+    armed = null;
+    ghostEl.innerHTML = '';
+  }
+
+  (root.querySelector('#assay-resolve') as HTMLElement).addEventListener('click', () => {
+    if (previewArmed()) void arm({ kind: 'resolve' });
+    else {
+      app.resolveK12();
+      void rerender('j2');
+    }
   });
   (root.querySelector('#assay-reopen') as HTMLElement).addEventListener('click', () => {
-    app.contestK12();
-    void rerender('j2');
+    if (previewArmed()) void arm({ kind: 'reopen' });
+    else {
+      app.contestK12();
+      void rerender('j2');
+    }
   });
   const stepInput = root.querySelector('#assay-step') as HTMLInputElement;
   stepInput.addEventListener('input', () => {
@@ -288,7 +342,8 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     const hi = Number((root.querySelector('#assay-edit-hi') as HTMLInputElement).value);
     const unit = (root.querySelector('#assay-edit-unit') as HTMLInputElement).value || 'tonnes';
     if (Number.isFinite(lo) && Number.isFinite(hi)) {
-      void app.editBand(id, { lo, hi, unit }).then(() => rerender('j2'));
+      if (previewArmed()) void arm({ kind: 'band-edit', id, band: { lo, hi, unit } });
+      else void app.editBand(id, { lo, hi, unit }).then(() => rerender('j2'));
     }
   });
 
@@ -297,7 +352,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       const el = btn as HTMLElement;
       el.setAttribute('aria-selected', String(el.dataset.tab === activeTab));
     }
-    for (const p of Array.from(panelsRoot.querySelectorAll('.assay-panel'))) {
+    for (const p of Array.from(panelsRoot.querySelectorAll('.assay-panel, .assay-role-menu-wrap'))) {
       const el = p as HTMLElement;
       el.style.display = el.dataset.tab === activeTab ? '' : 'none';
     }
@@ -311,6 +366,15 @@ export function mountShell(root: HTMLElement, app: AppState): void {
 
     // render panels
     panelsRoot.innerHTML = '';
+    // Per-tab role-action menu (US5): the legal write verbs for the role, at the
+    // top of its tab. A surface, not a service call — pure re-arrangement (DEC-33).
+    for (const t of TABS) {
+      const rm = doc.createElement('div');
+      rm.className = 'assay-role-menu-wrap';
+      rm.dataset.tab = t.id;
+      rm.innerHTML = roleMenu(ROLE_VERBS[t.id]);
+      panelsRoot.appendChild(rm);
+    }
     for (const panel of snap.panels) {
       const el = doc.createElement('div');
       el.className = 'assay-panel';
@@ -350,6 +414,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     firstRender = false;
 
     wireTraceChips();
+    wireChallenge();
     wireCoaDrag();
     syncTabs();
 
@@ -419,6 +484,57 @@ export function mountShell(root: HTMLElement, app: AppState): void {
         void app.moveWaypoint(d.plan, d.element, d.leg, cell.x, cell.y).then(() => rerender('coa'));
       });
     }
+  }
+
+  // ---- the challenge affordance on verdict cells (US4) ----
+  let challengeEl: HTMLElement | null = null;
+  function closeChallenge(): void {
+    if (challengeEl) {
+      challengeEl.remove();
+      challengeEl = null;
+    }
+  }
+  doc.addEventListener('click', closeChallenge);
+
+  function wireChallenge(): void {
+    for (const cell of Array.from(panelsRoot.querySelectorAll('td[data-glow-id^="v:"]')) as HTMLElement[]) {
+      const glowId = cell.dataset.glowId as string;
+      const parts = glowId.split(':'); // v:PLAN:COMMITMENT
+      if (parts.length < 3) continue;
+      const plan = parts[1] as string;
+      const commitment = parts[2] as string;
+      cell.style.cursor = 'help';
+      cell.title = 'Click to challenge — surface the assumptions this verdict leans on';
+      cell.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        void openChallenge(plan, commitment, ev as MouseEvent);
+      });
+    }
+  }
+
+  async function openChallenge(plan: string, commitment: string, ev: MouseEvent): Promise<void> {
+    closeChallenge();
+    const result = await app.challenge(plan, commitment);
+    if (!result) return; // nothing to challenge — the affordance is absent, not erroring
+    challengeEl = doc.createElement('div');
+    challengeEl.className = 'assay-menu';
+    challengeEl.style.maxWidth = '420px';
+    challengeEl.innerHTML = challengePanel(result);
+    // Deep-link: clicking a contributor row jumps to J-2 where its S1 row lives.
+    for (const row of Array.from(challengeEl.querySelectorAll('[data-logical-id]')) as HTMLElement[]) {
+      row.style.cursor = 'pointer';
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeChallenge();
+        activeTab = 'j2';
+        syncTabs();
+        flushPending();
+      });
+    }
+    challengeEl.style.left = `${ev.pageX + 6}px`;
+    challengeEl.style.top = `${ev.pageY + 6}px`;
+    challengeEl.addEventListener('click', (e) => e.stopPropagation());
+    doc.body.appendChild(challengeEl);
   }
 
   // ---- the one-hop trace menu on item chips ----

@@ -123,9 +123,9 @@ updates:
       Moves no thesis.
   - date: 2026-07-16
     note: >-
-      Register batch 7 ratified (ASSAY-DEC-37/38/39, closing concept §6.30–6.32) — the three
+      Register batch 7 ratified (ASSAY-DEC-37/38/39, closing concept §6.32–6.34) — the three
       candidates raised by SPEC-26 (history, replay & trace depth; review slice S-G, mockups
-      M5/M7) and decided by research note 14-replay.md under the DEC-11 gate. DEC-37: the
+      M5/M7) and decided by research note 15-replay.md under the DEC-11 gate. DEC-37: the
       decision-history replay surface — a decision-time scrubber over the delta log whose view
       at cursor n is the event-sourcing fold state(n) = fold(deltas[1..n]), implemented as the
       immutable store (DEC-21) filtered by a derived, non-authoritative created_seq index (a
@@ -141,6 +141,27 @@ updates:
       projections over existing machinery — no schema change, no seam change, no new engine
       (DEC-10); implementation proceeds under SPEC-26. The eight candidates at concept §6.22–6.29
       remain unratified, awaiting their own batches. Moves no thesis.
+  - date: 2026-07-16
+    note: >-
+      SPEC-25 built (verdict legibility & the argument surface; review §3.1/§3.3, mockups
+      M3/M4/M8/M10, addendum slice S-F): five legibility moves over machinery ASSAY already
+      has. Research note 14-legibility.md (DEC-11 gate for US2) decides the consequence-preview
+      contract — a preview is the real pipeline run over a byte-faithful shadow of the store,
+      never an estimate (DEC-10): the previewed diff equals the post-commit glow set
+      element-for-element (G1/DEC-34), the shadow persists nothing, emits no delta, mutates no
+      stamp, and a dishonest armed edit previews its refusal (G2/G5). The other four are
+      re-renderings of banked output: the public verdict legend (US1 — the four-stop mapping
+      laid open CRT-style, illustrated by the frozen oracle O-3 sweep, oracle-derived, a
+      mapping never a score); relaxation cards v2 (US3 — a derived "puts at risk" line of
+      verdict deltas vs the incumbent P1-under-R3m, sacrificed still exactly the violated set,
+      numbered trace-linked reasons; on Meridian the candidates are Pareto-clean so the residue
+      is honestly empty); the challenge affordance (US4 — the SPEC-11 sensitivity ranking scoped
+      to a verdict, single-source flags co-shown, deep-linked to the knowledge row; the honest
+      C4 flipper under BASE is K6, not K8, which is genuinely insensitive there); and per-role
+      action menus (US5 — each role's legal write verbs marked live / runs-on-recompute /
+      not-yet-built, observer read-only, menus reorganise never restrict). No schema change, no
+      seam change, no new scalar (DEC-19); 523 tests, typecheck clean. Register candidates
+      concept §6.30/§6.31 flagged, awaiting the next batch.
   - date: 2026-07-16
     note: >-
       SPEC-24 built (the Decision Support Matrix surface — decisions in time; review §4.2/M1/B1,
