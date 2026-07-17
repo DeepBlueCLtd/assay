@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-15 · **Picked up**: 2026-07-16
 
-**Status**: In build — research note `docs/research/12-decision-support.md` authored (the DEC-11 gate); concept §6.27/§6.28 flagged; plan.md + tasks.md in this directory
+**Status**: Built — `src/decisionSupport.ts` + `src/components/dsmTable.ts`, wired as the commander "decisions in time" panel; `tests/decisionSupport.test.ts` pins the Meridian exhibit; 493 tests, typecheck clean. Research note `docs/research/12-decision-support.md` authored (the DEC-11 gate); ratified as ASSAY-DEC-45/46 (register batch 8, closing concept §6.27/§6.28).
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §4.2, mockup M1, action B1, addendum §10 slice S-D). JIPOE earns its keep in doctrine at the artefact ASSAY stops one step short of: the **decision support template/matrix** — decision points tied to the intelligence that discriminates them, with a latest time the information is of value (LTIOV). ASSAY has quietly built every ingredient: a commitment whose verdict is scenario-divergent or `tight` *is* a decision point; the discriminating open question *is* the NAI's indicator; `collection.earliest_result` against the plan's commit step *is* the LTIOV calculation; staleness flags *are* DSM re-validation. Missing is only the artefact that assembles them — the one a J-3 actually recognises. Per DEC-5 (surfaces are config-declared projections) this slice is **a projection plus one derivation rule**, not a new engine.
 
