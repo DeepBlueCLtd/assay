@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-15
 
-**Status**: Draft — queued (implementation gates on the research note below; plan jointly with issue #24, whose shallow end this slice is)
+**Status**: US1/US2 queued (gate on the research note below, present). **US3 rescoped and built (2026-07-17)** — issue #24's full dependency-graph view (DEC-47) shipped ahead of this slice, so US3 now *integrates* with it (reuses its traversal, hands its counted remainders off to it) rather than pre-figuring it. US3 is independent of US1/US2 and lives in `traceView.ts` + `components/recursiveTrace.ts`.
 
 **Input**: JIPOE/C2 process review (`docs/reviews/2026-07-14-jipoe-c2-process-review.md` §6.2, mockups M5/M7, addendum §10 slice S-G). Two viewport moves over machinery that already exists: **(1)** a **decision-history scrubber** — the delta log and stamp lineage already form an event-sourced record of the session (the walkthrough's seq 42–46 *is* a replayable heartbeat); a scrubber over it replays compiles, refusals, contests/resolutions, and verdict flips, with the glow re-firing at each transition. This is the after-action-review instrument: *what did we believe, when did we believe it, and what did each change invalidate*. It is deliberately distinct from SPEC-19's timeline, which scrubs **world time** (the scenario clock); this scrubs **decision time** (the delta sequence). The two compose. Stage-7 narratives become curated scrub paths, unifying the narrative runner with replay instead of maintaining a parallel beat mechanism. **(2)** **recursive-on-demand trace tooltips** — the one-hop informs/influenced-by menu (SPEC-16) becomes recursively expandable, depth-capped (~2–3 per the CK3 nested-tooltip practitioner guidance), each hop rendering the actual relationship (which interval operation, which edge type) — the shallow end of issue #24's full dependency-graph view, shippable first and feeding its design.
 
@@ -51,18 +51,25 @@ Each Stage-7 narrative is re-expressed as a sequence of (seq cursor, tab, presen
 
 ---
 
-### User Story 3 — Recursive trace tooltips (Priority: P2)
+### User Story 3 — Recursive trace tooltips (Priority: P2) — RESCOPED (issue #24 has landed)
 
-Hovering a verdict opens the one-hop menu as today; each entry expands in place — verdict → margin computation → channel reads → knowledge objects → provenance — to a stated depth cap, each hop labelled with its real relationship (edge type, or the interval operation for computation hops). At the cap, an honest "N more — open full trace" hands off to the existing trace drawer (and, when issue #24 lands, to the graph view).
+**Rescope (2026-07-17).** When this story was written the full dependency-graph view (issue #24 / DEC-47) did not exist, so US3 was specified as its "shallow end," pre-figuring a traversal and a handoff target that were still hypothetical. That view has since shipped (`src/depGraph.ts` + `components/depGraphRiver`/`depGraphSidebar`, a full-screen overlay reachable from the SPEC-16 one-hop menu). US3 now **integrates with it rather than pre-figures it**:
 
-**Why this priority**: Depth-on-demand provenance is the reading-flow version of G3; it is also #24's cheapest de-risking step.
+- **Reuse, no parallel walker.** The recursive tooltip is the shipped one-hop reading (`traceView.neighbours` under `EDGE_ORIENTATION`) recursed hop by hop — *the same traversal the DEC-47 graph walks*. There is one traversal semantics; the tooltip introduces no second walker (FR-007). It agrees with the full graph by construction (both consume `neighbours`), with a path-based cycle guard matching `TraceStore.walk`.
+- **The cap remainder opens the real surface.** "N more — open full trace" routes to the shipped dependency-graph overlay (`openDepOverlay`), **focused on the exact hop the tooltip stopped at** (by content hash) — not a hypothetical drawer.
+- **Redundancy dropped.** No new walker, no new "trace drawer," no bespoke handoff target — the shipped overlay is all three. What remains genuinely additive is the *in-reading-flow depth-on-demand nesting* (the shallow end), which the full-screen overlay does not provide.
+- **Placement.** US3 lives in `traceView.ts` (the traversal) + a pure `components/recursiveTrace.ts` (the render); the shell change is a thin wire into the existing menu that reuses `openDepOverlay`. Independent of US1/US2 — parallelisable.
 
-**Independent Test**: Expand from a P2·C2 verdict; assert each hop's label matches the trace graph's actual edges/operations (no paraphrase layer); assert the cap renders the honest remainder count, never silent truncation; assert dead ends render as dead ends at any depth (G3).
+An observer hovers a verdict and opens the one-hop menu as today; each entry expands in place — verdict → world (the interval evaluation) → knowledge objects → provenance — to a **stated depth cap of 3**, each hop labelled with its real relationship (the `edge_type`, plus a fixed operation gloss on the two computation edges). Expansion is progressive (collapsed by default, revealed on demand). Each hop is also **breadth-capped**: a high-fan-out hop (a knowledge object compiled into a world `scored_from` by every verdict) shows a handful of neighbours and a counted "+N more — open full trace", adopting the DEC-47 view's own per-layer breadth-truncation honesty rather than dumping the whole subtree. At the depth cap, an honest "N more — open full trace" hands off to the shipped graph view focused on that hop.
+
+**Why this priority**: Depth-on-demand provenance is the reading-flow version of G3; post-#24 it is also the cheapest way to make the full graph *discoverable* from the reading flow.
+
+**Independent Test**: Expand from a verdict/knowledge origin; assert each hop's label matches the trace graph's actual edges/operations (no paraphrase layer); assert the depth-1 children equal `neighbours()` for the origin and the reachable set is a subset of the shipped `buildDepGraph` reachable set (one traversal semantics); assert both the depth-cap remainder and the breadth-cap overflow render the honest counted "open full trace" affordance, never silent truncation; assert dead ends render as dead ends at any depth (G3).
 
 **Acceptance Scenarios**:
 
-1. **Given** an expanded chain, **Then** every hop resolves to a stored object or computation record and the chain matches `TraceStore.walk` output for the same origin (one source of truth).
-2. **Given** the depth cap, **Then** the remainder affordance states the count and routes to the full trace drawer — truncation is visible, bounded, and escapable.
+1. **Given** an expanded chain, **Then** every hop resolves to a stored object (or a surfaced dead end, G3), the depth-1 layer equals the one-hop `neighbours()` reading, and every reached node is one the shipped `buildDepGraph` reaches for the same origin (one traversal, no parallel walker).
+2. **Given** the depth cap OR a breadth overflow, **Then** the remainder affordance states the count and opens the shipped dependency-graph overlay focused on that hop — truncation is visible, bounded, and escapable (G4).
 
 ---
 
@@ -73,7 +80,8 @@ Hovering a verdict opens the one-hop menu as today; each entry expands in place 
 - **Very long histories**: reconstruction is a pure filter over an immutable store; if cost grows, the note decides a checkpointing rule — but stored checkpoints, if any, must be derivable and never authoritative over the deltas (the log remains the truth).
 - **Replay while new live writes arrive**: the record grows at the head; the cursor stays put with a visible "M new" indicator — replay never silently jumps.
 - **Tooltip expansion on a contested pair**: `contests` renders symmetrically (per the SPEC-16 orientation map) at every depth.
-- **Cycles in the trace graph**: the existing cycle guard applies; a tooltip chain never loops.
+- **Tooltip expansion on a high-fan-out hop** (a knowledge object whose world is `scored_from` by every verdict): the breadth cap shows a handful and a counted "+N more — open full trace"; the whole subtree is never dumped into the tooltip. The wide reading is the DEC-47 graph's job (it has its own per-layer breadth cap); the tooltip defers to it.
+- **Cycles in the trace graph**: the path-based cycle guard applies (matching `TraceStore.walk`); a tooltip chain never loops.
 
 ## Requirements *(mandatory)*
 
@@ -84,8 +92,8 @@ Hovering a verdict opens the one-hop menu as today; each entry expands in place 
 - **FR-003**: Cursor transitions MUST re-fire glow under the live value-keyed rule (DEC-34) — no over- or under-report in replay.
 - **FR-004**: Replay mode MUST disable writes, be visibly marked, and return cleanly to the live head; new live deltas during replay surface as a count, never a silent jump.
 - **FR-005**: Narratives MUST be re-expressed as (seq, tab, note) waypoints driving the scrubber; the SPEC-17 presenter contract (navigation, notes, wall mode, honesty guard) is preserved; the parallel beat mechanism is removed in the same change.
-- **FR-006**: Trace tooltips MUST expand recursively to a stated depth cap, each hop labelled from the trace graph itself (edge type / interval operation), with an honest remainder affordance at the cap and G3 dead-end rendering at every depth.
-- **FR-007**: Tooltip chains MUST agree with `TraceStore.walk` for the same origin — one traversal semantics, no parallel walker.
+- **FR-006**: Trace tooltips MUST expand recursively to a stated depth cap (3), each hop labelled from the trace graph itself (edge type + a fixed operation gloss on computation edges), collapsed-by-default progressive disclosure, with a **stated breadth cap** per hop, an honest counted remainder at BOTH the depth cap and any breadth overflow, and G3 dead-end rendering at every depth.
+- **FR-007**: Tooltip chains MUST reuse the shipped one-hop `neighbours` reading under `EDGE_ORIENTATION` recursed hop by hop — the same traversal the DEC-47 dependency-graph view walks — with a path-based cycle guard matching `TraceStore.walk`; **no parallel walker**. The counted-remainder affordances MUST open the shipped dependency-graph overlay focused on the hop where the tooltip stopped (integrate, not pre-figure).
 - **FR-008**: All new rendering stays in pure components where values are shown (SPEC-14); all state in `src/app/`; no schema change; no seam change (the delta log and trace graph already cross the seam).
 
 ### Key Entities
@@ -99,11 +107,11 @@ Hovering a verdict opens the one-hop menu as today; each entry expands in place 
 
 - **SC-001**: The heartbeat replays from the record with byte-equal state at every seq and correct refusal/glow behaviour — no scripted state anywhere in the path.
 - **SC-002**: All five narratives run on scrub paths with the SPEC-17 contract intact and the bespoke beat mechanism deleted.
-- **SC-003**: Recursive tooltips match `TraceStore.walk`, cap honestly, and render dead ends at depth (G3).
-- **SC-004**: Typecheck/tests clean; components pure; no schema/seam change; issue #24 gains a "design fed by SPEC-26" note at ratification.
+- **SC-003**: Recursive tooltips reuse the shipped `neighbours`/`buildDepGraph` traversal (one semantics, no parallel walker), cap honestly in both depth and breadth, hand off to the shipped graph overlay, and render dead ends at depth (G3).
+- **SC-004**: Typecheck/tests clean; components pure; no schema/seam change. US3 integrates with the shipped issue #24 surface (its own close-out already notes the "big brother / shallow end" relationship, DEC-38/DEC-47); the breadth-cap refinement is flagged as a register candidate, not asserted (DEC-2).
 
 ## Assumptions
 
 - The delta log's coverage is sufficient to reconstruct all surface-relevant state (DEC-5's "every cross-surface write is a stamped delta" is the guarantee); any gap found is a walkthrough-§0-class contract defect to log, not a reason to synthesise state.
-- The depth cap lands between 2 and 3 per the note; the cap is a stated constant, not adaptive.
-- Issue #24's full graph view remains separate; this slice must not grow a graph layout engine.
+- The depth cap is a stated constant, fixed at 3 per the note; the breadth cap is likewise a stated constant per hop, not adaptive.
+- Issue #24's full graph view **has shipped** (DEC-47) and remains a separate surface; this slice must not grow a graph layout engine — it reuses that view's traversal and hands the wide/deep readings off to it.

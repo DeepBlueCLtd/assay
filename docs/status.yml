@@ -97,6 +97,24 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-17
+    note: >-
+      SPEC-26 US3 (recursive-trace tooltips) rescoped and built. Issue #24's full dependency-graph
+      view (DEC-47) shipped ahead of this slice, so US3 now *integrates* with it rather than
+      pre-figuring it: the tooltip is the shipped one-hop `neighbours` reading recursed hop by hop
+      under EDGE_ORIENTATION — the same traversal the DEC-47 graph walks (one semantics, no parallel
+      walker, agreement machine-checked against buildDepGraph over the frozen fixtures) — depth-capped
+      at a stated 3 with each hop labelled from edge_type + a fixed operation gloss on the two
+      computation edges; dead ends at every depth (G3), symmetric contests, cycle-guarded. Redundancy
+      dropped: no new walker and no bespoke "trace drawer" — the depth-cap remainder opens the shipped
+      DEC-47 overlay focused on the exact stopped-at hop. Chromium verification found a knowledge
+      object's downstream fans into every verdict (a ~6000px "tooltip"), so a stated per-hop breadth
+      cap was added, mirroring the DEC-47 view's own per-layer "+N more" truncation (G4) and deferring
+      the wide reading to that surface; progressive disclosure (collapsed-by-default) does the rest.
+      Lives in `traceView.ts` + pure `components/recursiveTrace.ts`; the shell wire is thin (reuses
+      openDepOverlay). 547 tests (22 new), typecheck clean; no schema/seam/oracle/verdict change,
+      moves no thesis. Rescope recorded in the `15-replay.md` §5 amendment; the breadth-cap refinement
+      flagged as register candidate concept §6.35 (DEC-2), not asserted. US1/US2 remain queued.
   - date: 2026-07-16
     note: >-
       Register batch 8 ratified (ASSAY-DEC-40…47, closing concept §6.22–6.29) — the JIPOE/C2

@@ -41,7 +41,16 @@ import { DecisionSupportService } from '../decisionSupport.js';
 import type { ScenarioVerdictTensor } from '../seam.js';
 import { checkEncoding } from '../encoding.js';
 import { confidenceLint } from '../lint.js';
-import { informs, influences, type Neighbour } from '../traceView.js';
+import {
+  informs,
+  influences,
+  recursiveNeighbours,
+  type Neighbour,
+  type RecursiveTrace,
+  type TraceHop,
+  type Relation,
+} from '../traceView.js';
+import type { LabelledTrace, LabelledHop } from '../components/recursiveTrace.js';
 import { buildDepGraph, nodeDetail, type DepGraph, type DepGraphNodeDetail } from '../depGraph.js';
 
 import { dayWindowToSteps, exposureProfile } from '../mapProject.js';
@@ -987,6 +996,39 @@ export class AppState {
     // baselines are identical across rows, so the first ranking row carries it).
     const verdict = sens.ranking[0]?.baseline_verdicts[idx] ?? 'unknown';
     return { plan: planId, commitment: commitmentId, verdict, contributors, stamp: sens.stamp };
+  }
+
+  /**
+   * SPEC-26 US3 (DEC-38) — the recursive-trace tooltip's labelled tree for an
+   * item, resolved to readable labels exactly as `traceMenu` resolves them. The
+   * traversal is `recursiveNeighbours` (the shipped one-hop `neighbours` reading
+   * recursed under EDGE_ORIENTATION — the same semantics the DEC-47 graph view
+   * walks, no parallel walker). The cap remainder hands off to `depGraph`.
+   */
+  recursiveTrace(logicalId: string, relation: Relation): LabelledTrace | undefined {
+    const hash = this.#latestHash(logicalId);
+    if (!hash) return undefined;
+    const known = (h: string): boolean => this.#svc.store.exists(h);
+    const tree: RecursiveTrace = recursiveNeighbours(this.#svc.trace, hash, relation, known);
+    const label = (hops: TraceHop[]): LabelledHop[] =>
+      hops.map((h) => ({
+        label: this.describeHash(h.hash),
+        hash: h.hash,
+        edge_type: h.edge_type,
+        known: h.known,
+        depth: h.depth,
+        children: label(h.children),
+        remainder: h.remainder,
+        childrenRemainder: h.childrenRemainder,
+      }));
+    return {
+      originLabel: this.describeHash(hash),
+      originHash: hash,
+      relation: tree.relation,
+      depthCap: tree.depthCap,
+      children: label(tree.children),
+      childrenRemainder: tree.childrenRemainder,
+    };
   }
 
   /** Full transitive dependency graph around an item (issue #24). */
