@@ -1,0 +1,282 @@
+{
+  "updated": "2026-07-16",
+  "current_stage": 7,
+  "current_stage_label": "Stage 6 built · Stage 7 next",
+  "gate_passed": false,
+  "stages": [
+    {
+      "id": 0,
+      "name": "Foundations",
+      "blurb": "store, trace graph, type-gen, fixtures",
+      "status": "done",
+      "research_note": "docs/research/00-foundations.md",
+      "research_published": true
+    },
+    {
+      "id": 1,
+      "name": "Knowledge capture & discipline",
+      "blurb": "band pill, provenance chip, encoding firewall, K10 refusal",
+      "status": "done",
+      "research_note": "docs/research/01-knowledge.md",
+      "research_published": true
+    },
+    {
+      "id": 2,
+      "name": "Compile",
+      "blurb": "knowledge → stamped world channels (sparse)",
+      "status": "done",
+      "research_note": "docs/research/02-compile.md",
+      "research_published": true
+    },
+    {
+      "id": 3,
+      "name": "Score, then plan",
+      "blurb": "four-stop banded verdicts, oracle cases, the generated handful",
+      "status": "done",
+      "research_note": "docs/research/03-score-plan.md",
+      "research_published": true
+    },
+    {
+      "id": 4,
+      "name": "Least-worst",
+      "blurb": "relaxation under infeasibility (thesis B)",
+      "status": "done",
+      "research_note": "docs/research/04-relaxation.md",
+      "research_published": true
+    },
+    {
+      "id": 5,
+      "name": "Scenario robustness",
+      "blurb": "scoring across the adversary COA set (thesis C)",
+      "status": "done",
+      "research_note": "docs/research/06-robustness.md",
+      "research_published": true
+    },
+    {
+      "id": 6,
+      "name": "Analysis loops",
+      "blurb": "sensitivity, discrimination, staleness (theses D, E, F)",
+      "status": "done",
+      "research_note": "docs/research/08-analysis.md",
+      "research_published": true
+    },
+    {
+      "id": 7,
+      "name": "Surfaces & narratives",
+      "blurb": "role bundles + five narrative scripts (post-gate)",
+      "status": "not-started",
+      "research_note": "docs/research/09-narratives.md",
+      "research_published": true
+    }
+  ],
+  "theses": [
+    {
+      "id": "A",
+      "name": "Pipeline",
+      "state": "explored"
+    },
+    {
+      "id": "B",
+      "name": "Least-worst",
+      "state": "explored"
+    },
+    {
+      "id": "C",
+      "name": "Robustness",
+      "state": "explored"
+    },
+    {
+      "id": "D",
+      "name": "Collection",
+      "state": "explored"
+    },
+    {
+      "id": "E",
+      "name": "Sensitivity / deception",
+      "state": "explored"
+    },
+    {
+      "id": "F",
+      "name": "Staleness",
+      "state": "explored"
+    },
+    {
+      "id": "G",
+      "name": "Interdependency",
+      "state": "horizon"
+    },
+    {
+      "id": "H",
+      "name": "Reactive red",
+      "state": "horizon"
+    }
+  ],
+  "updates": [
+    {
+      "date": "2026-07-18",
+      "note": "Register batch 9 ratified (ASSAY-DEC-48/49/50, closing concept §6.30/§6.31/§6.35) — the review series' remaining register debt, the interaction-class and shell-structure decisions SPEC-25 and the SPEC-26 US3 rescope left held: DEC-48 the consequence-preview interaction class (arm a mutating act, run the real pipeline over a byte-for-byte store fork, show an uncommitted ghost diff that equals the post-commit glow set element-for-element — previewed = computed, never estimated, G1; a dishonest armed act previews its refusal, G2/G5; no seam change); DEC-49 per-role action menus as a standing shell element (legal write verbs from one ROLE_VERBS map, observer read-only, each verb marked live / runs-on-recompute / not-yet-built — refines DEC-32/33, never forks them); DEC-50 the recursive-trace tooltip's breadth cap (DEC-38's depth cap extended to width — a stated RECURSIVE_TRACE_BREADTH_CAP = 6 and a counted \"+N more\" opening the DEC-47 overlay, the same G4 no-silent-drop discipline). None carries a schema, seam, oracle, verdict, or coverage-row change — all read-only projections or client-side orchestration (no new engine, DEC-10). Until this batch DEC-2 forbade citing SPEC-25/26 as authority for these behaviours; the debt is now cleared and the concept §6 candidate queue is empty but for the horizon forward-derivation item (§6.19, issue #43). Folded in: the stale specs/026 spec status line corrected (US1/US2 recorded as built, not queued) and issue #24 confirmed closed (DEC-47's shipped surface plus SPEC-26's tooltip integration fully satisfy it). Moves no thesis."
+    },
+    {
+      "date": "2026-07-17",
+      "note": "SPEC-26 built end-to-end (history, replay & trace depth — the after-action-review instrument) over research note 15-replay.md and DEC-37/38/39. A read-only projection over the existing substrate: no schema change, no seam-shape change, no new engine (DEC-10). US1 — a decision-history scrubber over the delta log: AppState.reconstructAt(n) re-drives the same pure snapshot() over a byte-faithful head filtered to creation-seq ≤ n (state(n) = the fold of deltas 1..n, byte-equal by G1); a canonical 21-delta heartbeat is the one recorded history; the scrubber replays refusals/stamps/glow exactly as recorded, disables writes in the past, and shows an \"M new\" head-growth count. A refused write now publishes a `refused` delta (a value on Delta.op, shape unchanged — DEC-5 coverage): the attempt is a scrubbable position with state unchanged. US2 — the five narratives are re-expressed as (seq, tab, note) scrub paths into that record and the bespoke beat/action mutation mechanism is deleted; the SPEC-17 presenter contract is preserved verbatim. US3 (rescoped, PR #60, now integrated) — the one-hop trace menu made recursively expandable, depth-capped at a stated 3, reusing the shipped `neighbours` reading recursed under EDGE_ORIENTATION (the same traversal the DEC-47 graph walks — one semantics, no parallel walker, machine-checked against buildDepGraph); dead ends at every depth (G3), symmetric contests, cycle-guarded; a per-hop breadth cap and the depth-cap remainder both open the shipped DEC-47 overlay at the exact stopped-at hop (G4). Moves no thesis (the theses were already explored/scripted); status states unchanged. Typecheck clean; full suite green. The US3 breadth-cap refinement is register candidate concept §6.35 (DEC-2), not asserted."
+    },
+    {
+      "date": "2026-07-16",
+      "note": "Register batch 8 ratified (ASSAY-DEC-40…47, closing concept §6.22–6.29) — the JIPOE/C2 review-series slices, built ahead of ratification under DEC-2's delegated-authority escape hatch and now converted from candidates to decisions in one session: DEC-40 compile-overlay precedence (excursion beats base; ENGINE_VERSION 0.2.0 — the one computed-world/narrative contradiction removed); DEC-41 jipoe_step on KnowledgeObject (schema, touches DEC-6 — the originating JIPOE step, singular, warning-level lint, observed not exempt); DEC-42 attention ordering (the §9 firewall sharpened to exactly two weight-consuming behaviours, the set declared closed, no scalar sort key anywhere); DEC-43 ExpectedAnswer.provenance (schema, touches DEC-9/DEC-18 — the event matrix carries a chip, single_source matters most where a deceiver shapes indicators); DEC-44 operative-pair conditioning (discrimination leads with the pairs the live tensor actually diverges across, K14 firewalled, v1 separations byte-identical); DEC-45 the decision-point derivation rule (two-class DP predicate, commit step from the metric's own reads, LTIOV with the honest red state, no urgency scalar); DEC-46 the DSM surface + POST /analyse/decision-support (a commander-tab projection, no tasking affordance); DEC-47 the transitive dependency-graph surface (a full-screen overlay off the trace menu, truncation-honesty rule, the big brother of DEC-38's recursive tooltip). Two carry schema changes already regenerated in their builds; the rest are read-only projections or materialisation-semantics. The §6.29 build inverted DEC-11's research-first order (mock-first, note-after) — recorded as a findings-ledger process observation, note 13 audited the built design, and DEC-11's order stands for future slices. The concept §6 candidate queue is now empty but for the horizon forward-derivation item (§6.19, issue #43). Moves no thesis."
+    },
+    {
+      "date": "2026-07-16",
+      "note": "Register batch 7 ratified (ASSAY-DEC-37/38/39, closing concept §6.32–6.34) — the three candidates raised by SPEC-26 (history, replay & trace depth; review slice S-G, mockups M5/M7) and decided by research note 15-replay.md under the DEC-11 gate. DEC-37: the decision-history replay surface — a decision-time scrubber over the delta log whose view at cursor n is the event-sourcing fold state(n) = fold(deltas[1..n]), implemented as the immutable store (DEC-21) filtered by a derived, non-authoritative created_seq index (a filter, never a rollback; byte-equal by G1); refusals and staleness re-derive rather than being stored, the glow (DEC-34) re-fires on cursor transitions, and decision-time replay composes with — but is distinct from — SPEC-19's world-time scenario scrub. DEC-38: the recursive-trace tooltip — note 13's transitive walk depth-capped at a stated 3, agreeing with TraceStore.walk, dead ends at every depth (G3), an honest counted remainder handing off to the trace drawer / issue #24 (its shallow end). DEC-39: narratives-as-scrub-paths — each Stage-7 narrative becomes (seq, tab, note) waypoints driving the scrubber, retiring the bespoke beat mechanism while preserving the SPEC-17 presenter contract; DEC-23's demo-moment requirement is unchanged, only its plumbing. All three are read-only projections over existing machinery — no schema change, no seam change, no new engine (DEC-10); implementation proceeds under SPEC-26. The eight candidates at concept §6.22–6.29 remain unratified, awaiting their own batches. Moves no thesis."
+    },
+    {
+      "date": "2026-07-16",
+      "note": "SPEC-25 built (verdict legibility & the argument surface; review §3.1/§3.3, mockups M3/M4/M8/M10, addendum slice S-F): five legibility moves over machinery ASSAY already has. Research note 14-legibility.md (DEC-11 gate for US2) decides the consequence-preview contract — a preview is the real pipeline run over a byte-faithful shadow of the store, never an estimate (DEC-10): the previewed diff equals the post-commit glow set element-for-element (G1/DEC-34), the shadow persists nothing, emits no delta, mutates no stamp, and a dishonest armed edit previews its refusal (G2/G5). The other four are re-renderings of banked output: the public verdict legend (US1 — the four-stop mapping laid open CRT-style, illustrated by the frozen oracle O-3 sweep, oracle-derived, a mapping never a score); relaxation cards v2 (US3 — a derived \"puts at risk\" line of verdict deltas vs the incumbent P1-under-R3m, sacrificed still exactly the violated set, numbered trace-linked reasons; on Meridian the candidates are Pareto-clean so the residue is honestly empty); the challenge affordance (US4 — the SPEC-11 sensitivity ranking scoped to a verdict, single-source flags co-shown, deep-linked to the knowledge row; the honest C4 flipper under BASE is K6, not K8, which is genuinely insensitive there); and per-role action menus (US5 — each role's legal write verbs marked live / runs-on-recompute / not-yet-built, observer read-only, menus reorganise never restrict). No schema change, no seam change, no new scalar (DEC-19); 523 tests, typecheck clean. Register candidates concept §6.30/§6.31 flagged, awaiting the next batch."
+    },
+    {
+      "date": "2026-07-16",
+      "note": "SPEC-24 built (the Decision Support Matrix surface — decisions in time; review §4.2/M1/B1, addendum slice S-D, the keystone): research note 12-decision-support.md (DEC-11 gate) decides the three derivation rules doctrine's DST/DSM needs and ASSAY had never assembled — the two-class decision-point predicate (a commitment is a DP iff its verdict is scenario-divergent across the adversary COA set or tight/marginal under the selected world; uniformly robust and uniformly violated are non-DPs), the commit step read from the plan's own geometry (the first route leg whose channel read differs across the scenario worlds; horizon step, worded world-decided, for state metrics; a stated absence for margin-class rows), and LTIOV = commit step − lead (lead 0, stated) with the three-state answerable-in-time predicate — in time with slack as a step count, the honest red \"cannot answer in time\" with its arithmetic visible and never dropped, and \"no earliest result stated\" never assumed answerable. POST /analyse/decision-support is a thin orchestration (DEC-10 — tensor + SPEC-12/23 classification + validity windows, no new engine); the surface is an S2-adjacent commander panel (\"decisions in time\"), rows in commitment-id order with no urgency scalar anywhere (DEC-19), every row cited_in back to its evidence (G3), no tasking affordance (the KINGFISHER/C6 discipline). The pinned Meridian exhibit shows the thesis moment: P2 (sweep-first) holds the port decision open to step 10 and DET KINGFISHER's step-8 report arrives in time with 2 steps of slack, where P1 (strait-early) commits at step 4 — a day before recon can report; the K9 forecast lapse (step 36) tripwires the horizon-read causeway decision. Register candidates concept §6.27/§6.28 flagged, awaiting the next batch."
+    },
+    {
+      "date": "2026-07-16",
+      "note": "SPEC-23 built (collection discrimination v2 — sharper where-to-look; review §3.4/B7, addendum slice S-E): the note-08 §7 amendment (DEC-11 gate) decides the operative-pair derivation — a scenario pair is operative iff some plan×commitment verdict diverges across it in the SPEC-10 tensor, computed never curated, likelihood firewalled (K14 does not enter) — the three-way separation classification (disjoint / partial / nested; a nested expectation can never single out the inner COA, and the surface now says \"cannot discriminate\" instead of a second negative number; bands touching at an endpoint classify partial, mirroring O-3's edge discipline), and provenance on ExpectedAnswer (the full Provenance shape, optional slot, warning-level missing_expected_answer_provenance lint — the event matrix was the only major assessed content without a chip). The collect-next ranking now leads with the pairs the live decision turns on, witnesses rendered (\"operative: R1↔R2 — P1's C1/C2 turn on it\"); K11-above-K13 reproduces on the operative ranking and a pinned constructed case shows v2 ≠ v1 exactly where best-pair-anywhere misleads; the v1 numeric separations are byte-identical; degenerate states (no tensor, incomparable stamps, one live scenario, no divergence) render honest statements, never a fabricated pair. Register candidates concept §6.25/§6.26 flagged, awaiting the next batch."
+    },
+    {
+      "date": "2026-07-16",
+      "note": "SPEC-22 built (attention ordering — the scenario-weight firewall's positive half; review §3.5/M11, addendum slice S-C): the register's claim that likelihood weights \"order attention and reporting, never compile\" now has its visible half. The scenario strip gains an attention block rendering the K14a–c likelihood bands under the INTERVAL ORDER (research note 11-attention.md, the DEC-11 gate): R1 (45–70%) ranks strictly above the level pair {R2, R3}, whose bands visibly overlap — the system refuses, in public, to rank what the bands don't rank; no scalar sort key exists anywhere (DEC-15/19); provenance welded on, labelled \"orders attention — never compiles\". The S1 collection queue may tie-break EXACTLY-equal discrimination standings by the conservative pair lift of the same order — stated in the rendering, never applied across overlap, never overriding DEC-18's primary ranking — composed in the queue assembly around an untouched DiscriminationService. \"Attention only\" is machine-checked: a K14 band edit changes zero stamps, verdicts, memberships, or relaxation outputs while the attention block moves; import isolation between the attention/strip modules and compile/score/dominance/relax is a source-level test. Register candidate concept §6.24 (the two-behaviour sharpening) flagged, awaiting the next batch. No schema change; no oracle, verdict, or coverage-row change."
+    },
+    {
+      "date": "2026-07-15",
+      "note": "SPEC-21's DEC-30 companions shipped (comms category — projections of shipped work, not spec features; review actions A1/A2/A6): the SME-facing doctrine page (\"ASSAY ↔ doctrine\", site doctrine.html, linked from a Home card) carrying the review §4.1 crosswalk — which JIPOE/JPP products ASSAY computes and how faithfully, its step column now machine-audited by SPEC-21 — and the §4.4 divergence register, the five deliberate departures from written doctrine each defended up front (no weighted COA matrix, no scenario-probability arithmetic, no reaction dynamics, no civil-harm quantification, no execution model); the citation- hardening pass over research notes 02/03/05/08 naming the prior art the inventions sit in (Cooke & Halsey / Orda & Rom for time-dependent cost; Dubois & Prade, Ben-Haim, Fishburn for the four-stop verdict; Bainomugisha et al. and Hermans et al. for the glow; Fishburn and Troffaes for band-separation discrimination) plus the two date corrections (Savage 1951 in note 06; Lipkus & Hollands 1999 in note 09); and the README status fix — the public face no longer says \"implementation has not started\" about a repository with seven built stages."
+    },
+    {
+      "date": "2026-07-15",
+      "note": "SPEC-21 built (JIPOE anchoring — knowledge names its doctrinal origin; review §4.1/A7, addendum slice S-A): the note-01 amendment (DEC-11 gate) fixes the JipoeStep vocabulary (JP 2-01.3's four steps verbatim), the per-object assignments for all seventeen Meridian K objects (resolving K10 → step 3 — retirement does not erase origin), and the lint posture. The schema gains a JipoeStep enum and an optional jipoe_step slot on KnowledgeObject (register candidate, concept §6.23 — flagged, awaiting the next batch); fixtures are annotated and pinned by an oracle-style test; the provenance chip renders the step in words wherever provenance renders, with legends updated; a step-less knowledge write draws a warning-level missing_jipoe_step lint on the response and the delta — never a refusal, and observed is NOT exempt (origin applies to facts too). \"Doctrinally shaped, not invented conveniences\" is now machine-auditable, the first concrete step of the forward-derivation programme (issue #43). No banded/scalar semantics change; no oracle, verdict, or coverage-row change."
+    },
+    {
+      "date": "2026-07-15",
+      "note": "SPEC-20 built (compile-overlay precedence, fix-class — review 2026-07-14 §3.6 / slice S-B): channel materialisation now resolves overlapping region overrides by LAYER before geometry — a scenario excursion's override beats a base-knowledge override on the cells it re-describes (research note 02-compile.md §6 amendment, the DEC-11 gate; register candidate concept §6.22). This removes the one place the computed world contradicted the vignette narrative: under R3/R3m the causeway demolition now wins over K2's base engineering estimate, C5 \"taken intact\" scores violated, and the Stage-4 least-worst exhibit's sacrifice sets become {C4,C5}, {C3,C5}, {C2,C5} — the exhibit changed because the world got more honest, and the coverage row, walkthrough beat 4, and gallery captions moved with it in the same change (never a silent test edit). engine_version bumps to 0.2.0; old stamps stay honest about what computed them (G1); mixed-engine worlds now grey the scenario strip. BASE worlds, oracles O-1…O-4, and every other frozen-tableau verdict are unchanged."
+    },
+    {
+      "date": "2026-07-15",
+      "note": "Register batch 6 ratified (ASSAY-DEC-36): the SME checkpoint endorsed the SPEC-19 spatial/temporal UI model (findings ledger ASSAY-FIND-7), closing concept §6 item 21 — the banded-surface convention, the temporal convention, drag-to-recompute, and promotion. The surface is promoted into the live app as a fifth shared \"Spatial · COA\" tab over the same single store: the map refuses with the compile while K12 is contested (G5) and appears, glowing, on resolve; dragging a waypoint authors a new plan version and re-scores through the real pipeline (G1/G6). DEC-32's four role tabs stand; the spatial tab is a cross-role surface. DEC-31(d)'s never-silently-optimise caution binds."
+    },
+    {
+      "date": "2026-07-15",
+      "note": "SPEC-19 built (spatial & temporal COA visualisation, review-first): research note 10-spatial-temporal.md decides the banded-surface rule (split fill + hatch, never a single stop for an assessed channel — G2) and the temporal rule (discrete validity/ task windows, lapse marked, stated peaks quoted never curved — thesis F); a reviewable map + timeline mockup renders the real fixture geometry and compiled bands, with the C4 exposure staircase making the SPEC-18 honest gap visible as geometry (K6 propagates, K7's region is never entered, K3 is never read); dragging a waypoint authors a new plan version and re-scores through the real in-browser pipeline with value-keyed glow (G6), byte-identical to a from-scratch run (G1). Thesis states unchanged (A/B already explored; this is a presentation-lane slice). SME review invited (comms §12) before the surface promotes (concept §6 item 21(d))."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Register batch 5 ratified (ASSAY-DEC-35): civil harm stays a geometric red line, never a quantified metric (issue #41). C3 counts whether FE-FALCON fires into the populated port district — it does not weight by population. Whether firing into 55,000 is \"worse\" than 5,000 is a commander value judgement the system is forbidden from encoding (DEC-19). The proposed weighted_civil_harm metric is declined; the honest gap SPEC-18 found (density band compiled but not read) is a design feature."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Stage 5 & 6 blog articles shipped: \"don't plan on most-likely\" (SPEC-10, thesis C) and \"what to verify next\" (SPEC-11/12/13, theses D/E/F). Both carry illustrative widgets over Meridian fixtures — the scenario strip with interactive scenario toggles, and the sensitivity/discrimination/staleness ranking tables."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Blog backlog cleared — six owed articles from Stages 0–4 shipped: provenance chip & K10 refusal (SPEC-05), verdict playground (SPEC-07), least-worst explorer (SPEC-09), stamp determinism (SPEC-06), content addressing (SPEC-01), trace walk (SPEC-02)."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Register batch 4 ratified (ASSAY-DEC-28…34): sparse channels, SPA shell, glow, in-browser pipeline, blog cadence, home-page currency, flow-view behaviours — seven candidates built under delegated authority now settled."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Stage 6 built — sensitivity, discrimination, staleness analysis (theses D, E, F live). SPEC-11/12/13 implemented over research note 08-analysis.md. K8 tops sensitivity (single-source, band-edge perturbation changes C4 verdicts); K11 ranks above K13 on discrimination (disjoint R1/R2 bands vs overlapping); K5 staleness walk flags exactly the storm-channel-dependent verdicts. 267 tests, typecheck clean."
+    },
+    {
+      "date": "2026-07-14",
+      "note": "Stage 5 built — scenario robustness (thesis C live). SPEC-10 implemented over research note 06-robustness.md. Minimax (worst-case) posture: no scenario weights, no weighted blend. The strait-early plan visibly collapses under R2 while robust alternatives hold."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Interactive system-flow infographic built (SPEC-14 flow-view sub-slice) — the S4 Bridge grown into a stakeholder explainer with a guided tour and a bounded sandbox driving the real seam (compile/score/relax), one self-contained embed in two homes. Auto-recompute is stamped and attributed, never silent; unbuilt computations (staleness fan-out, selection) are scripted and visibly labelled. Reachable from the Home page."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Communications scaffold landed — status.yml single source of truth, the blog + standalone-embed pipeline, and the first pattern-setter article (the band pill, live).",
+      "article": "blog/posts/2026-07-13-band-pill.html"
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Stage 4 built — least-worst relaxation over R3m (thesis B live). SPEC-09 implemented."
+    },
+    {
+      "date": "2026-07-13",
+      "note": "Stage 3 built — the four-stop scorer and the generated handful (SPEC-07, SPEC-08)."
+    },
+    {
+      "date": "2026-07-12",
+      "note": "Stage 2 built — compile to a stamped world of sparse channels (SPEC-06)."
+    },
+    {
+      "date": "2026-07-12",
+      "note": "Register batch 3 ratified (ASSAY-DEC-22…27); walkthrough and findings ledger canonical."
+    }
+  ],
+  "blog": [
+    {
+      "date": "2026-07-14",
+      "title": "What to verify next",
+      "href": "blog/posts/2026-07-14-what-to-verify-next.html",
+      "slice": "SPEC-11 / SPEC-12 / SPEC-13",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-14",
+      "title": "Don't plan on most-likely",
+      "href": "blog/posts/2026-07-14-dont-plan-on-most-likely.html",
+      "slice": "SPEC-10",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-13",
+      "title": "Least-worst: choosing what to sacrifice",
+      "href": "blog/posts/2026-07-13-least-worst.html",
+      "slice": "SPEC-09",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-13",
+      "title": "The verdict playground: four stops, no decimals",
+      "href": "blog/posts/2026-07-13-verdict-playground.html",
+      "slice": "SPEC-07",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-13",
+      "title": "The band pill: why a range is more honest than a number",
+      "href": "blog/posts/2026-07-13-band-pill.html",
+      "slice": "SPEC-05 / SPEC-14",
+      "embed": "live component — the demonstrator's actual code"
+    },
+    {
+      "date": "2026-07-12",
+      "title": "Stamp determinism: compile twice, get the same answer",
+      "href": "blog/posts/2026-07-12-stamp-determinism.html",
+      "slice": "SPEC-06",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-12",
+      "title": "The provenance chip & the K10 refusal",
+      "href": "blog/posts/2026-07-12-provenance-chip.html",
+      "slice": "SPEC-05 / SPEC-14",
+      "embed": "live component — the demonstrator's actual code"
+    },
+    {
+      "date": "2026-07-11",
+      "title": "Trace walk: every output traces back to named knowledge",
+      "href": "blog/posts/2026-07-11-trace-walk.html",
+      "slice": "SPEC-02",
+      "embed": "illustrative widget — real rule, fixture data"
+    },
+    {
+      "date": "2026-07-11",
+      "title": "Content addressing: identity is a hash",
+      "href": "blog/posts/2026-07-11-content-addressing.html",
+      "slice": "SPEC-01",
+      "embed": "illustrative widget — real rule, fixture data"
+    }
+  ]
+}
