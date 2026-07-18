@@ -47,6 +47,21 @@ interdependency that survives the EBO/ONA critique — that is honestly computab
 under ASSAY's banded, no-weights, everything-attributed discipline — and where
 exactly does it turn into false precision?**
 
+It is useful to see the ambition as a **three-rung ladder** of how much a link
+claims, and to find the highest rung that stays honest:
+
+| Rung | The link claims | Example |
+|---|---|---|
+| **1 · Reachability** | *X can reach Y* (topology only) | "striking the substation can reach the field hospital" |
+| **2 · Signed direction** | *X pushes Y up / down* (sign, no magnitude) | "mining the strait **increases** ANVIL's threat exposure" |
+| **3 · Weighted magnitude** | *X changes Y by this much, with this confidence* | "cranes down → throughput −60% (conf 0.7)" |
+
+Rung 3 is EBO/ONA and is out (§5). The interesting work — and the reason this
+note was worth rewriting — is that **rung 2 does not sit cleanly on one side of
+the line.** It is honest one attributed hop at a time and dishonest the moment it
+*composes*, and pinning exactly where it breaks sharpens the whole verdict (§4,
+§6). §3 takes rung 1; §4 takes rung 2 (the proof); §5 takes rung 3 (the trap).
+
 ## 2. Meridian already contains a latent PMESII graph
 
 We do not need to invent a world. The Meridian vignette is dense with
@@ -136,7 +151,101 @@ puncture. It never says an effect *will* happen, or *how much*; it says a depend
 commander can act on "you may not have considered that this strike reaches the
 hospital" without the system having laundered a value judgement.
 
-## 4. The trap — weighted propagation
+## 4. The intermediate — signed direction (the proof)
+
+Rung 2 is the one that repays the work. The tempting summary — *"sign needs a
+model, so park it with the trap"* — is wrong; so is *"sign is magnitude-free, so
+park it with reachability."* The honest answer is that **rung 2 splits**, and
+locating the split is the sharpest thing in this note.
+
+### 4.1 Per-link signed direction is honest
+
+Start with the strongest reason to *doubt* it: to say "increases/decreases" you
+assert a monotone relationship, which is more than "a link exists." Doesn't that
+smuggle a model in?
+
+No — because **ASSAY is already signed-without-magnitude at its core**, and treats
+that as honest:
+
+- Commitments are **directional**: C1's `at_most`, C5's `at_least` are signs on a
+  threshold, not magnitudes.
+- The verdict scale is a **signed margin band with the interior explicitly
+  refused**. Oracle O-3 is exactly this: as the threshold sweeps, the verdict
+  changes *only at the band edges* — the scorer reports the **sign of the margin**
+  (`m_lo > 0` ⇒ robust; `m_hi < 0` ⇒ violated) and says "neither" for the interior.
+  "Signed, magnitude-free, interior-refused" is not alien to the honesty model; it
+  *is* how scoring works.
+
+So a **single, stated, attributed, one-hop** directional assertion — "the allied
+LNO asserts that laying more mines **increases** the strait threat channel" — is a
+qualitative fact with an owner, no more a smuggled scalar than a Band is. It is a
+genuine *refinement of rung 1*: reachability says "X can reach Y"; signed
+reachability says "X is asserted to push Y **up** (or **down**)", still with no
+magnitude, still fully attributed. **This is honest, and it is more useful than
+bare reachability.**
+
+### 4.2 Sign stays honest only one attributed hop at a time — composition breaks it
+
+The dishonesty does not live in the sign; it lives in **composing** signs across
+the graph, and there are two distinct failure modes.
+
+**(a) Same-direction chains — survivable, but only with per-hop honesty.** To carry
+a sign along a chain (*cranes down → throughput down → relief down → shortfall up*)
+you must assert **each hop's monotonicity separately, with an owner, rendered per
+hop** — and stop where a hop's monotonicity is *not* asserted. Some hops are
+monotone by definition (less relief delivered ⇒ more shortfall); the physical ones
+(demolition ⇒ throughput) need a named asserter. Rendered that way — a chain of
+attributed, individually-owned monotone claims — it is still rung 2, still honest.
+Rendered as a single "cranes → shortfall: ↑" with the intermediate assumptions
+swallowed, it has invented the links it skipped. The honesty condition is *no
+swallowed hop*, which is just G3 applied to signs.
+
+**(b) Opposing parallel paths — the killer, and where magnitude sneaks back in.**
+When X reaches Y along one **increasing** and one **decreasing** stated path, the
+*net* sign is **undefined without weighing the two paths against each other** — and
+weighing is precisely the magnitude judgement DEC-19 forbids. You cannot honestly
+emit "net ↑" or "net ↓"; choosing one is a rung-3 act wearing a rung-2 costume.
+
+The honest resolution is **the O-3 move, lifted from the number line to the
+graph.** Just as the scorer refuses the interior of a straddling band ("neither
+robust nor violated"), the honest sign-composer refuses the net of opposing paths:
+
+> *"X pushes Y **up** along one stated path and **down** along another. The net
+> direction is a magnitude judgement the system does not make — here are both
+> paths, each attributed."*
+
+That is *more* informative than a fabricated net sign, and it is honest. Note the
+consequence: honest sign-**composition** over a real (multi-path) graph
+**degenerates back to reachability plus a straddle flag** in exactly the cases that
+matter. It does *not* deliver a general magnitude-free net direction — the general
+net direction was never magnitude-free.
+
+### 4.3 Meridian shows both cases
+
+- **Honest opposing straddle (rung 2b → refuse the net).** Target: `threat_exposure(FE-ANVIL)`
+  (C4's metric). Two stated influences oppose — FALCON suppressing the Carrick Head
+  battery **decreases** it; ANVIL pushing forward to cover BROOM's sweep **increases**
+  it. The honest output is the straddle: both paths, attributed, no net. A panel that
+  announced "ANVIL exposure: net ↓" would have silently weighed suppression against
+  exposure — a commander's judgement, not the system's (DEC-19; the same firewall
+  DEC-35 holds for civil harm).
+- **Honest same-direction chain (rung 2a).** *R3 demolishes cranes* **↓** port
+  throughput **↓** relief delivered **↑** civilian shortfall — legitimate rung 2
+  *only* while each hop is a stated, owned monotone assertion shown in the chain, and
+  it stops at the first hop no source will sign.
+
+### 4.4 What 4.1–4.3 do to the boundary
+
+The magnitude line drawn in the first draft (§5) was *right but too coarse*. Rung 2
+proves the real boundary is not "topology vs magnitude" but **per-link attributed
+facts vs any aggregation that weighs paths against each other.** Magnitude (rung 3)
+is the obvious such aggregation; **net-sign-over-opposing-paths is a subtler one
+that looks magnitude-free but is not.** Single-hop sign (rung 2a) sits with
+reachability on the honest side; net-sign composition (rung 2b) sits with weighting
+on the dishonest side, and the honest system handles it by *reporting the straddle*,
+never resolving it.
+
+## 5. The trap — weighted propagation
 
 The tempting version, and the one the demonstrator should **build in order to
 label**, is **weighted propagation**: give each edge a weight and each node a state,
@@ -158,96 +267,122 @@ elsewhere:
   point probability where even the honest knowledge objects (K6, K8) only ever give
   bands.
 
-This is why the demonstrator's whole design is **two panels over one graph**: the
-honest reachability read on the left, the weighted-propagation read on the right —
-built, rendered, and then **stamped with a red "FALSE PRECISION — this is the
-EBO/ONA failure mode"** banner that explains, per number, *why* it lies. That is not
-a strawman; it is ASSAY's own DEC-4 move ("show the scripted/uncomputed thing
-visibly labelled, never fake it") lifted from a single value to a whole thesis. You
-learn the boundary by seeing the two reads of the *same* graph side by side and
-feeling where the second one starts inventing.
+This is why the demonstrator's design is **three reads over one graph** (§7): the
+honest reachability read, the signed-reachability read with its straddle refusal,
+and this weighted-propagation read — built, rendered, and then **stamped with a red
+"FALSE PRECISION — this is the EBO/ONA failure mode"** banner that explains, per
+number, *why* it lies. That is not a strawman; it is ASSAY's own DEC-4 move ("show
+the scripted/uncomputed thing visibly labelled, never fake it") lifted from a single
+value to a whole thesis. You learn the boundary by seeing the reads of the *same*
+graph side by side and feeling where each one starts inventing.
 
-## 5. Provisional verdict — where the line falls
+## 6. Provisional verdict — where the line falls
 
 Stated as this note's finding, explicitly non-asserting (a flagged candidate, not a
-decision):
+decision). The first draft said the boundary was *magnitude*; rung 2 (§4) sharpens
+it:
 
-> **Interdependency is honestly computable as attributed reachability and
-> path-surfacing. It is not honestly computable as weighted effect prediction.**
-> The honest slice is thesis F generalised to an ontic graph; the dishonest slice is
-> EBO/ONA revived. The boundary is *magnitude* — the exact point where "this link is
-> asserted to exist" becomes "this link transmits this much effect."
+> **Interdependency is honestly computable as per-link attributed facts —
+> reachability ("X can reach Y") and single-hop signed direction ("X is asserted to
+> push Y up / down"). It is not honestly computable as any aggregation that weighs
+> paths against each other** — neither weighted magnitude (rung 3, EBO/ONA) nor
+> *net sign over opposing paths* (rung 2b), which looks magnitude-free but silently
+> weighs. Where influences oppose, the honest system **reports the straddle and
+> refuses the net** — the O-3 discipline lifted from the number line to the graph.
 
-Three consequences worth recording:
+Four consequences worth recording:
 
 1. **Thesis G is not wholly horizon.** Concept §6.3 asks whether it admits *any*
-   honest v1 slice; this note's provisional answer is **yes — the reachability slice**
-   — which is a smaller and more defensible claim than the concept's blanket "horizon;
-   highest false-precision risk" and would, if it survives, refine that line.
-2. **The honest slice needs almost no new machinery** — it is a projection over a
-   graph the core already knows how to walk. What it needs is a *different node type*
-   (world features) and *per-edge provenance*, both of which can live entirely in the
-   sandbox. This is why it is safe to prototype without touching the core.
-3. **The magnitude boundary is testable, not a matter of taste.** On Meridian you can
-   demonstrate it: removing K3 (the civil-density band) leaves every C3 verdict
-   identical (`tests/k3-trace.test.ts`, the SPEC-18/DEC-35 honest gap) — the core
-   *already* refuses to let civil-harm magnitude drive a verdict. A weighted-PMESII
-   panel that made "55 k vs 5 k" change an output would be doing exactly the thing
-   DEC-35 declined. The boundary this note draws is the same one the core already
-   holds; thesis G just states it for a whole graph.
+   honest v1 slice; this note's provisional answer is **yes — the reachability slice,
+   refined to signed reachability** — a smaller, more defensible claim than the
+   concept's blanket "horizon; highest false-precision risk", and one that would
+   refine that line.
+2. **The boundary is not magnitude; it is aggregation-that-weighs.** This is the
+   rewrite's main gain. Magnitude is merely the loudest violation. The subtle one —
+   emitting a net direction across opposing stated paths — is caught by the *same*
+   rule and handled by the *same* device the scorer already uses for straddling
+   bands (O-3). One honesty principle covers rung 2b and rung 3 at once.
+3. **The honest slice needs almost no new machinery** — it is a projection over a
+   graph the core already knows how to walk (`TraceStore.walk` / `EDGE_ORIENTATION`),
+   plus a per-edge sign and provenance, plus the O-3 straddle check reused as a
+   graph operation. All of it lives in the sandbox; none touches the core.
+4. **The boundary is testable, not a matter of taste.** On Meridian, removing K3
+   (the civil-density band) leaves every C3 verdict identical (`tests/k3-trace.test.ts`,
+   the SPEC-18/DEC-35 honest gap) — the core *already* refuses to let civil-harm
+   magnitude drive a verdict. A weighted-PMESII panel that made "55 k vs 5 k" move an
+   output, or a signed panel that announced a net direction across ANVIL's opposing
+   exposure paths (§4.3), would each be doing exactly what DEC-19/DEC-35 already
+   decline. The boundary is the one the core holds; thesis G states it for a graph.
 
-## 6. Honesty invariants the demonstrator must not break
+## 7. Honesty invariants the demonstrator must not break
 
 Even a sandbox that exists to explore a horizon thesis must not model dishonesty as
-if it were fine. The reachability panel must keep:
+if it were fine. The reachability and signed-reachability panels must keep:
 
 - **No scalar anywhere** (DEC-19 / banded honesty). Reachability is set membership;
-  no weights, no confidences, no propagation coefficients. If the panel ever needs a
-  number to say something, that something is out of scope.
-- **Every edge attributed** (G3 / constitution). An interdependency link with no
-  named asserter renders as an open assertion, never as a fact.
+  a sign is a direction, not a number. No weights, no confidences, no propagation
+  coefficients. If a panel ever needs a number to say something, that something is
+  out of scope.
+- **Every edge attributed, and every sign owned** (G3 / constitution). An
+  interdependency link with no named asserter renders as an open assertion, never a
+  fact; a directional claim (↑/↓) with no owner does not render as signed at all.
+- **No swallowed hop in a signed chain** (§4.2a; G3). A chain sign is legitimate only
+  while every hop's monotonicity is separately asserted and shown; it stops at the
+  first hop no source will sign.
+- **Refuse the net across opposing paths** (§4.2b; the O-3 discipline). When stated
+  influences on a target oppose, report both paths and *decline the net direction* —
+  never emit a resolved net sign, which would silently weigh (DEC-19).
 - **Honest dead ends and stated coverage** (G4-shaped). The walk stops where stated
   knowledge stops and says so; the graph declares which cross-system links it does
-  *not* model rather than implying completeness. (This is the same "no silent drop"
-  the horizon-forward note §2.5 reaches for at the generator level.)
+  *not* model rather than implying completeness. (The same "no silent drop" the
+  horizon-forward note §2.5 reaches for at the generator level.)
 - **The trap is labelled, never hidden** (DEC-4). The weighted panel exists only as a
   rendered-and-labelled counter-example; it is never presented as a computed result,
   and it writes nothing.
 - **No core contamination** (this experiment's own rule). No schema class, no import
   into `src/`, no register assertion. Fixture reads are one-way.
 
-If the reachability read cannot be delivered under all five, it is not honest and the
-verdict in §5 is wrong — the same falsification test SPEC-09 applied to weighted CSP
-and note 06 applied to minimax regret.
+If a read cannot be delivered under all of these, it is not honest and the verdict in
+§6 is wrong — the same falsification test SPEC-09 applied to weighted CSP and note 06
+applied to minimax regret.
 
-## 7. What the demonstrator would show (feeds the prototype)
+## 8. What the demonstrator would show (feeds the prototype)
 
 A single self-contained, offline HTML page (the band-pill embed pattern — no
 bundler, no network, no `src/` import), one screen, the same Meridian-derived PMESII
-graph read two ways:
+graph read three ways:
 
-- **Left — honest reachability.** Pick a node (e.g. *R3 demolishes the port cranes*).
-  The graph highlights what that perturbation *can reach*, hop by hop, along stated
-  links, each edge carrying a provenance chip. Output is qualitative: *can reach*,
-  *asserted by*, *path you may not have considered*, *no stated dependency beyond
-  here*. No magnitude.
-- **Right — the labelled trap.** The same graph, same perturbation, edges weighted
-  and nodes propagating a fabricated "shortfall index", under a red **FALSE
-  PRECISION — EBO/ONA failure mode** banner annotating each invented number.
+- **Reachability (honest).** Pick a node (e.g. *R3 demolishes the port cranes*). The
+  graph highlights what that perturbation *can reach*, hop by hop, along stated links,
+  each edge with a provenance chip. Qualitative: *can reach*, *asserted by*, *path you
+  may not have considered*, *no stated dependency beyond here*. No magnitude.
+- **Signed reachability (honest, with the straddle refusal).** The same walk, edges
+  now labelled ↑/↓ with the owner of each directional claim; same-direction chains
+  render hop-by-hop (§4.2a). The centrepiece is the **straddle detector**: pick a
+  target reached by opposing signs (e.g. `threat_exposure(FE-ANVIL)`, §4.3) and the
+  panel **refuses the net** — showing both the ↑ and the ↓ path, attributed, with the
+  explicit "net direction is a magnitude judgement the system does not make." This is
+  O-3 made visible on a graph and is the single most instructive moment in the demo.
+- **Weighted propagation (the labelled trap).** The same graph, edges weighted and
+  nodes propagating a fabricated "shortfall index", under a red **FALSE PRECISION —
+  EBO/ONA failure mode** banner annotating each invented number.
 
-The learning artifact is this note's §5 verdict made *visceral* — you see the two
-reads of one graph and feel the boundary. If it holds up under a look, the
-reachability slice graduates to a flagged concept §6 candidate.
+The learning artifact is §6's verdict made *visceral* — three reads of one graph, and
+the exact rung where invention starts. If it holds up under a look, the signed-
+reachability slice (with the straddle refusal) graduates to a flagged concept §6
+candidate.
 
-## 8. Feedback path (register-first, asserts nothing)
+## 9. Feedback path (register-first, asserts nothing)
 
-Nothing here touches canon. If the reachability verdict survives:
+Nothing here touches canon. If the verdict survives:
 
-- Record a **candidate** in concept §6 (a PMESII reachability slice as thesis G's
-  honest v1), flagged, awaiting a future register batch (DEC-2).
+- Record a **candidate** in concept §6 (a PMESII *signed-reachability* slice — with
+  the opposing-path straddle refusal — as thesis G's honest v1), flagged, awaiting a
+  future register batch (DEC-2).
 - Note that it would *refine* the concept §1 "horizon; highest false-precision risk"
-  line for thesis G — narrowing "horizon-only" to "horizon for magnitude; buildable
-  for reachability."
+  line for thesis G — narrowing "horizon-only" to **"horizon for any path-weighing
+  aggregation (magnitude, and net sign over opposing paths); buildable for per-link
+  reachability and signed direction."**
 - Ratification, and any move into `src/`/`schema/`, is a future research-first slice
   (DEC-11) behind its own *canonical* note — this sandbox note is not that note.
 
@@ -262,12 +397,22 @@ predictive PMESII node-link modelling; the founding cautionary tale for thesis G
 Complex-adaptive-systems critique of predictive effects modelling (the second-/
 third-order-effect instability that motivates the reachability-not-magnitude line).
 
+**Signed graphs / composition.** System-dynamics causal-loop diagrams (Sterman,
+*Business Dynamics*, 2000) use exactly rung-2 signed links and loop polarity — and
+their well-documented limitation grounds §4.2: link polarities do **not** compose
+reliably, and loop-dominance / net-effect over opposing paths cannot be read off the
+signs but requires simulation (i.e. magnitude). That is the same wall this note hits
+at rung 2b, reached from the modelling literature rather than from ASSAY's O-3.
+
 **ASSAY canon (read-only).** `assay-concept.md` §1 (thesis catalogue G), §6.3 (the
 open question this note probes); `assay-knowledge-model.md` §12 / :484 (PMESII shapes
 kept out deliberately); `assay-vignette.md` §1–§6 (the latent PMESII graph);
 `assay-doctrine.html` (JIPOE Step 3 stated gap); register DEC-2 (register-first),
 DEC-4 (label, never fake), DEC-11 (research-first), DEC-15 (banded, no interior),
 DEC-19 (no numeric weights), DEC-35 (civil harm stays geometric, never quantified);
+`assay-vignette.md` §9 oracle O-3 (the straddle / interior-refused discipline reused
+for opposing-path net sign, §4.2b); the signed-margin verdict mapping (`src/verdictMap.ts`,
+research note `03-score-plan.md`);
 `docs/research/horizon-forward-derivation.md` (§2.5 the sibling "no silent drop"
 discipline); `tests/k3-trace.test.ts` (the magnitude boundary already held on
 Meridian).
