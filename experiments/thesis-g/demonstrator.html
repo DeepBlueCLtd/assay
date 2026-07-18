@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thesis G — interdependency, read three ways (non-canonical spike)</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --ink:#1a1d23; --muted:#5b6472; --line:#d9dee6;
+    --action:#7c5cff; --infra:#2f6fed; --mil:#c2384b; --econ:#1f9d6b; --social:#d68a1e; --info:#0f9aa6;
+    --reach:#2f6fed; --up:#d68a1e; --down:#0f9aa6; --trap:#c2384b; --faint:#c3cad4;
+    --chip:#eef1f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117; --panel:#161b22; --ink:#e6edf3; --muted:#9aa4b2; --line:#2a313c;
+      --reach:#5b9bff; --up:#e8a94a; --down:#38c3cf; --trap:#f0616d; --faint:#3a424e; --chip:#1f2630;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:22px 18px 60px}
+  h1{font-size:22px;margin:0 0 4px}
+  .stamp{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:var(--action);border-radius:4px;padding:2px 7px;vertical-align:middle;margin-left:8px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .sub a{color:var(--reach)}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);max-width:100%}
+  .tabs{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .tabs button{font:inherit;font-weight:600;border:0;background:var(--panel);color:var(--muted);padding:8px 14px;cursor:pointer}
+  .tabs button+button{border-left:1px solid var(--line)}
+  .tabs button[aria-selected="true"]{color:#fff;background:var(--reach)}
+  .tabs button.trap[aria-selected="true"]{background:var(--trap)}
+  .mapwrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;overflow-x:auto}
+  svg{display:block;width:100%;min-width:900px;height:auto}
+  .node rect{stroke-width:1.5}
+  .node text{font-size:11px;fill:var(--ink);pointer-events:none}
+  .node.dim{opacity:.28}
+  .edge{stroke-width:1.6;fill:none}
+  .edge.faint{stroke:var(--faint);opacity:.5}
+  .edge.reach{stroke:var(--reach)}
+  .edge.up{stroke:var(--up)} .edge.down{stroke:var(--down)}
+  .edge.trap{stroke:var(--trap);stroke-dasharray:5 3}
+  .elabel{font-size:10.5px;font-weight:700}
+  .elabel.up{fill:var(--up)} .elabel.down{fill:var(--down)} .elabel.trap{fill:var(--trap)}
+  .straddle rect{stroke:var(--trap);stroke-width:2.5;stroke-dasharray:4 2}
+  .details{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .details h2{font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  .tag{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-radius:4px;padding:2px 6px}
+  .tag.ok{background:#e5f5ee;color:#1f7a54} .tag.bad{background:#fbe6e9;color:#a52235}
+  @media (prefers-color-scheme: dark){.tag.ok{background:#12321f;color:#54d19a}.tag.bad{background:#3a1418;color:#f0808c}}
+  .row{margin:10px 0}
+  .lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:12.5px;white-space:nowrap}
+  .chip small{color:var(--muted)}
+  .arrow{color:var(--muted);font-weight:700;margin:0 1px}
+  .up-g{color:var(--up);font-weight:800} .down-g{color:var(--down);font-weight:800}
+  .prov{font-size:11.5px;color:var(--muted)}
+  .refuse{border:2px dashed var(--trap);border-radius:10px;padding:12px 14px;margin-top:8px;background:rgba(194,56,75,.05)}
+  .refuse b{color:var(--trap)}
+  .banner{background:var(--trap);color:#fff;border-radius:9px;padding:10px 14px;font-weight:700;display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  .banner .big{font-size:20px}
+  .trapnum{font-variant-numeric:tabular-nums;font-weight:800;color:var(--trap)}
+  .why{font-size:12.5px;color:var(--muted);margin:3px 0 0 18px}
+  ul.clean{margin:6px 0 0;padding-left:18px}
+  ul.clean li{margin:4px 0}
+  .selfcheck{margin-top:16px;font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:12px}
+  .selfcheck code{background:var(--chip);padding:1px 5px;border-radius:4px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:22px;height:0;border-top:3px solid}
+  footer{margin-top:22px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Interdependency, read three ways <span class="stamp">experimental · not canonical</span></h1>
+  <p class="sub">
+    A sandbox demonstrator for <b>thesis&nbsp;G</b> (PMESII interdependency), the highest-false-precision-risk thesis.
+    One Meridian-derived graph, three reads — finding the rung where honesty ends. Meridian is fiction (vignette §8);
+    nothing here touches core ASSAY. See <code>thesis-g-interdependency.md</code> for the argument.
+  </p>
+
+  <div class="controls">
+    <label class="lbl" for="q" style="margin:0">Question</label>
+    <select id="q"></select>
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="reach" aria-selected="true">1 · Reachability</button>
+      <button role="tab" data-tab="signed" aria-selected="false">2 · Signed direction</button>
+      <button role="tab" data-tab="trap" class="trap" aria-selected="false">3 · Weighted (the trap)</button>
+    </div>
+  </div>
+
+  <div class="mapwrap">
+    <svg id="map" viewBox="0 0 1060 560" role="img" aria-label="PMESII interdependency map"></svg>
+  </div>
+  <div class="legend" id="legend"></div>
+
+  <div class="details" id="details"></div>
+
+  <div class="selfcheck" id="selfcheck"></div>
+
+  <footer>
+    Convention: each edge asserts a <b>direction of influence</b>, never a magnitude. A signed walk multiplies asserted
+    monotone hops (rung&nbsp;2a); where influences on a node <b>oppose</b>, the net is refused (rung&nbsp;2b, the O-3 straddle).
+    The weighted read is a rendered counter-example (DEC-4), never a computed result.
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * The Meridian-derived PMESII graph.
+ * Signs are DIRECTIONS, never magnitudes. No numeric weight/confidence
+ * field exists on any node or edge — the self-check asserts this.
+ * ------------------------------------------------------------------ */
+const SYS = {action:"Action",infra:"Infrastructure",mil:"Military",econ:"Economic",social:"Social",info:"Information",pol:"Political"};
+const SYSCOLOR = {action:"var(--action)",infra:"var(--infra)",mil:"var(--mil)",econ:"var(--econ)",social:"var(--social)",info:"var(--info)",pol:"#8a5cf0"};
+
+const NODES = {
+  // perturbations (things you can pick as X)
+  strike_cranes:   {label:"R3: demolish cranes",   sys:"action", x:60,  y:50},
+  drop_causeway:   {label:"R3: drop causeway",     sys:"action", x:60,  y:150},
+  mine_strait:     {label:"R2: mine strait",       sys:"action", x:60,  y:255},
+  falcon_suppress: {label:"FALCON: suppress battery", sys:"action", x:60, y:375},
+  anvil_advance:   {label:"ANVIL: advance",        sys:"action", x:60,  y:470},
+  // world features / metrics
+  port_throughput: {label:"Port throughput",       sys:"infra",  x:320, y:50},
+  overland_resupply:{label:"Overland resupply",    sys:"infra",  x:320, y:150},
+  strait_threat:   {label:"Strait mine-threat (K12)", sys:"mil",  x:320, y:270},
+  battery:         {label:"Carrick battery (K8)",  sys:"mil",    x:320, y:375},
+  anvil_position:  {label:"ANVIL in the arc",      sys:"mil",    x:320, y:470},
+  relief_delivered:{label:"Relief delivered",      sys:"econ",   x:600, y:50},
+  anvil_sustainment:{label:"ANVIL sustainment",    sys:"econ",   x:600, y:150},
+  strait_usable:   {label:"Strait usable (C2)",    sys:"infra",  x:600, y:250},
+  sweep_time:      {label:"Sweep time (C2)",       sys:"mil",    x:600, y:330},
+  anvil_exposure:  {label:"ANVIL exposure (C4)",   sys:"mil",    x:600, y:450},
+  civ_shortfall:   {label:"Civilian shortfall",    sys:"social", x:870, y:50},
+};
+
+// impose: perturbation edges set an initial direction on their target (+1 raise / -1 reduce)
+// pol:    propagation edges are co-directional (+1) or counter-directional (-1)
+const EDGES = [
+  {id:"E1",  from:"strike_cranes",   to:"port_throughput",  impose:-1, asserter:"R3 signature — vignette §4", grade:"scenario",         gloss:"demolition removes crane capacity"},
+  {id:"E2",  from:"port_throughput", to:"relief_delivered", pol:+1,    asserter:"CTF-M J-4 (offload engineering)", grade:"assessed·moderate", mono:true, gloss:"throughput sets the ashore offload rate"},
+  {id:"E3",  from:"relief_delivered",to:"civ_shortfall",    pol:-1,    asserter:"CTF-M J-4 (relief plan)", grade:"assessed·moderate", mono:true, gloss:"more relief delivered, less supply shortfall"},
+  {id:"E4",  from:"drop_causeway",   to:"overland_resupply",impose:-1, asserter:"R3 signature — vignette §4", grade:"scenario",         gloss:"demolition severs the only overland route"},
+  {id:"E5",  from:"overland_resupply",to:"anvil_sustainment",pol:+1,   asserter:"CTF-M J-4", grade:"assessed·moderate", mono:true, gloss:"the overland route sustains a Ledger-side lodgement"},
+  {id:"E6",  from:"mine_strait",     to:"strait_threat",    impose:+1, asserter:"R2 signature — vignette §4", grade:"scenario",         gloss:"mines laid in the strait raise the mine-threat channel"},
+  {id:"E7",  from:"strait_threat",   to:"strait_usable",    pol:-1,    asserter:"TG BROOM (MCM estimate)", grade:"assessed·moderate", mono:true, gloss:"a higher mine-threat lowers the strait's usable state"},
+  {id:"E8",  from:"strait_threat",   to:"sweep_time",       pol:+1,    asserter:"TG BROOM (MCM estimate)", grade:"assessed·moderate", mono:true, gloss:"a higher mine-threat lengthens the sweep"},
+  {id:"E9",  from:"falcon_suppress", to:"battery",          impose:-1, asserter:"J-3 fires plan", grade:"assessed·moderate", gloss:"suppression degrades the battery's fire-control (K8)"},
+  {id:"E10", from:"battery",         to:"anvil_exposure",   pol:+1,    asserter:"J-3 (C4 basis)", grade:"assessed·moderate", mono:true, gloss:"an active battery raises ANVIL's threat exposure"},
+  {id:"E11", from:"anvil_advance",   to:"anvil_position",   impose:+1, asserter:"scheme of manoeuvre", grade:"plan", gloss:"advancing moves ANVIL into the battery / FAC arc"},
+  {id:"E12", from:"anvil_position",  to:"anvil_exposure",   pol:+1,    asserter:"J-3 / doctrine", grade:"assessed·moderate", mono:true, gloss:"being inside the arc raises exposure"},
+];
+
+const QUESTIONS = [
+  {id:"cranes",   label:"R3 demolishes the port cranes — what can it reach?",       active:["strike_cranes"],                    headline:["civ_shortfall"]},
+  {id:"anvil",    label:"What drives FE-ANVIL's threat exposure?  (the straddle)",  active:["falcon_suppress","anvil_advance"],  headline:["anvil_exposure"]},
+  {id:"causeway", label:"R3 drops the Ledger causeway",                             active:["drop_causeway"],                    headline:["anvil_sustainment"]},
+  {id:"strait",   label:"R2 mines Halcyon Strait",                                  active:["mine_strait"],                      headline:["strait_usable","sweep_time"]},
+];
+
+/* ------------------------------------------------------------------ *
+ * Pure graph reads (no rendering, no numbers).
+ * ------------------------------------------------------------------ */
+function outEdges(n){ return EDGES.filter(e=>e.from===n); }
+
+// Rung 1: pure transitive reachability, ignoring sign.
+function reach(active){
+  const seen=new Set(), used=new Set(), q=[...active];
+  while(q.length){
+    const n=q.shift();
+    for(const e of outEdges(n)){ used.add(e.id); if(!seen.has(e.to)){ seen.add(e.to); q.push(e.to);} }
+  }
+  const deadEnds=[...seen].filter(n=>outEdges(n).length===0);
+  return {seen, used, deadEnds};
+}
+
+// Rung 2: signed walk. Multiplies asserted monotone hops; refuses net at opposing nodes.
+function signedWalk(active){
+  const sign={}, straddle={}, used=new Set(), incoming={}, edgeEff={};
+  const q=[];
+  function apply(edge, s){
+    used.add(edge.id);
+    (incoming[edge.to] ||= []).push({from:edge.from, s, edge});
+    edgeEff[edge.id]=s;
+    if(sign[edge.to]===undefined){ sign[edge.to]=s; q.push(edge.to); }
+    else if(sign[edge.to]!==s){ straddle[edge.to]=true; }   // opposing paths → net undefined
+  }
+  for(const e of EDGES) if(e.impose!==undefined && active.includes(e.from)) apply(e, e.impose);
+  while(q.length){
+    const n=q.shift();
+    if(straddle[n]) continue;                                // do not propagate a net past a straddle
+    for(const e of outEdges(n)) if(e.pol!==undefined) apply(e, sign[n]*e.pol);
+  }
+  return {sign, straddle, used, incoming, edgeEff};
+}
+
+// Reconstruct the owned hop chain(s) back to a perturbation, for display.
+function chains(target, walk){
+  const out=[];
+  (function rec(node, acc){
+    const ins=(walk.incoming[node]||[]);
+    if(ins.length===0){ out.push(acc.slice()); return; }
+    for(const inc of ins){ rec(inc.from, [inc, ...acc]); }
+  })(target, []);
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * Rendering.
+ * ------------------------------------------------------------------ */
+const NW=160, NH=42;
+let CUR_Q=QUESTIONS[0].id, CUR_TAB="reach";
+
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function nlabel(id){ return NODES[id].label; }
+function glyph(s){ return s>0 ? "▲" : "▼"; }
+function gclass(s){ return s>0 ? "up" : "down"; }
+function gword(s){ return s>0 ? '<span class="up-g">rises ▲</span>' : '<span class="down-g">falls ▼</span>'; }
+
+function wrap(text){
+  if(text.length<=20) return [text];
+  const words=text.split(" "); let a="",b="";
+  for(const w of words){ if((a+" "+w).trim().length<=18 && b==="") a=(a+" "+w).trim(); else b=(b+" "+w).trim(); }
+  return b? [a,b] : [a];
+}
+
+function anchors(e){
+  const s=NODES[e.from], t=NODES[e.to];
+  return {x1:s.x+NW, y1:s.y+NH/2, x2:t.x, y2:t.y+NH/2};
+}
+
+// deterministic fabricated numbers for the TRAP panel only (never stored on the graph)
+function fakeW(id){ let h=0; for(const c of id) h=(h*31+c.charCodeAt(0))%1000; return (0.30+(h%50)/100).toFixed(2); }
+function fakeIdx(id){ let h=7; for(const c of id) h=(h*17+c.charCodeAt(0))%1000; return (0.20+(h%60)/100).toFixed(2); }
+
+function renderMap(q, r, walk){
+  const active=new Set(q.active);
+  let edgesSvg="", nodesSvg="";
+  const markers=`
+    <defs>
+      ${["faint","reach","up","down","trap"].map(k=>`
+        <marker id="ar-${k}" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" class="mk-${k}"/>
+        </marker>`).join("")}
+    </defs>
+    <style>
+      .mk-faint{fill:var(--faint)} .mk-reach{fill:var(--reach)} .mk-up{fill:var(--up)} .mk-down{fill:var(--down)} .mk-trap{fill:var(--trap)}
+    </style>`;
+
+  for(const e of EDGES){
+    const a=anchors(e);
+    const inUse = CUR_TAB==="signed" ? walk.used.has(e.id) : r.used.has(e.id);
+    let cls="faint", mk="faint", label="";
+    if(inUse){
+      if(CUR_TAB==="reach"){ cls="reach"; mk="reach"; }
+      else if(CUR_TAB==="signed"){ const s=walk.edgeEff[e.id]; cls=gclass(s); mk=gclass(s); label=`<text class="elabel ${cls}" x="${(a.x1+a.x2)/2}" y="${(a.y1+a.y2)/2-4}" text-anchor="middle">${glyph(s)}</text>`; }
+      else { cls="trap"; mk="trap"; label=`<text class="elabel trap" x="${(a.x1+a.x2)/2}" y="${(a.y1+a.y2)/2-4}" text-anchor="middle">×${fakeW(e.id)}</text>`; }
+    }
+    const midx=(a.x1+a.x2)/2;
+    const d=`M${a.x1},${a.y1} C${midx},${a.y1} ${midx},${a.y2} ${a.x2},${a.y2}`;
+    edgesSvg += `<path class="edge ${cls}" d="${d}" marker-end="url(#ar-${mk})"><title>${esc(e.gloss)} — asserted by ${esc(e.asserter)} (${esc(e.grade)})</title></path>${label}`;
+  }
+
+  for(const id in NODES){
+    const n=NODES[id];
+    const on = active.has(id) || r.seen.has(id);
+    const straddle = CUR_TAB==="signed" && walk.straddle[id];
+    let badge="";
+    if(on && !active.has(id)){
+      if(CUR_TAB==="signed"){ badge = straddle ? `<text x="${n.x+NW-14}" y="${n.y+NH/2+5}" text-anchor="middle" font-size="16" fill="var(--trap)">⚖</text>`
+                                               : (walk.sign[id]!==undefined ? `<text x="${n.x+NW-14}" y="${n.y+NH/2+5}" text-anchor="middle" font-size="15" class="elabel ${gclass(walk.sign[id])}">${glyph(walk.sign[id])}</text>`:""); }
+      else if(CUR_TAB==="trap"){ badge=`<text x="${n.x+NW-20}" y="${n.y+NH/2+4}" text-anchor="middle" font-size="11" class="trapnum">${fakeIdx(id)}</text>`; }
+    }
+    const lines=wrap(n.label);
+    const tx=n.x+10;
+    const text = lines.length===1
+      ? `<text x="${tx}" y="${n.y+NH/2+4}">${esc(lines[0])}</text>`
+      : `<text x="${tx}" y="${n.y+NH/2-4}">${esc(lines[0])}</text><text x="${tx}" y="${n.y+NH/2+11}">${esc(lines[1])}</text>`;
+    const col=SYSCOLOR[n.sys];
+    const fillOp = on ? "0.16" : "0.05";
+    nodesSvg += `<g class="node ${on?"":"dim"} ${straddle?"straddle":""}">
+      <rect x="${n.x}" y="${n.y}" width="${NW}" height="${NH}" rx="9" fill="${col}" fill-opacity="${fillOp}" stroke="${col}"></rect>
+      ${text}${badge}
+      <title>${esc(n.label)} · ${SYS[n.sys]}</title>
+    </g>`;
+  }
+  document.getElementById("map").innerHTML = markers + edgesSvg + nodesSvg;
+}
+
+function chainChips(chain){
+  // chain: array of {from, s, edge} — render node —(asserter)→ direction node …
+  let html = `<span class="chip">${esc(nlabel(chain[0].from))}</span>`;
+  for(const step of chain){
+    html += `<span class="arrow">—</span><span class="prov">${esc(step.edge.asserter)}</span><span class="arrow">→</span>`;
+    html += `<span class="chip">${esc(nlabel(step.edge.to))} ${gword(step.s)}</span>`;
+  }
+  return `<div class="chips" style="margin:6px 0">${html}</div>`;
+}
+
+function renderDetails(q, r, walk){
+  const D=document.getElementById("details");
+  const active=q.active.map(nlabel).join(" + ");
+  let h="";
+
+  if(CUR_TAB==="reach"){
+    const reached=[...r.seen].map(nlabel);
+    h += `<h2>Reachability <span class="tag ok">honest · rung 1</span></h2>`;
+    h += `<div class="row"><div class="lbl">Perturbation</div><div class="chips"><span class="chip">${esc(active)}</span></div></div>`;
+    h += `<div class="row"><div class="lbl">Can reach (topology only — no magnitude, no direction)</div><div class="chips">${reached.map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</div></div>`;
+    h += `<div class="row"><div class="lbl">A path you may not have considered</div>`;
+    for(const t of q.headline){ for(const ch of chains(t, walk)){ h += chainChipsPlain(ch); } }
+    h += `</div>`;
+    h += `<div class="row"><div class="lbl">Honest dead ends</div><ul class="clean">`;
+    for(const de of r.deadEnds) h += `<li><b>${esc(nlabel(de))}</b> — no stated dependency beyond here.</li>`;
+    h += `<li class="prov">We do <b>not</b> model civilian&nbsp;shortfall → political instability, or any further cascade: that is rung&nbsp;3 (magnitude / prediction), horizon, and is never asserted.</li>`;
+    h += `</ul></div>`;
+  }
+
+  else if(CUR_TAB==="signed"){
+    h += `<h2>Signed direction <span class="tag ok">honest per hop · rung 2</span></h2>`;
+    h += `<div class="row"><div class="lbl">Owned monotone chain (each hop separately asserted — §4.2a)</div>`;
+    let anyStraddle=false;
+    for(const t of q.headline){
+      if(walk.straddle[t]) anyStraddle=true;
+      else for(const ch of chains(t, walk)) h += chainChips(ch);
+    }
+    if(!q.headline.some(t=>!walk.straddle[t])) h += `<div class="prov">(headline node is a straddle — see below)</div>`;
+    h += `</div>`;
+    // resulting directions for all signed nodes
+    const dirs=Object.keys(walk.sign).filter(n=>!walk.straddle[n]);
+    if(dirs.length){
+      h += `<div class="row"><div class="lbl">Resulting direction</div><div class="chips">`;
+      for(const n of dirs) h += `<span class="chip">${esc(nlabel(n))} ${gword(walk.sign[n])}</span>`;
+      h += `</div></div>`;
+    }
+    // straddle refusal cards
+    for(const n in walk.straddle){
+      const ins=walk.incoming[n]||[];
+      const up=ins.filter(i=>i.s>0), down=ins.filter(i=>i.s<0);
+      h += `<div class="refuse"><b>⚖ ${esc(nlabel(n))} — net direction refused (rung 2b · the O-3 straddle).</b><br>`;
+      h += up.map(i=>`Pushed <span class="up-g">up ▲</span> along <span class="chip">${esc(nlabel(i.from))}</span> <span class="prov">(${esc(i.edge.asserter)})</span>`).join("<br>")+"<br>";
+      h += down.map(i=>`Pushed <span class="down-g">down ▼</span> along <span class="chip">${esc(nlabel(i.from))}</span> <span class="prov">(${esc(i.edge.asserter)})</span>`).join("<br>");
+      h += `<br><span class="prov">The net is a magnitude judgement the system does not make — weighing these two is a commander's call (DEC-19), not the system's. Both paths shown; net declined.</span></div>`;
+    }
+  }
+
+  else {
+    h += `<h2>Weighted propagation <span class="tag bad">FALSE PRECISION · rung 3</span></h2>`;
+    h += `<div class="banner"><span class="big">⚠</span><span>FALSE PRECISION — this is the EBO / ONA failure mode. Built only to be labelled (DEC-4). Nothing below is computed; every number is invented.</span></div>`;
+    h += `<div class="row"><div class="lbl">Fabricated propagation readout</div><ul class="clean">`;
+    for(const n of [...r.seen]){
+      h += `<li>${esc(nlabel(n))}: index <span class="trapnum">${fakeIdx(n)}</span> (confidence <span class="trapnum">0.7</span>)`;
+      h += `<div class="why">— invented. No assessed source produces this; even K6/K8 only ever give <b>bands</b>, and a Band has no interior (DEC-15).</div></li>`;
+    }
+    h += `</ul></div>`;
+    h += `<div class="row"><div class="lbl">Why every number here lies</div><ul class="clean">`;
+    h += `<li>The edge weights <span class="trapnum">×0.x</span> are the smuggled scalars DEC-19 forbids — a value judgement dressed as knowledge.</li>`;
+    h += `<li>The propagation claims stable, composable second-/third-order effects across a complex adaptive system — the exact ONA/SoSA overreach JFCOM repudiated (Mattis, 2008).</li>`;
+    h += `<li>It would let magnitude drive a verdict — the very thing DEC-35 declined for civil harm (removing K3 changes no C3 verdict).</li>`;
+    h += `</ul></div>`;
+  }
+  D.innerHTML=h;
+}
+
+function chainChipsPlain(chain){ // rung-1: reachability path, no direction words
+  let html = `<span class="chip">${esc(nlabel(chain[0].from))}</span>`;
+  for(const step of chain){
+    html += `<span class="arrow">—</span><span class="prov">${esc(step.edge.asserter)}</span><span class="arrow">→</span><span class="chip">${esc(nlabel(step.edge.to))}</span>`;
+  }
+  return `<div class="chips" style="margin:6px 0">${html}</div>`;
+}
+
+function renderLegend(){
+  const L=document.getElementById("legend");
+  if(CUR_TAB==="reach") L.innerHTML = `<span><span class="sw" style="border-color:var(--reach)"></span>can reach</span><span><span class="sw" style="border-color:var(--faint)"></span>not on this walk</span>`;
+  else if(CUR_TAB==="signed") L.innerHTML = `<span><span class="sw" style="border-color:var(--up)"></span>▲ pushed up</span><span><span class="sw" style="border-color:var(--down)"></span>▼ pushed down</span><span style="color:var(--trap)">⚖ opposing → net refused</span>`;
+  else L.innerHTML = `<span style="color:var(--trap)"><span class="sw" style="border-color:var(--trap)"></span>fabricated weight / index — not computed</span>`;
+}
+
+function render(){
+  const q=QUESTIONS.find(x=>x.id===CUR_Q);
+  const r=reach(q.active);
+  const walk=signedWalk(q.active);
+  renderMap(q,r,walk); renderDetails(q,r,walk); renderLegend();
+}
+
+/* ------------------------------------------------------------------ *
+ * Honesty self-check — makes §7's invariants literally verifiable.
+ * ------------------------------------------------------------------ */
+function selfCheck(){
+  const results=[];
+  const ok=(name,cond)=>results.push({name,cond:!!cond});
+
+  // 1. No numeric magnitude anywhere in the stored graph (rungs 1–2 data).
+  const forbidden=["weight","w","confidence","conf","value","magnitude","score"];
+  let clean=true;
+  for(const e of EDGES) for(const k in e) if(forbidden.includes(k)) clean=false;
+  for(const id in NODES) for(const k in NODES[id]) if(forbidden.includes(k)) clean=false;
+  ok("no scalar magnitude stored on any node or edge (DEC-19)", clean);
+
+  // 2. Every edge carries a named asserter (G3).
+  ok("every edge is attributed to a named owner (G3)", EDGES.every(e=>e.asserter && e.asserter.length));
+
+  // 3. The straddle is detected: 'what drives ANVIL exposure' opposes.
+  const w=signedWalk(["falcon_suppress","anvil_advance"]);
+  ok("ANVIL exposure is detected as a straddle (rung 2b), net refused", !!w.straddle.anvil_exposure);
+
+  // 4. Reachability is complete and dead-ends honestly (no fabricated cascade).
+  const r=reach(["strike_cranes"]);
+  ok("R3-cranes reaches civilian shortfall, which dead-ends honestly", r.seen.has("civ_shortfall") && r.deadEnds.includes("civ_shortfall"));
+
+  const all=results.every(x=>x.cond);
+  const S=document.getElementById("selfcheck");
+  S.innerHTML = `<b>Honesty self-check</b> ${all?'<span class="tag ok">all pass</span>':'<span class="tag bad">FAILING</span>'}<ul class="clean">`
+    + results.map(x=>`<li>${x.cond?"✓":"✗"} ${esc(x.name)}</li>`).join("") + `</ul>`;
+  return all;
+}
+
+/* ------------------------------------------------------------------ * boot */
+(function init(){
+  const sel=document.getElementById("q");
+  sel.innerHTML=QUESTIONS.map(q=>`<option value="${q.id}">${esc(q.label)}</option>`).join("");
+  sel.addEventListener("change",()=>{ CUR_Q=sel.value; render(); });
+  for(const b of document.querySelectorAll('[role="tab"]')){
+    b.addEventListener("click",()=>{
+      CUR_TAB=b.dataset.tab;
+      for(const x of document.querySelectorAll('[role="tab"]')) x.setAttribute("aria-selected", x===b);
+      render();
+    });
+  }
+  render();
+  selfCheck();
+})();
+</script>
+</body>
+</html>

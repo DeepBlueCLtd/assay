@@ -22,3 +22,8 @@ is it horizon-only?* Thesis G is flagged "highest false-precision risk" (concept
 - `thesis-g-interdependency.md` — the design note (this spike's DEC-11-shaped
   gate, kept *out* of `docs/research/` because it gates no build stage and
   decides nothing canonical).
+- `demonstrator.html` — the built three-panel demonstrator. Self-contained and
+  offline; open it directly in a browser (no build step, no network, no `src/`
+  import). Picks a question, reads the Meridian-derived PMESII graph three ways
+  (reachability / signed direction / weighted-trap), and runs an in-page honesty
+  self-check. `preview-*.png` are verification screenshots.

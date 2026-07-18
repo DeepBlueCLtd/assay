@@ -346,11 +346,14 @@ If a read cannot be delivered under all of these, it is not honest and the verdi
 §6 is wrong — the same falsification test SPEC-09 applied to weighted CSP and note 06
 applied to minimax regret.
 
-## 8. What the demonstrator would show (feeds the prototype)
+## 8. What the demonstrator shows — **built**: `demonstrator.html`
 
-A single self-contained, offline HTML page (the band-pill embed pattern — no
-bundler, no network, no `src/` import), one screen, the same Meridian-derived PMESII
-graph read three ways:
+Built as a single self-contained, offline HTML page (the band-pill embed pattern —
+no bundler, no network, no `src/` import), one screen, the same Meridian-derived
+PMESII graph read three ways. Verified end-to-end in Chromium (all three tabs across
+all four questions; the in-page honesty self-check all-pass; zero console errors) —
+see `preview-straddle.png` (the rung-2b refusal) and `preview-trap.png` (the labelled
+rung-3 trap). The reads:
 
 - **Reachability (honest).** Pick a node (e.g. *R3 demolishes the port cranes*). The
   graph highlights what that perturbation *can reach*, hop by hop, along stated links,
@@ -371,6 +374,15 @@ The learning artifact is §6's verdict made *visceral* — three reads of one gr
 the exact rung where invention starts. If it holds up under a look, the signed-
 reachability slice (with the straddle refusal) graduates to a flagged concept §6
 candidate.
+
+**The honesty invariants of §7 are checked in-page, not just asserted.** The
+demonstrator runs a self-check on load that verifies: no scalar magnitude is stored
+on any node or edge (DEC-19); every edge carries a named asserter (G3); the ANVIL-
+exposure straddle is detected and its net refused (rung 2b); and the R3-cranes walk
+reaches civilian shortfall and dead-ends there honestly (no fabricated Social →
+Political cascade). All pass. The fabricated numbers in the trap panel are generated
+at render time and never stored on the graph — the "no scalar" check would fail if
+they were.
 
 ## 9. Feedback path (register-first, asserts nothing)
 
