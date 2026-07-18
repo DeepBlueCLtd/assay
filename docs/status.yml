@@ -13,10 +13,10 @@
 #     the site polices its own optimism rather than trusting a human to.
 #   - Nothing here may show a capability the repository does not contain.
 
-updated: 2026-07-16
+updated: 2026-07-18
 current_stage: 7            # 0..7, the stage in flight
-current_stage_label: "Stage 6 built · Stage 7 next"
-gate_passed: false          # the spine-complete gate (SPEC-15)
+current_stage_label: "All stages built · gate passed"
+gate_passed: true           # the spine-complete gate (SPEC-15) — tests/gate.test.ts, green in CI
 
 stages:
   - id: 0
@@ -64,7 +64,7 @@ stages:
   - id: 7
     name: Surfaces & narratives
     blurb: role bundles + five narrative scripts (post-gate)
-    status: not-started
+    status: done
     research_note: docs/research/09-narratives.md
     research_published: true
 
@@ -97,6 +97,16 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-18
+    note: >-
+      Site-currency correction (DEC-28 — under-reporting is drift too): the stage tracker and Home
+      badge still said "Stage 6 built · Stage 7 next" and gate_passed: false, while Stage 7
+      (surfaces & narratives, SPEC-16/17 — since rebuilt on the SPEC-26 replay mechanism) has been
+      built and demonstrated, and the SPEC-15 spine-complete gate harness (tests/gate.test.ts,
+      asserting G1–G6 end-to-end on Meridian plus the vignette §9 oracles) has been implemented and
+      green in CI since it landed. Corrected: stage 7 done, gate_passed true, badge "All stages
+      built · gate passed"; the SPEC-15 spec status line updated to match. No capability change —
+      this entry records the site catching up with the repository, in both directions of honesty.
   - date: 2026-07-18
     note: >-
       Register batch 9 ratified (ASSAY-DEC-48/49/50, closing concept §6.30/§6.31/§6.35) — the
