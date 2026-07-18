@@ -169,23 +169,17 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     return cursor.mode === 'replay' ? app.reconstructAt(cursor.seq) : app.snapshot();
   }
 
-  function renderHistoryBar(): void {
-    const max = app.historyMaxSeq;
-    const mNew = newDeltaCount(cursor, max, headAtReplayEntry);
+  /** Build the history bar ONCE — the slider element must be stable across
+   *  rerenders, or rebuilding its innerHTML mid-drag destroys the element under
+   *  the pointer and the drag dies after one step. Wired here; only its value and
+   *  the surrounding labels update on rerender (renderHistoryBar). */
+  function initHistoryBar(): void {
     historyEl.innerHTML = `
       <span class="hlabel">Decision history</span>
-      <input type="range" id="assay-hist-range" min="0" max="${max}" step="1" value="${cursor.seq}">
-      <span class="seqpos">seq ${cursor.seq} of ${max}</span>
-      ${
-        cursor.mode === 'replay'
-          ? `<span class="assay-replay-banner">▶ replaying seq ${cursor.seq} of ${max} — record, not present</span>
-             ${mNew > 0 ? `<span class="assay-mnew">${mNew} new at head</span>` : ''}
-             <button id="assay-hist-live">Return to live head ▸</button>`
-          : `<span style="font-size:10.5px;color:#5B6B77">the recorded heartbeat — scrub to replay any past belief-state (writes disabled in the past)</span>`
-      }
+      <input type="range" id="assay-hist-range" min="0" max="${app.historyMaxSeq}" step="1" value="${cursor.seq}">
+      <span class="seqpos" id="assay-hist-seqpos"></span>
+      <span id="assay-hist-status" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></span>
       <div style="flex-basis:100%">${legend(['replay', 'recursive_trace'], { title: 'replay & recursive trace' })}</div>`;
-    doc.documentElement.setAttribute('data-replay', cursor.mode === 'replay' ? 'on' : 'off');
-
     const range = root.querySelector('#assay-hist-range') as HTMLInputElement;
     range.addEventListener('input', () => {
       const seq = Number(range.value);
@@ -193,11 +187,31 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       cursor = { seq, mode: seq >= app.historyMaxSeq ? 'live' : 'replay' };
       void rerender();
     });
-    const liveBtn = root.querySelector('#assay-hist-live') as HTMLButtonElement | null;
-    liveBtn?.addEventListener('click', () => {
-      cursor = { seq: app.historyMaxSeq, mode: 'live' };
-      void rerender();
+    // The "return to live" button is re-rendered into #assay-hist-status; delegate
+    // its click so it survives every status refresh.
+    historyEl.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).id === 'assay-hist-live') {
+        cursor = { seq: app.historyMaxSeq, mode: 'live' };
+        void rerender();
+      }
     });
+  }
+
+  function renderHistoryBar(): void {
+    const max = app.historyMaxSeq;
+    const mNew = newDeltaCount(cursor, max, headAtReplayEntry);
+    const range = root.querySelector('#assay-hist-range') as HTMLInputElement;
+    range.max = String(max);
+    // Never fight an active drag: only sync the thumb when the user isn't holding it.
+    if (doc.activeElement !== range) range.value = String(cursor.seq);
+    (root.querySelector('#assay-hist-seqpos') as HTMLElement).textContent = `seq ${cursor.seq} of ${max}`;
+    (root.querySelector('#assay-hist-status') as HTMLElement).innerHTML =
+      cursor.mode === 'replay'
+        ? `<span class="assay-replay-banner">▶ replaying seq ${cursor.seq} of ${max} — record, not present</span>
+           ${mNew > 0 ? `<span class="assay-mnew">${mNew} new at head</span>` : ''}
+           <button id="assay-hist-live">Return to live head ▸</button>`
+        : `<span style="font-size:10.5px;color:#5B6B77">the recorded heartbeat — scrub to replay any past belief-state (writes disabled in the past)</span>`;
+    doc.documentElement.setAttribute('data-replay', cursor.mode === 'replay' ? 'on' : 'off');
   }
 
   /** Guard every write affordance behind the live head — a scrub is read-only
@@ -755,5 +769,6 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     }
   }
 
+  initHistoryBar();
   void rerender();
 }

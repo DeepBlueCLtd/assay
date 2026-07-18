@@ -6545,18 +6545,13 @@ ${items}
     async function view() {
       return cursor.mode === "replay" ? app.reconstructAt(cursor.seq) : app.snapshot();
     }
-    function renderHistoryBar() {
-      const max = app.historyMaxSeq;
-      const mNew = newDeltaCount(cursor, max, headAtReplayEntry);
+    function initHistoryBar() {
       historyEl.innerHTML = `
       <span class="hlabel">Decision history</span>
-      <input type="range" id="assay-hist-range" min="0" max="${max}" step="1" value="${cursor.seq}">
-      <span class="seqpos">seq ${cursor.seq} of ${max}</span>
-      ${cursor.mode === "replay" ? `<span class="assay-replay-banner">\u25B6 replaying seq ${cursor.seq} of ${max} \u2014 record, not present</span>
-             ${mNew > 0 ? `<span class="assay-mnew">${mNew} new at head</span>` : ""}
-             <button id="assay-hist-live">Return to live head \u25B8</button>` : `<span style="font-size:10.5px;color:#5B6B77">the recorded heartbeat \u2014 scrub to replay any past belief-state (writes disabled in the past)</span>`}
+      <input type="range" id="assay-hist-range" min="0" max="${app.historyMaxSeq}" step="1" value="${cursor.seq}">
+      <span class="seqpos" id="assay-hist-seqpos"></span>
+      <span id="assay-hist-status" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></span>
       <div style="flex-basis:100%">${legend(["replay", "recursive_trace"], { title: "replay & recursive trace" })}</div>`;
-      doc.documentElement.setAttribute("data-replay", cursor.mode === "replay" ? "on" : "off");
       const range = root.querySelector("#assay-hist-range");
       range.addEventListener("input", () => {
         const seq = Number(range.value);
@@ -6564,11 +6559,24 @@ ${items}
         cursor = { seq, mode: seq >= app.historyMaxSeq ? "live" : "replay" };
         void rerender();
       });
-      const liveBtn = root.querySelector("#assay-hist-live");
-      liveBtn?.addEventListener("click", () => {
-        cursor = { seq: app.historyMaxSeq, mode: "live" };
-        void rerender();
+      historyEl.addEventListener("click", (e) => {
+        if (e.target.id === "assay-hist-live") {
+          cursor = { seq: app.historyMaxSeq, mode: "live" };
+          void rerender();
+        }
       });
+    }
+    function renderHistoryBar() {
+      const max = app.historyMaxSeq;
+      const mNew = newDeltaCount(cursor, max, headAtReplayEntry);
+      const range = root.querySelector("#assay-hist-range");
+      range.max = String(max);
+      if (doc.activeElement !== range) range.value = String(cursor.seq);
+      root.querySelector("#assay-hist-seqpos").textContent = `seq ${cursor.seq} of ${max}`;
+      root.querySelector("#assay-hist-status").innerHTML = cursor.mode === "replay" ? `<span class="assay-replay-banner">\u25B6 replaying seq ${cursor.seq} of ${max} \u2014 record, not present</span>
+           ${mNew > 0 ? `<span class="assay-mnew">${mNew} new at head</span>` : ""}
+           <button id="assay-hist-live">Return to live head \u25B8</button>` : `<span style="font-size:10.5px;color:#5B6B77">the recorded heartbeat \u2014 scrub to replay any past belief-state (writes disabled in the past)</span>`;
+      doc.documentElement.setAttribute("data-replay", cursor.mode === "replay" ? "on" : "off");
     }
     function canWrite() {
       return writesEnabled(cursor);
@@ -7045,6 +7053,7 @@ ${items}
         });
       }
     }
+    initHistoryBar();
     void rerender();
   }
 

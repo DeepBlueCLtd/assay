@@ -68,6 +68,21 @@ describe('SPEC-26 — the shell drives end-to-end (verify)', () => {
     expect(panels.textContent).toContain('contested'); // the refusal replays (G5)
   });
 
+  it('the slider element is stable across rerenders — a continuous drag scrubs many steps', async () => {
+    const { root } = await mounted();
+    const range = root.querySelector('#assay-hist-range') as HTMLInputElement;
+    // Simulate a continuous drag: several input events on the SAME element.
+    for (const seq of [17, 15, 12, 9]) {
+      range.value = String(seq);
+      range.dispatchEvent(new Event('input'));
+      await until(() => root.querySelector('#assay-hist-seqpos')!.textContent!.includes(`seq ${seq} `));
+      // The element must NOT have been replaced (that is the bug — a rebuilt
+      // innerHTML kills the drag after one step).
+      expect(root.querySelector('#assay-hist-range')).toBe(range);
+    }
+    expect(root.querySelector('#assay-hist-seqpos')!.textContent).toContain('seq 9 ');
+  });
+
   it('writes are disabled in replay — a resolve click is a no-op', async () => {
     const { root, app } = await mounted();
     const range = root.querySelector('#assay-hist-range') as HTMLInputElement;
