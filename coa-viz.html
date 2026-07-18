@@ -751,6 +751,22 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
       for (const [id, lineage] of this.#lineages) copy.#lineages.set(id, [...lineage]);
       return copy;
     }
+    /**
+     * A byte-faithful copy keeping only the hashes `keep` admits (SPEC-26 — the
+     * state-at-seq store view). Lineages are filtered to the kept hashes so
+     * `versions(logicalId)` reports the correct head-at-n. The store is immutable
+     * and append-only in seq order (DEC-21), so a filter over the live head is
+     * byte-equal to a fresh fold of the deltas up to that seq (note 15 §2).
+     */
+    cloneWhere(keep) {
+      const copy = new _ObjectStore();
+      for (const [hash, entry] of this.#byHash) if (keep(hash)) copy.#byHash.set(hash, { ...entry });
+      for (const [id, lineage] of this.#lineages) {
+        const kept = lineage.filter(keep);
+        if (kept.length > 0) copy.#lineages.set(id, kept);
+      }
+      return copy;
+    }
   };
 
   // src/trace.ts
@@ -779,6 +795,17 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     clone() {
       const copy = new _TraceStore();
       for (const e of this.#edges) copy.add({ ...e });
+      return copy;
+    }
+    /**
+     * A byte-faithful copy of the first `count` edges (SPEC-26 — the state-at-seq
+     * trace view). Edges are append-only in seq order (each edge-adding act
+     * publishes one delta), so the first `count` edges are exactly those present
+     * after the corresponding delta — a boundary, not a rollback (note 15 §2).
+     */
+    sliceClone(count) {
+      const copy = new _TraceStore();
+      for (const e of this.#edges.slice(0, Math.max(0, count))) copy.add({ ...e });
       return copy;
     }
     /**
@@ -866,6 +893,18 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
       const copy = new _DeltaLog(this.#clock);
       copy.#deltas = this.#deltas.map((d) => ({ ...d }));
       copy.#seq = this.#seq;
+      return copy;
+    }
+    /**
+     * A byte-faithful copy holding only deltas with `seq <= uptoSeq` (SPEC-26 —
+     * the state-at-seq feed). The delta log is the seq spine (DEC-5); truncating
+     * it to a cursor is the honest "what had been recorded by then" — the feed the
+     * reconstructed observer panel renders (note 15 §2).
+     */
+    sliceClone(uptoSeq) {
+      const copy = new _DeltaLog(this.#clock);
+      copy.#deltas = this.#deltas.filter((d) => d.seq <= uptoSeq).map((d) => ({ ...d }));
+      copy.#seq = Math.max(0, Math.min(this.#seq, uptoSeq));
       return copy;
     }
   };
@@ -1118,7 +1157,10 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     async create(ko) {
       this.#assertValid(ko);
       const refusal3 = checkEncoding(ko);
-      if (refusal3) return refusal3;
+      if (refusal3) {
+        await this.#publishRefused("create", ko);
+        return refusal3;
+      }
       const hash = await contentHash(ko);
       const isNew = !this.#store.exists(hash);
       const ref = await this.#store.put(ko);
@@ -1138,7 +1180,10 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     async supersede(next, priorId) {
       this.#assertValid(next);
       const refusal3 = checkEncoding(next);
-      if (refusal3) return refusal3;
+      if (refusal3) {
+        await this.#publishRefused("supersede", next, priorId);
+        return refusal3;
+      }
       const priorHash = this.#latestHash(priorId);
       if (!priorHash) {
         return unknownRef(priorId, `${priorId}: no live version to supersede.`);
@@ -1221,6 +1266,23 @@ body{margin:0;background:var(--page);color:var(--page-ink);font-family:system-ui
     /** Every knowledge write runs every lint; warnings never refuse (research note 01 + amendment). */
     #lints(ko) {
       return [...confidenceLint(ko), ...jipoeStepLint(ko), ...expectedAnswerProvenanceLint(ko)];
+    }
+    /**
+     * SPEC-26 §3 (DEC-5 coverage) — record a refused write-attempt as a `refused`
+     * delta: the attempted op and refs (the object that would have been written,
+     * plus the prior version on a supersede). No object is stored and no edge is
+     * added, so `state(seq)` equals `state(seq-1)` — the attempt is a scrubbable
+     * position, not a state change. The Delta shape is unchanged; `refused` is a
+     * value on the existing `op` union.
+     */
+    async #publishRefused(op, attempted, priorId) {
+      const hash = await contentHash(attempted);
+      const refs = [{ logical_id: attempted.logical_id, content_hash: hash }];
+      if (priorId) {
+        const priorHash = this.#latestHash(priorId);
+        refs.push({ logical_id: priorId, content_hash: priorHash ?? "" });
+      }
+      this.#deltas.publish({ op: "refused", refs, actor: this.#actor, role: this.#role });
     }
     #latestHash(id) {
       const versions = this.#store.versions(id);
