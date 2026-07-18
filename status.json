@@ -1,8 +1,8 @@
 {
-  "updated": "2026-07-16",
+  "updated": "2026-07-18",
   "current_stage": 7,
-  "current_stage_label": "Stage 6 built · Stage 7 next",
-  "gate_passed": false,
+  "current_stage_label": "All stages built · gate passed",
+  "gate_passed": true,
   "stages": [
     {
       "id": 0,
@@ -64,7 +64,7 @@
       "id": 7,
       "name": "Surfaces & narratives",
       "blurb": "role bundles + five narrative scripts (post-gate)",
-      "status": "not-started",
+      "status": "done",
       "research_note": "docs/research/09-narratives.md",
       "research_published": true
     }
@@ -112,6 +112,10 @@
     }
   ],
   "updates": [
+    {
+      "date": "2026-07-18",
+      "note": "Site-currency correction (DEC-28 — under-reporting is drift too): the stage tracker and Home badge still said \"Stage 6 built · Stage 7 next\" and gate_passed: false, while Stage 7 (surfaces & narratives, SPEC-16/17 — since rebuilt on the SPEC-26 replay mechanism) has been built and demonstrated, and the SPEC-15 spine-complete gate harness (tests/gate.test.ts, asserting G1–G6 end-to-end on Meridian plus the vignette §9 oracles) has been implemented and green in CI since it landed. Corrected: stage 7 done, gate_passed true, badge \"All stages built · gate passed\"; the SPEC-15 spec status line updated to match. No capability change — this entry records the site catching up with the repository, in both directions of honesty."
+    },
     {
       "date": "2026-07-18",
       "note": "Register batch 9 ratified (ASSAY-DEC-48/49/50, closing concept §6.30/§6.31/§6.35) — the review series' remaining register debt, the interaction-class and shell-structure decisions SPEC-25 and the SPEC-26 US3 rescope left held: DEC-48 the consequence-preview interaction class (arm a mutating act, run the real pipeline over a byte-for-byte store fork, show an uncommitted ghost diff that equals the post-commit glow set element-for-element — previewed = computed, never estimated, G1; a dishonest armed act previews its refusal, G2/G5; no seam change); DEC-49 per-role action menus as a standing shell element (legal write verbs from one ROLE_VERBS map, observer read-only, each verb marked live / runs-on-recompute / not-yet-built — refines DEC-32/33, never forks them); DEC-50 the recursive-trace tooltip's breadth cap (DEC-38's depth cap extended to width — a stated RECURSIVE_TRACE_BREADTH_CAP = 6 and a counted \"+N more\" opening the DEC-47 overlay, the same G4 no-silent-drop discipline). None carries a schema, seam, oracle, verdict, or coverage-row change — all read-only projections or client-side orchestration (no new engine, DEC-10). Until this batch DEC-2 forbade citing SPEC-25/26 as authority for these behaviours; the debt is now cleared and the concept §6 candidate queue is empty but for the horizon forward-derivation item (§6.19, issue #43). Folded in: the stale specs/026 spec status line corrected (US1/US2 recorded as built, not queued) and issue #24 confirmed closed (DEC-47's shipped surface plus SPEC-26's tooltip integration fully satisfy it). Moves no thesis."
