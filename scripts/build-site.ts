@@ -148,6 +148,66 @@ copyFileSync(
   fileURLToPath(new URL('index.html', mockDir)),
 );
 
+// Non-canonical experiments (sandbox spikes) — review-only, and DELIBERATELY
+// NOT linked from the Home page. These probe theses the core has consciously
+// not opened (e.g. thesis G, PMESII interdependency); featuring one on the
+// public face would be exactly the false-precision pollution the sandbox
+// exists to avoid. They are an accepted exception to the copy-and-link
+// convention above (cf. the dep-graph mockups): reachable under /experiments/
+// if you navigate there, each self-stamped "experimental · not canonical",
+// never presented as ASSAY output. The `experiments/` tree is source, not a
+// build product (see experiments/README.md).
+const experimentsRoot = new URL('experiments/', site);
+const thesisGDir = new URL('experiments/thesis-g/', site);
+mkdirSync(fileURLToPath(thesisGDir), { recursive: true });
+copyFileSync(
+  fileURLToPath(new URL('experiments/thesis-g/demonstrator.html', root)),
+  fileURLToPath(new URL('demonstrator.html', thesisGDir)),
+);
+// A self-describing, clearly-labelled landing so /experiments/ announces what
+// it is rather than serving a bare file.
+writeFileSync(
+  fileURLToPath(new URL('index.html', experimentsRoot)),
+  `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASSAY experiments — non-canonical sandbox</title>
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#f7f8fa;color:#1a1d23;padding:40px 20px}
+  @media(prefers-color-scheme:dark){body{background:#0d1117;color:#e6edf3}}
+  .wrap{max-width:720px;margin:0 auto}
+  .stamp{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    color:#fff;background:#7c5cff;border-radius:5px;padding:3px 9px}
+  h1{font-size:24px;margin:14px 0 6px}
+  .warn{border:2px dashed #c2384b;border-radius:10px;padding:12px 16px;margin:18px 0;
+    background:rgba(194,56,75,.06);font-size:14px}
+  .warn b{color:#c2384b}
+  a.card{display:block;text-decoration:none;color:inherit;border:1px solid #d9dee6;border-radius:12px;
+    padding:16px 18px;margin:12px 0;background:#fff}
+  @media(prefers-color-scheme:dark){a.card{background:#161b22;border-color:#2a313c}}
+  a.card:hover{border-color:#7c5cff}
+  a.card h2{margin:0 0 4px;font-size:17px}
+  a.card p{margin:0;font-size:14px;color:#5b6472}
+  @media(prefers-color-scheme:dark){a.card p{color:#9aa4b2}}
+  .muted{font-size:13px;color:#5b6472}
+</style></head><body><div class="wrap">
+  <span class="stamp">experimental · not canonical</span>
+  <h1>ASSAY experiments</h1>
+  <div class="warn"><b>Not part of ASSAY canon.</b> This area holds standalone sandbox spikes that
+    explore theses the core has deliberately <em>not</em> opened. Nothing here is a decided design,
+    a shipped surface, or a register decision — it decides nothing and is linked from no canonical page.</div>
+  <a class="card" href="thesis-g/demonstrator.html">
+    <h2>Thesis G — interdependency, read three ways</h2>
+    <p>A PMESII interdependency demonstrator: one Meridian-derived graph read as reachability,
+      signed direction (with the opposing-path straddle refused), and the labelled weighted-propagation
+      trap — probing where honesty ends. See <code>experiments/thesis-g/</code> in the repo for the argument.</p>
+  </a>
+  <p class="muted">Meridian is fiction (vignette §8). These pages touch no core ASSAY code, schema, or register.</p>
+</div></body></html>
+`,
+);
+
 // The blog and its standalone embeds, copied verbatim (self-contained static;
 // comms plan §8). Markdown sources (README, backlog) are dev-facing and skipped.
 cpSync(
