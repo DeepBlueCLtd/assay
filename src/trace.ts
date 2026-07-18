@@ -48,6 +48,18 @@ export class TraceStore {
   }
 
   /**
+   * A byte-faithful copy of the first `count` edges (SPEC-26 — the state-at-seq
+   * trace view). Edges are append-only in seq order (each edge-adding act
+   * publishes one delta), so the first `count` edges are exactly those present
+   * after the corresponding delta — a boundary, not a rollback (note 15 §2).
+   */
+  sliceClone(count: number): TraceStore {
+    const copy = new TraceStore();
+    for (const e of this.#edges.slice(0, Math.max(0, count))) copy.add({ ...e });
+    return copy;
+  }
+
+  /**
    * Walk transitively from `start`. `forward` follows from→to; `backward`
    * follows to→from. Returns one chain per simple path to a terminal node.
    * `isKnown` (usually store.exists) marks whether the terminal is a real

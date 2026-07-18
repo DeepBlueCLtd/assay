@@ -20,8 +20,10 @@
  * Vanilla TS + DOM — no framework (note 05 §1). The 10s glow window is
  * display-only (DEC-17): it never touches content addressing.
  */
-import type { AppState, TabId } from './state.js';
+import type { AppState, TabId, Snapshot } from './state.js';
 import { changedGlowUnits, changedTabs, type SignatureMap } from './glow.js';
+import { writesEnabled, newDeltaCount, type HistoryCursor } from './history.js';
+import { legend } from '../components/legends.js';
 import { cellAtPixel, makeProjection } from '../mapProject.js';
 import { depGraphRiver } from '../components/depGraphRiver.js';
 import { depGraphSidebar } from '../components/depGraphSidebar.js';
@@ -109,6 +111,16 @@ const STYLES = `
 .assay-narrator .principles{margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.05);border-radius:4px;font-size:10.5px;color:#8091A0}
 .assay-narrator .principles div{margin:2px 0}
 
+/* ---- decision-history scrubber (SPEC-26 US1) ---- */
+.assay-history-bar{background:#F3EFF9;border:1px solid #D8CBEE;border-radius:8px;padding:10px 14px;margin:10px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.assay-history-bar .hlabel{font-size:11px;color:#5B3B8C;font-weight:700}
+.assay-history-bar input[type=range]{flex:1;min-width:220px}
+.assay-history-bar .seqpos{font-family:ui-monospace,monospace;font-size:11px;color:#5B3B8C;min-width:110px}
+.assay-history-bar .assay-replay-banner{background:#5B3B8C;color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600}
+.assay-history-bar .assay-mnew{background:#F4C430;color:#1B2732;border-radius:10px;padding:2px 8px;font-size:10.5px;font-weight:700}
+.assay-history-bar button{appearance:none;border:1px solid #5B3B8C;background:#fff;color:#5B3B8C;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+[data-replay="on"] .assay-controls{opacity:.5;pointer-events:none;filter:grayscale(.4)}
+
 /* ---- wall-projection mode (note 09 §5) ---- */
 [data-projection="wall"] .assay-app{font-size:24px;line-height:1.4;max-width:100%;padding:24px 32px 48px}
 [data-projection="wall"] .assay-tabbar{display:none}
@@ -143,6 +155,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Four roles plus a shared <b>Spatial · COA</b> surface (DEC-36), one in-browser pipeline. Every edit re-runs the <b>real</b> compile → score → relax; a change in one role <b>glows</b> the roles and components it touches (the propagation graph, not an animation — G6). Meridian is engineered fiction (DEC-8); every assessed value is banded (G2).</p>
     <div class="assay-narrative-bar" id="assay-narrative-bar"></div>
     <div id="assay-narrator"></div>
+    <div class="assay-history-bar" id="assay-history"></div>
     <div class="assay-controls" id="assay-controls"></div>
     <div class="assay-notice" id="assay-notice"></div>
     <div class="assay-ghost-mount" id="assay-ghost"></div>
@@ -162,6 +175,68 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   let prevSig: SignatureMap = new Map();
   let firstRender = true;
   const pending = new Set<string>();
+
+  // ---- decision-history cursor (SPEC-26 US1) ----
+  const historyEl = root.querySelector('#assay-history') as HTMLElement;
+  let cursor: HistoryCursor = { seq: app.historyMaxSeq, mode: 'live' };
+  let headAtReplayEntry = app.historyMaxSeq;
+
+  /** The snapshot the surfaces render: the live head, or a reconstructed past
+   *  cursor in replay — the same pure pipeline either way (note 15 §2). */
+  async function view(): Promise<Snapshot> {
+    return cursor.mode === 'replay' ? app.reconstructAt(cursor.seq) : app.snapshot();
+  }
+
+  /** Build the history bar ONCE — the slider element must be stable across
+   *  rerenders, or rebuilding its innerHTML mid-drag destroys the element under
+   *  the pointer and the drag dies after one step. Wired here; only its value and
+   *  the surrounding labels update on rerender (renderHistoryBar). */
+  function initHistoryBar(): void {
+    historyEl.innerHTML = `
+      <span class="hlabel">Decision history</span>
+      <input type="range" id="assay-hist-range" min="0" max="${app.historyMaxSeq}" step="1" value="${cursor.seq}">
+      <span class="seqpos" id="assay-hist-seqpos"></span>
+      <span id="assay-hist-status" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></span>
+      <div style="flex-basis:100%">${legend(['replay', 'recursive_trace'], { title: 'replay & recursive trace' })}</div>`;
+    const range = root.querySelector('#assay-hist-range') as HTMLInputElement;
+    range.addEventListener('input', () => {
+      const seq = Number(range.value);
+      if (cursor.mode === 'live') headAtReplayEntry = app.historyMaxSeq;
+      cursor = { seq, mode: seq >= app.historyMaxSeq ? 'live' : 'replay' };
+      void rerender();
+    });
+    // The "return to live" button is re-rendered into #assay-hist-status; delegate
+    // its click so it survives every status refresh.
+    historyEl.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).id === 'assay-hist-live') {
+        cursor = { seq: app.historyMaxSeq, mode: 'live' };
+        void rerender();
+      }
+    });
+  }
+
+  function renderHistoryBar(): void {
+    const max = app.historyMaxSeq;
+    const mNew = newDeltaCount(cursor, max, headAtReplayEntry);
+    const range = root.querySelector('#assay-hist-range') as HTMLInputElement;
+    range.max = String(max);
+    // Never fight an active drag: only sync the thumb when the user isn't holding it.
+    if (doc.activeElement !== range) range.value = String(cursor.seq);
+    (root.querySelector('#assay-hist-seqpos') as HTMLElement).textContent = `seq ${cursor.seq} of ${max}`;
+    (root.querySelector('#assay-hist-status') as HTMLElement).innerHTML =
+      cursor.mode === 'replay'
+        ? `<span class="assay-replay-banner">▶ replaying seq ${cursor.seq} of ${max} — record, not present</span>
+           ${mNew > 0 ? `<span class="assay-mnew">${mNew} new at head</span>` : ''}
+           <button id="assay-hist-live">Return to live head ▸</button>`
+        : `<span style="font-size:10.5px;color:#5B6B77">the recorded heartbeat — scrub to replay any past belief-state (writes disabled in the past)</span>`;
+    doc.documentElement.setAttribute('data-replay', cursor.mode === 'replay' ? 'on' : 'off');
+  }
+
+  /** Guard every write affordance behind the live head — a scrub is read-only
+   *  (FR-004, US1 AS-3). A blocked write is a no-op, never a silent past edit. */
+  function canWrite(): boolean {
+    return writesEnabled(cursor);
+  }
 
   // ---- narrative state ----
   let activeNarrative: Narrative | null = null;
@@ -186,7 +261,10 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     if (!id) {
       activeNarrative = null;
       beatIndex = 0;
+      // Leaving a narrative returns to the live head (exit replay).
+      cursor = { seq: app.historyMaxSeq, mode: 'live' };
       renderNarrator();
+      void rerender();
       return;
     }
     const n = NARRATIVES.find((x) => x.id === id);
@@ -210,8 +288,14 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     const beat = activeNarrative.beats[beatIndex];
     if (!beat) return;
     activeTab = beat.tab;
-    syncTabs();
+    // SPEC-26 (DEC-39) — a beat is a waypoint: drive the decision-history cursor
+    // to its seq (replay if it is behind the head) and let the surfaces
+    // reconstruct that belief-state. No bespoke beat mutation; the runner drives
+    // the scrubber (note 15 §4). The SPEC-17 presenter view is unchanged.
+    headAtReplayEntry = app.historyMaxSeq;
+    cursor = { seq: beat.seq, mode: beat.seq >= app.historyMaxSeq ? 'live' : 'replay' };
     renderNarrator();
+    void rerender();
   }
 
   function renderNarrator(): void {
@@ -232,7 +316,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       <div class="presenter-note">${esc(beat.presenterNote)}</div>
       ${beat.doctrinalQuote ? `<div class="doctrine">${esc(beat.doctrinalQuote)}</div>` : ''}
       ${isCentrepiece ? `<div class="centrepiece">★ Centrepiece: ${esc(n.centrepiece)}</div>` : ''}
-      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">⚡ Scripted action: ${esc(beat.action === 'resolve' ? 'Resolve K12 contest' : 'Edit K8 band')}</div>` : ''}
+      <div style="margin-top:8px;font-size:10.5px;color:#8091A0">▶ scrubbed to seq ${beat.seq} of the record — reconstruction, not a scripted state</div>
       <div class="nav">
         <button id="assay-beat-prev" ${beatIndex === 0 ? 'disabled' : ''}>◀ Previous</button>
         <button id="assay-beat-next" ${beatIndex >= n.beats.length - 1 ? 'disabled' : ''}>Next ▶</button>
@@ -333,6 +417,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   }
 
   (root.querySelector('#assay-resolve') as HTMLElement).addEventListener('click', () => {
+    if (!canWrite()) return; // read-only in replay (FR-004)
     if (previewArmed()) void arm({ kind: 'resolve' });
     else {
       app.resolveK12();
@@ -340,6 +425,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     }
   });
   (root.querySelector('#assay-reopen') as HTMLElement).addEventListener('click', () => {
+    if (!canWrite()) return;
     if (previewArmed()) void arm({ kind: 'reopen' });
     else {
       app.contestK12();
@@ -348,6 +434,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   });
   const stepInput = root.querySelector('#assay-step') as HTMLInputElement;
   stepInput.addEventListener('input', () => {
+    if (!canWrite()) return;
     app.setStep(Number(stepInput.value));
     (root.querySelector('#assay-step-label') as HTMLElement).textContent = String(app.step);
     // A scrub is pure selection over the compiled world — nothing upstream
@@ -356,6 +443,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   });
   (root.querySelector('#assay-edit') as HTMLFormElement).addEventListener('submit', (e) => {
     e.preventDefault();
+    if (!canWrite()) return; // read-only in replay (FR-004)
     const id = (root.querySelector('#assay-edit-id') as HTMLSelectElement).value;
     const lo = Number((root.querySelector('#assay-edit-lo') as HTMLInputElement).value);
     const hi = Number((root.querySelector('#assay-edit-hi') as HTMLInputElement).value);
@@ -378,10 +466,14 @@ export function mountShell(root: HTMLElement, app: AppState): void {
   }
 
   async function rerender(sourceTab?: TabId, opts: { silent?: boolean } = {}): Promise<void> {
-    const snap = await app.snapshot();
+    // In live mode the cursor tracks the head, so a fresh write moves the slider
+    // with it; in replay the cursor is parked and the surfaces reconstruct it.
+    if (cursor.mode === 'live') cursor = { seq: app.historyMaxSeq, mode: 'live' };
+    const snap = await view();
+    renderHistoryBar();
 
-    // notice (last edit outcome)
-    noticeEl.innerHTML = snap.notice ? snap.notice.html : '';
+    // notice (last edit outcome) — suppressed in replay (the past has no "last edit")
+    noticeEl.innerHTML = cursor.mode === 'live' && snap.notice ? snap.notice.html : '';
 
     // render panels
     panelsRoot.innerHTML = '';
@@ -479,6 +571,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     for (const c of Array.from(svg.querySelectorAll('.coa-wp')) as SVGCircleElement[]) {
       c.style.cursor = 'grab';
       c.addEventListener('pointerdown', (ev) => {
+        if (!canWrite()) return; // a drag authors a plan version — disabled in replay
         ev.preventDefault();
         drag = {
           el: c,
@@ -593,6 +686,7 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     if (!informs || !influences) return;
     menuEl = doc.createElement('div');
     menuEl.className = 'assay-menu';
+    menuEl.style.maxWidth = '420px';
     menuEl.innerHTML =
       `<div style="font-weight:600;margin-bottom:4px">${logicalId} — relationships</div>` +
       recursiveTraceView(informs) +
@@ -702,5 +796,6 @@ export function mountShell(root: HTMLElement, app: AppState): void {
     }
   }
 
+  initHistoryBar();
   void rerender();
 }

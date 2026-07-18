@@ -11,23 +11,23 @@ Dependency-ordered. `[P]` = parallelisable (different files, no incomplete-task 
 
 ## Phase 2 — Foundational (blocking prerequisites for US1 and US2)
 
-- [ ] **T03** `src/seam.ts`: add a `refused` value to the existing `Delta['op']` union (a value, not a shape change) so a refused write attempt is a recordable op; no other seam type changes.
-- [ ] **T04** `src/app/history.ts` (NEW) — movement types `HistoryCursor { seq, mode: 'live'|'replay' }` and the `HistoryIndex`: `objectSeq: Map<contentHash, seq>` (first delta whose refs name the hash) and `edgeBoundary: number[]` (`traceStore.edges.length` after each op's delta), populated at publish time — derived, non-authoritative over the log (note §2).
-- [ ] **T05** `src/app/history.ts` — `storeViewAt(n)` (read-only `exists/get/versions` filtered to `objectSeq(hash) ≤ n`, so `versions(logical_id)` reports the correct head-at-n) and `traceViewAt(n)` (`edges.slice(0, edgeBoundary[n])` behind the `TraceStore` read surface); no copy — predicates over the shared immutable store (DEC-21).
-- [ ] **T06** `src/app/history.ts` — `reconstructAt(n)`: run the existing `snapshot()` over `storeViewAt(n)`/`traceViewAt(n)`, returning the same `Snapshot`; `n = 0` yields the honest empty store (spec edge case), never an error.
-- [ ] **T07** `src/app/state.ts`: capture the `HistoryIndex` boundaries on every `DeltaLog.publish` (wire the index into the store/service write path); expose `reconstructAt`/`HistoryCursor` on `AppState` without disturbing the live-head `snapshot()` path.
-- [ ] **T08** `tests/history.test.ts` (NEW) — **byte-equality**: for each heartbeat seq 41–46, assert `reconstructAt(n)` equals a **fresh store fed deltas 1…n** (the fold, not merely the filter) — the reconstruction contract (FR-001/SC-001, G1); `n = 0` is the empty store.
+- [X] **T03** `src/seam.ts`: add a `refused` value to the existing `Delta['op']` union (a value, not a shape change) so a refused write attempt is a recordable op; no other seam type changes.
+- [X] **T04** `src/app/history.ts` (NEW) — movement types `HistoryCursor { seq, mode: 'live'|'replay' }` and the `HistoryIndex`: `objectSeq: Map<contentHash, seq>` (first delta whose refs name the hash) and `edgeBoundary: number[]` (`traceStore.edges.length` after each op's delta), populated at publish time — derived, non-authoritative over the log (note §2).
+- [X] **T05** `src/app/history.ts` — `storeViewAt(n)` (read-only `exists/get/versions` filtered to `objectSeq(hash) ≤ n`, so `versions(logical_id)` reports the correct head-at-n) and `traceViewAt(n)` (`edges.slice(0, edgeBoundary[n])` behind the `TraceStore` read surface); no copy — predicates over the shared immutable store (DEC-21).
+- [X] **T06** `src/app/history.ts` — `reconstructAt(n)`: run the existing `snapshot()` over `storeViewAt(n)`/`traceViewAt(n)`, returning the same `Snapshot`; `n = 0` yields the honest empty store (spec edge case), never an error.
+- [X] **T07** `src/app/state.ts`: capture the `HistoryIndex` boundaries on every `DeltaLog.publish` (wire the index into the store/service write path); expose `reconstructAt`/`HistoryCursor` on `AppState` without disturbing the live-head `snapshot()` path.
+- [X] **T08** `tests/history.test.ts` (NEW) — **byte-equality**: for each heartbeat seq 41–46, assert `reconstructAt(n)` equals a **fresh store fed deltas 1…n** (the fold, not merely the filter) — the reconstruction contract (FR-001/SC-001, G1); `n = 0` is the empty store.
 
 ## Phase 3 — US1: Scrub the heartbeat (P1 🎯 exit) — the MVP
 
 **Goal**: an observer drags the cursor across seq 41–46 and every surface shows exactly `state(n)`, refusals and glow included. **Independent test**: reconstruct at each seq, assert byte-equality vs fresh replay, seq-43 renders the contested-compile refusal, seq-45 the new stamp, glow fires only where displayed values move.
 
-- [ ] **T09** [US1] `src/knowledge.ts`: on a refused write (encoding/lint/contested refusal at the "persist nothing" branches), publish a `refused` delta — attempted `op`, its `refs`, refusal reason in the existing `warnings?` slot; no object written (DEC-5 coverage; note §3). The Delta shape is unchanged.
-- [ ] **T10** [US1] `src/app/shell.ts`: the history scrubber on the observer tab — a slider `0…N` over the delta seqs, per-position labels reusing the delta-row vocabulary (op + refs); a cursor move re-renders all panels from `reconstructAt(n)`.
-- [ ] **T11** [US1] `src/app/shell.ts`: replay-mode chrome — entering replay stamps `mode='replay'`, disables every write affordance, shows the "replaying seq n of N — record, not present" banner; leaving returns to `{ seq: N, mode: 'live' }` (FR-004).
-- [ ] **T12** [US1] `src/app/shell.ts`: glow on cursor transitions — diff prior/next reconstructed signature maps with the existing `changedGlowUnits` (DEC-34); a unit glows iff its `data-glow-sig` moved, nothing else (FR-003, G6, no under/over-report).
-- [ ] **T13** [US1] `src/app/shell.ts`: "M new" indicator — live deltas arriving during replay bump `N` and surface as a count; the cursor never silently jumps (FR-004).
-- [ ] **T14** [US1] `tests/app-replay.test.ts` (NEW): seq-43 reconstruction renders the contested-compile refusal banner and seq-45 the new stamp (US1 AS-1); a cursor move glows exactly the moved-value units and nowhere else (AS-2); replay disables writes (structural — no write path reachable while `mode='replay'`, AS-3); a `refused`-delta seq is a cursor position with `state(n) == state(n-1)` (the refusal-producing-attempt edge case); "M new" bumps without moving the cursor.
+- [X] **T09** [US1] `src/knowledge.ts`: on a refused write (encoding/lint/contested refusal at the "persist nothing" branches), publish a `refused` delta — attempted `op`, its `refs`, refusal reason in the existing `warnings?` slot; no object written (DEC-5 coverage; note §3). The Delta shape is unchanged.
+- [X] **T10** [US1] `src/app/shell.ts`: the history scrubber on the observer tab — a slider `0…N` over the delta seqs, per-position labels reusing the delta-row vocabulary (op + refs); a cursor move re-renders all panels from `reconstructAt(n)`.
+- [X] **T11** [US1] `src/app/shell.ts`: replay-mode chrome — entering replay stamps `mode='replay'`, disables every write affordance, shows the "replaying seq n of N — record, not present" banner; leaving returns to `{ seq: N, mode: 'live' }` (FR-004).
+- [X] **T12** [US1] `src/app/shell.ts`: glow on cursor transitions — diff prior/next reconstructed signature maps with the existing `changedGlowUnits` (DEC-34); a unit glows iff its `data-glow-sig` moved, nothing else (FR-003, G6, no under/over-report).
+- [X] **T13** [US1] `src/app/shell.ts`: "M new" indicator — live deltas arriving during replay bump `N` and surface as a count; the cursor never silently jumps (FR-004).
+- [X] **T14** [US1] `tests/app-replay.test.ts` (NEW): seq-43 reconstruction renders the contested-compile refusal banner and seq-45 the new stamp (US1 AS-1); a cursor move glows exactly the moved-value units and nowhere else (AS-2); replay disables writes (structural — no write path reachable while `mode='replay'`, AS-3); a `refused`-delta seq is a cursor position with `state(n) == state(n-1)` (the refusal-producing-attempt edge case); "M new" bumps without moving the cursor.
 
 **Checkpoint**: US1 is independently demonstrable — the heartbeat replays from the record, no scripted state anywhere (SC-001).
 
@@ -35,10 +35,10 @@ Dependency-ordered. `[P]` = parallelisable (different files, no incomplete-task 
 
 **Goal**: each Stage-7 narrative is `(seq, tab, note)` waypoints driving the scrubber; the bespoke beat/action mechanism is gone; the SPEC-17 presenter contract is intact. **Depends on** Phase 2 (reconstruction) + a canonical recorded history.
 
-- [ ] **T15** [US2] `src/app/state.ts`: seed the **canonical heartbeat** at bootstrap via the real services — the walkthrough seq run extended to cover every act any narrative references (create fixtures → supersede K5→K9 → contest K12 → resolve → recompile → the edit-k8 supersede); the seed is deterministic (fixed clock, G1/FIND-4).
-- [ ] **T16** [US2] `src/narratives.ts`: replace `NarrativeBeat` `{ tab, title, presenterNote, doctrinalQuote?, action? }` with a waypoint shape carrying `seq` (into the canonical history) and drop the `action` field; re-express all five narratives as `ScrubPath`s of waypoints; keep titles, notes, doctrinal quotes, centrepiece markers.
-- [ ] **T17** [US2] `src/app/shell.ts`: the narrative runner drives the history cursor (set cursor to `waypoint.seq`, raise `waypoint.tab`) instead of dispatching `applyBeat` actions; delete the `resolve`/`edit-k8` action handlers; preserve nav (prev/next), notes panel, doctrinal quotes, centrepiece marker, wall-projection toggle (SPEC-17 contract, FR-005).
-- [ ] **T18** [US2] `tests/narratives.test.ts` (extended): an oracle-style **beat→seq** table pins each waypoint; every beat's rendered state equals `reconstructAt(beat.seq)` (no residual bespoke state, AS-1); the banded-honesty note guard (no midpoint / no verdict-as-score / no weighted-sum, note 09 §3) still passes; the SPEC-17 nav/notes/wall behaviour is unchanged (AS-2); the `action` field is gone (structural).
+- [X] **T15** [US2] `src/app/state.ts`: seed the **canonical heartbeat** at bootstrap via the real services — the walkthrough seq run extended to cover every act any narrative references (create fixtures → supersede K5→K9 → contest K12 → resolve → recompile → the edit-k8 supersede); the seed is deterministic (fixed clock, G1/FIND-4).
+- [X] **T16** [US2] `src/narratives.ts`: replace `NarrativeBeat` `{ tab, title, presenterNote, doctrinalQuote?, action? }` with a waypoint shape carrying `seq` (into the canonical history) and drop the `action` field; re-express all five narratives as `ScrubPath`s of waypoints; keep titles, notes, doctrinal quotes, centrepiece markers.
+- [X] **T17** [US2] `src/app/shell.ts`: the narrative runner drives the history cursor (set cursor to `waypoint.seq`, raise `waypoint.tab`) instead of dispatching `applyBeat` actions; delete the `resolve`/`edit-k8` action handlers; preserve nav (prev/next), notes panel, doctrinal quotes, centrepiece marker, wall-projection toggle (SPEC-17 contract, FR-005).
+- [X] **T18** [US2] `tests/narratives.test.ts` (extended): an oracle-style **beat→seq** table pins each waypoint; every beat's rendered state equals `reconstructAt(beat.seq)` (no residual bespoke state, AS-1); the banded-honesty note guard (no midpoint / no verdict-as-score / no weighted-sum, note 09 §3) still passes; the SPEC-17 nav/notes/wall behaviour is unchanged (AS-2); the `action` field is gone (structural).
 
 **Checkpoint**: all five narratives run on scrub paths, SPEC-17 contract intact, bespoke mechanism deleted (SC-002).
 
@@ -55,10 +55,10 @@ Dependency-ordered. `[P]` = parallelisable (different files, no incomplete-task 
 
 ## Phase 6 — Polish & cross-cutting
 
-- [~] **T22** [P] `src/components/legends.ts`: the tooltip legend entry (`recursive_trace`) is **landed** with US3 (depth cap 3, breadth cap, computation glosses, counted "open full trace" handoff). The replay-mode entry ("record, not present") remains, to land with US1.
-- [ ] **T23** [P] Sweep peers (batch propagation): `CLAUDE.md` current-phase line (SPEC-26 built); `docs/status.yml` updates entry; the issue #24 close-out note "design fed by SPEC-26" (SC-004).
-- [ ] **T24** Regenerate committed assets that render the new surfaces: `npm run build:app` (and `npm run gallery` if a replay/tooltip demo moment is added).
-- [ ] **T25** Verify: `npm run typecheck` clean, `npm test` green (395+ existing + new suites); no oracle/verdict/coverage-row change; components stay pure (SPEC-14/DEC-33); the heartbeat replays and a narrative runs end-to-end from a cold start (SC-001…004). Run the project `verify` skill on the scrubber + tooltip.
+- [X] **T22** [P] `src/components/legends.ts`: legend entries for replay mode ("record, not present") and the tooltip depth/remainder affordance (`recursive_trace`, landed with US3).
+- [X] **T23** [P] Sweep peers (batch propagation): `CLAUDE.md` current-phase line (SPEC-26 built); `docs/status.yml` updates entry; the issue #24 close-out note "design fed by SPEC-26" (SC-004).
+- [X] **T24** Regenerate committed assets that render the new surfaces: `npm run build:app` (and `npm run gallery` if a replay/tooltip demo moment is added).
+- [X] **T25** Verify: `npm run typecheck` clean, `npm test` green (existing + new suites); no oracle/verdict/coverage-row change; components stay pure (SPEC-14/DEC-33); the heartbeat replays and a narrative runs end-to-end from a cold start (SC-001…004). Run the project `verify` skill on the scrubber + tooltip.
 
 ## Dependencies & parallelism
 

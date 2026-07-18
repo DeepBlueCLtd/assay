@@ -72,6 +72,8 @@ import { dsmTable } from '../components/dsmTable.js';
 import type { ChallengeResult } from '../components/challengePanel.js';
 import { componentLegend, verdictLegendFor } from '../components/legends.js';
 import { ENGINE_VERSION } from '../engine.js';
+import { HistoryIndex, storeViewAt, traceViewAt } from './history.js';
+export type { HistoryCursor } from './history.js';
 
 export type TabId = 'j2' | 'planner' | 'commander' | 'observer' | 'coa';
 
@@ -176,6 +178,144 @@ export class AppState {
       await svc.store.put(c as unknown as Record<string, unknown>);
 
     this.#wireServices(svc);
+  }
+
+  /**
+   * SPEC-26 (DEC-39) — seed the CANONICAL HEARTBEAT: the walkthrough seq run
+   * driven through the REAL services, deterministic under the fixed clock (G1),
+   * extended to cover every act any of the five narratives references (create
+   * the tableau → K9 supersedes K5 → contest K12 → a refused dishonest edit →
+   * resolve → the honest K8 edit). This is the ONE recorded history the scrubber
+   * replays and the narratives scrub through — each narrative a curated ordering
+   * of waypoints into it (note 15 §4). The live head lands at the end of the
+   * heartbeat; a scrubber into the past renders any earlier belief-state.
+   */
+  async seedCanonical(): Promise<void> {
+    await this.#seedCanonical(Infinity);
+  }
+
+  /**
+   * Replay the canonical heartbeat only up to (and including) the act that
+   * publishes delta `uptoSeq` — the fold `state(n) = fold(deltas[1..n])`, used
+   * by the byte-equality contract (`tests/history.test.ts`, note 15 §2). At
+   * `uptoSeq = 0` only the static fixtures are present — the honest empty
+   * compile input, never an error.
+   */
+  async seedCanonicalTo(uptoSeq: number): Promise<void> {
+    await this.#seedCanonical(uptoSeq);
+  }
+
+  async #seedCanonical(uptoSeq: number): Promise<void> {
+    const svc = new KnowledgeService();
+    // Static fixtures — seed infrastructure, put directly (no delta), present at
+    // every cursor (the plans back the Spatial tab; COAs/commitments feed the
+    // pipeline). Order is immaterial: the store is keyed by content hash.
+    for (const p of this.#fx.plans ?? []) await svc.store.put(p as unknown as Record<string, unknown>);
+    for (const coa of this.#fx.coas) await svc.store.put(coa as unknown as Record<string, unknown>);
+    for (const c of this.#fx.commitments) await svc.store.put(c as unknown as Record<string, unknown>);
+
+    for (const act of this.#canonicalActs(svc)) {
+      if (svc.deltas.size >= uptoSeq) break;
+      await act();
+    }
+    this.#wireServices(svc);
+    this.#resolved = new HistoryIndex(svc.deltas.all).resolvedAt(svc.deltas.size);
+  }
+
+  /**
+   * The canonical heartbeat as an ordered list of REAL service acts — each
+   * publishes exactly one delta (a refused act too: the attempt is part of the
+   * record, note §3). The seq of each act is its 1-based position; the beat→seq
+   * table in `tests/narratives.test.ts` pins them. Never a bespoke live mutation
+   * smuggled in — every narrative act is one of these, scrubbed *to* (note §4).
+   */
+  #canonicalActs(svc: KnowledgeService): Array<() => Promise<unknown>> {
+    const k = (id: string): KnowledgeObject => structuredClone(this.#kById.get(id)!);
+    const answered = (id: string): KnowledgeObject => ({ ...k(id), status: 'answered' });
+    const k3 = this.#kById.get('K3')!;
+    const k8 = this.#kById.get('K8')!;
+    return [
+      () => svc.create(answered('K1')), // seq 1
+      () => svc.create(answered('K2')), // 2
+      () => svc.create(answered('K3')), // 3
+      () => svc.create(answered('K4')), // 4
+      () => svc.create(answered('K5')), // 5 — the storm assessment K9 will supersede
+      () => svc.create(answered('K6')), // 6
+      () => svc.create(answered('K7')), // 7
+      () => svc.create(answered('K8')), // 8
+      () => svc.create(k('K10')), // 9
+      () => svc.create(k('K11')), // 10
+      () => svc.create(k('K13')), // 11
+      () => svc.create(k('K12a')), // 12
+      () => svc.create(k('K12b')), // 13
+      () => svc.create(k('K14a')), // 14
+      () => svc.create(k('K14b')), // 15
+      () => svc.create(k('K14c')), // 16
+      // seq 17 — K9 supersedes K5 (the storm re-assessment; bridge narrative, thesis F)
+      () => svc.supersede(answered('K9'), 'K5'),
+      // seq 18 — the K12 minefield-extent contest opens; compile refuses (G5)
+      () => Promise.resolve(svc.contest('K12a', 'K12b')),
+      // seq 19 — a dishonest edit the firewall refuses (an assumption may never be
+      // a hard constraint). Recorded as a `refused` delta: the attempt is part of
+      // the record, nothing is written, state is unchanged (note §3, DEC-5).
+      () =>
+        svc.supersede(
+          {
+            ...k('K3'),
+            version: k3.version + 1,
+            encoding_class: 'hard_constraint',
+            provenance: { ...(k3.provenance as unknown as Record<string, unknown>), source_class: 'assumption' },
+          } as unknown as KnowledgeObject,
+          'K3',
+        ),
+      // seq 20 — the contest resolves; K12a survives, recompile unblocks (G5)
+      () =>
+        Promise.resolve(
+          svc.resolve('K12a', 'defector debrief corroborated; manifests predate the drawdown'),
+        ),
+      // seq 21 — the honest edit the bridge/REMIT narratives perform: supersede K8
+      () =>
+        svc.supersede(
+          {
+            ...k('K8'),
+            version: k8.version + 1,
+            answer: { ...(k8.answer as Band), lo: (k8.answer as Band).lo + 5 },
+          } as KnowledgeObject,
+          'K8',
+        ),
+    ];
+  }
+
+  /**
+   * SPEC-26 US1 — reconstruct the belief-state at decision-cursor `n`: run the
+   * SAME pure `snapshot()` pipeline over a byte-faithful head filtered to
+   * creation-seq ≤ n (note 15 §2). Refusals, staleness flags, stamps and
+   * verdicts fall out of re-driving the pipeline over the reconstructed store —
+   * nothing bespoke is stored or replayed (note §2). Byte-equal to a fresh fold
+   * of deltas 1…n (G1); `n = 0` is the honest empty store, never an error.
+   */
+  async reconstructAt(n: number): Promise<Snapshot> {
+    const index = new HistoryIndex(this.#svc.deltas.all);
+    const c = index.clamp(n);
+    const store = storeViewAt(this.#svc.store, index, c);
+    const trace = traceViewAt(this.#svc.trace, index, c);
+    const deltas = this.#svc.deltas.sliceClone(c);
+    const svc = new KnowledgeService({ store, trace, deltas });
+    const shadow = new AppState(this.#fx);
+    shadow.#wireServices(svc);
+    shadow.#resolved = index.resolvedAt(c);
+    shadow.#step = this.#step;
+    return shadow.snapshot();
+  }
+
+  /** The recorded decision history — the deltas the scrubber positions over. */
+  get deltas(): readonly Delta[] {
+    return this.#svc.deltas.all;
+  }
+
+  /** The live head's seq — the maximum scrubber position (`0…N`). */
+  get historyMaxSeq(): number {
+    return this.#svc.deltas.size;
   }
 
   /**
@@ -418,8 +558,13 @@ export class AppState {
     let liveTensor: ScenarioVerdictTensor | undefined;
 
     // Live knowledge id set: the survivor K12a once resolved, else the whole
-    // contested pair (so the compile honestly refuses).
-    const liveIds = this.#resolved ? [...BASE, 'K12a'] : [...BASE, 'K12a', 'K12b'];
+    // contested pair (so the compile honestly refuses). Filtered to what the
+    // store actually holds so a reconstructed early cursor (SPEC-26) renders the
+    // honest partial state — only the knowledge created by that seq — never a
+    // crash on a not-yet-created id.
+    const liveIds = (this.#resolved ? [...BASE, 'K12a'] : [...BASE, 'K12a', 'K12b']).filter(
+      (id) => this.#latest(id) !== undefined,
+    );
 
     // ---- J-2 · knowledge table ----
     const s1Rows: S1Row[] = liveIds.map((id) => {
@@ -440,11 +585,22 @@ export class AppState {
     });
 
     // ---- Planner · compile → handful → matrix ----
-    const compiled = await this.#compiler.compile({
-      knowledge: liveIds.map(refFor),
-      config: this.#fx.config,
-      engine_version: ENGINE_VERSION,
-    });
+    // An empty compile input (a reconstructed early cursor before any BASE
+    // knowledge exists, SPEC-26) refuses honestly rather than throwing — nothing
+    // to compile is a first-class state, not an error.
+    const compiled: Awaited<ReturnType<CompileService['compile']>> =
+      liveIds.length === 0
+        ? {
+            refused: true,
+            reason: 'unknown_ref',
+            offending: [],
+            explanation: 'no knowledge has been recorded yet — nothing to compile.',
+          }
+        : await this.#compiler.compile({
+            knowledge: liveIds.map(refFor),
+            config: this.#fx.config,
+            engine_version: ENGINE_VERSION,
+          });
     if (isRefusal(compiled)) {
       panels.push({
         id: 'channels',
@@ -723,12 +879,20 @@ export class AppState {
     }
 
     // ---- Commander · relax over R3m ----
-    const r3m = await this.#compiler.compile({
-      knowledge: liveIds.map(refFor),
-      config: this.#fx.config,
-      scenario: 'R3m',
-      engine_version: ENGINE_VERSION,
-    });
+    const r3m: Awaited<ReturnType<CompileService['compile']>> =
+      liveIds.length === 0
+        ? {
+            refused: true,
+            reason: 'unknown_ref',
+            offending: [],
+            explanation: 'no knowledge has been recorded yet — nothing to compile.',
+          }
+        : await this.#compiler.compile({
+            knowledge: liveIds.map(refFor),
+            config: this.#fx.config,
+            scenario: 'R3m',
+            engine_version: ENGINE_VERSION,
+          });
     if (isRefusal(r3m)) {
       panels.push({
         id: 'cards',

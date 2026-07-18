@@ -24,6 +24,7 @@
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.1",
     "fast-check": "^4.9.0",
+    "happy-dom": "^20.10.6",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

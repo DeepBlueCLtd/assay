@@ -30,7 +30,11 @@ describe('US1 — the system declines laundered judgement (encoding_violation)',
       expect(result.offending[0]?.logical_id).toBe('K10');
     }
     expect(svc.store.size).toBe(0); // nothing stored (SC-001)
-    expect(svc.deltas.size).toBe(0); // no delta from a refused write
+    // The refused write persists NO object, but the ATTEMPT is recorded as a
+    // `refused` delta — a scrubbable cursor position (SPEC-26 §3, DEC-5 coverage).
+    expect(svc.deltas.size).toBe(1);
+    expect(svc.deltas.all[0]?.op).toBe('refused');
+    expect(svc.deltas.all[0]?.refs[0]?.logical_id).toBe('K10');
   });
 
   it('K14a scenario_weight is storable but never compiles as constraint/cost', async () => {

@@ -84,4 +84,21 @@ export class ObjectStore {
     for (const [id, lineage] of this.#lineages) copy.#lineages.set(id, [...lineage]);
     return copy;
   }
+
+  /**
+   * A byte-faithful copy keeping only the hashes `keep` admits (SPEC-26 — the
+   * state-at-seq store view). Lineages are filtered to the kept hashes so
+   * `versions(logicalId)` reports the correct head-at-n. The store is immutable
+   * and append-only in seq order (DEC-21), so a filter over the live head is
+   * byte-equal to a fresh fold of the deltas up to that seq (note 15 §2).
+   */
+  cloneWhere(keep: (hash: string) => boolean): ObjectStore {
+    const copy = new ObjectStore();
+    for (const [hash, entry] of this.#byHash) if (keep(hash)) copy.#byHash.set(hash, { ...entry });
+    for (const [id, lineage] of this.#lineages) {
+      const kept = lineage.filter(keep);
+      if (kept.length > 0) copy.#lineages.set(id, kept);
+    }
+    return copy;
+  }
 }
