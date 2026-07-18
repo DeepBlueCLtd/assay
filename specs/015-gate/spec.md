@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-14
 
-**Status**: Draft
+**Status**: Built — the gate harness ships as `tests/gate.test.ts` (asserts G1–G6 end-to-end on Meridian, re-asserts the vignette §9 oracle cases O-1…O-4, confirms theses A–F walkable) and runs green in CI; recorded as passed in `docs/status.yml` (`gate_passed: true`, 2026-07-18)
 
 **Input**: SPEC-15 — Spine-complete gate harness; the single barrier before Stage 7.
 
