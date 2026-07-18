@@ -99,8 +99,8 @@ theses:                      # state vocabulary is the register's own
 updates:
   - date: 2026-07-17
     note: >-
-      SPEC-26 built (history, replay & trace depth — the after-action-review instrument) over
-      research note 15-replay.md and DEC-37/38/39. A read-only projection over the existing
+      SPEC-26 built end-to-end (history, replay & trace depth — the after-action-review instrument)
+      over research note 15-replay.md and DEC-37/38/39. A read-only projection over the existing
       substrate: no schema change, no seam-shape change, no new engine (DEC-10). US1 — a
       decision-history scrubber over the delta log: AppState.reconstructAt(n) re-drives the same
       pure snapshot() over a byte-faithful head filtered to creation-seq ≤ n (state(n) = the fold
@@ -110,11 +110,15 @@ updates:
       delta (a value on Delta.op, shape unchanged — DEC-5 coverage): the attempt is a scrubbable
       position with state unchanged. US2 — the five narratives are re-expressed as (seq, tab,
       note) scrub paths into that record and the bespoke beat/action mutation mechanism is
-      deleted; the SPEC-17 presenter contract is preserved verbatim. US3 — a recursive trace
-      tooltip: the one-hop menu expanded to a stated depth cap of 3 over the same walk, dead ends
-      at every depth (G3), a counted remainder handing off to the #24 graph (G4). Moves no thesis
-      (the theses were already explored/scripted); status states unchanged. 557 tests, typecheck
-      clean.
+      deleted; the SPEC-17 presenter contract is preserved verbatim. US3 (rescoped, PR #60, now
+      integrated) — the one-hop trace menu made recursively expandable, depth-capped at a stated
+      3, reusing the shipped `neighbours` reading recursed under EDGE_ORIENTATION (the same
+      traversal the DEC-47 graph walks — one semantics, no parallel walker, machine-checked
+      against buildDepGraph); dead ends at every depth (G3), symmetric contests, cycle-guarded; a
+      per-hop breadth cap and the depth-cap remainder both open the shipped DEC-47 overlay at the
+      exact stopped-at hop (G4). Moves no thesis (the theses were already explored/scripted);
+      status states unchanged. Typecheck clean; full suite green. The US3 breadth-cap refinement
+      is register candidate concept §6.35 (DEC-2), not asserted.
   - date: 2026-07-16
     note: >-
       Register batch 8 ratified (ASSAY-DEC-40…47, closing concept §6.22–6.29) — the JIPOE/C2

@@ -124,7 +124,8 @@ describe('SPEC-26 — the shell drives end-to-end (verify)', () => {
     target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await until(() => document.querySelector('.assay-menu') !== null);
     const menu = document.querySelector('.assay-menu') as HTMLElement;
-    expect(menu.textContent).toContain('relationships (recursive)');
+    expect(menu.textContent).toContain('relationships');
     expect(menu.textContent).toMatch(/Informs|Influences/);
+    expect(menu.textContent).toContain('View full graph');
   });
 });

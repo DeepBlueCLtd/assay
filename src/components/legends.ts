@@ -161,15 +161,15 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'The decision-history scrubber shows a PAST belief-state, reconstructed byte-for-byte from the delta log (state at seq n = the fold of deltas 1…n, G1) — not the live present. Refusals, staleness flags, stamps and verdicts re-derive; nothing unrecorded plays, no wall clock is resurrected (FIND-4). Writes are disabled in the past; new live deltas surface as an “M new” count, never a silent jump (SPEC-26).',
   },
-  recursive_trace: {
-    term: 'recursive trace (depth-capped, counted remainder)',
-    gloss:
-      'The one-hop “informs / influenced by” menu expanded in place to a stated depth of 3 (Cowan 2001), each hop labelled from the trace graph itself — the edge type, plus a fixed operation gloss for computation edges (band materialisation, interval evaluation), never an invented “why”. Dead ends render as dead ends at every depth (G3); at the cap, “N more — open full trace” hands off to the full dependency graph — bounded, counted, escapable, never a silent stop (G4, SPEC-26).',
-  },
   role_menu: {
     term: 'role actions (the legal verbs for this role)',
     gloss:
       'The write verbs C2 permits this role — J-2 collect/contest/resolve/supersede, planner compile/generate/relax/score, commander select/waive, observer none. Each is marked live-actionable, pipeline-automatic, or deferred (never a dead button faking a write, DEC-4). Menus reorganise what the seam already permits (DEC-33), never restrict; the observer tab exposes no write (SPEC-25).',
+  },
+  recursive_trace: {
+    term: 'recursive trace (▸ expand · depth cap 3)',
+    gloss:
+      'The one-hop informs/influenced-by menu expanded in place, hop by hop, to a stated depth cap of 3 (DEC-38). Each hop shows its real edge type — plus a fixed operation gloss on the computation edges (scored_from = the interval evaluation over channel reads; compiled_into = the band materialisation), never an invented "why". Dead ends read as dead ends at every depth (G3). The same transitive walk as the full graph, capped for reading flow; at the cap an honest "N more — open full trace" opens that graph (G4 — never a silent stop).',
   },
 };
 
@@ -209,6 +209,7 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict', 'verdict_legend'],
   discriminationTable: ['separation', 'separation_class', 'operative_pair', 'collection_cost', 'band', 'provenance', 'weight_tiebreak'],
   stalenessFlags: ['invalidated'],
+  recursiveTrace: ['recursive_trace'],
   dsmTable: ['decision_point', 'ltiov_state', 'tripwire', 'separation_class', 'collection_cost', 'band', 'provenance', 'tier', 'verdict_legend'],
 };
 
