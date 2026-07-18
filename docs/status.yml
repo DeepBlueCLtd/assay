@@ -97,6 +97,26 @@ theses:                      # state vocabulary is the register's own
 # The dated updates feed — newest first. A milestone entry may stay a one-liner
 # or grow into a full blog article (see `blog:` below and comms plan §6/§9).
 updates:
+  - date: 2026-07-18
+    note: >-
+      Register batch 9 ratified (ASSAY-DEC-48/49/50, closing concept §6.30/§6.31/§6.35) — the
+      review series' remaining register debt, the interaction-class and shell-structure decisions
+      SPEC-25 and the SPEC-26 US3 rescope left held: DEC-48 the consequence-preview interaction
+      class (arm a mutating act, run the real pipeline over a byte-for-byte store fork, show an
+      uncommitted ghost diff that equals the post-commit glow set element-for-element — previewed =
+      computed, never estimated, G1; a dishonest armed act previews its refusal, G2/G5; no seam
+      change); DEC-49 per-role action menus as a standing shell element (legal write verbs from one
+      ROLE_VERBS map, observer read-only, each verb marked live / runs-on-recompute / not-yet-built
+      — refines DEC-32/33, never forks them); DEC-50 the recursive-trace tooltip's breadth cap
+      (DEC-38's depth cap extended to width — a stated RECURSIVE_TRACE_BREADTH_CAP = 6 and a counted
+      "+N more" opening the DEC-47 overlay, the same G4 no-silent-drop discipline). None carries a
+      schema, seam, oracle, verdict, or coverage-row change — all read-only projections or
+      client-side orchestration (no new engine, DEC-10). Until this batch DEC-2 forbade citing
+      SPEC-25/26 as authority for these behaviours; the debt is now cleared and the concept §6
+      candidate queue is empty but for the horizon forward-derivation item (§6.19, issue #43).
+      Folded in: the stale specs/026 spec status line corrected (US1/US2 recorded as built, not
+      queued) and issue #24 confirmed closed (DEC-47's shipped surface plus SPEC-26's tooltip
+      integration fully satisfy it). Moves no thesis.
   - date: 2026-07-17
     note: >-
       SPEC-26 built end-to-end (history, replay & trace depth — the after-action-review instrument)
