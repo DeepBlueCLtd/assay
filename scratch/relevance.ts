@@ -63,7 +63,7 @@ const config: VignetteConfig = {
     { name: 'raptor_arc', x0: 26, y0: 6, x1: 34, y1: 16 },
     { name: 'fac_waters', x0: 22, y0: 18, x1: 30, y1: 24 },
     { name: 'civil_town', x0: 18, y0: 24, x1: 26, y1: 30 },
-    { name: 'causeway', x0: 16, y0: 16, x1: 20, y1: 20 },
+    { name: 'causeway', x0: 11, y0: 15, x1: 17, y1: 21 },
     { name: 'objective', x0: 22, y0: 22, x1: 30, y1: 30 },
     { name: 'battery_sensor', x0: 30, y0: 2, x1: 36, y1: 8 },
     { name: 'north_shoal', x0: 2, y0: 2, x1: 8, y1: 8 },
@@ -209,7 +209,7 @@ const planNorth: Plan = {
   logical_id: 'P-NORTH', version: 1, name: 'North-channel push', seed: 1, generator: 'hand-drawn',
   elements: [
     { force_element: 'FE-BROOM', route: [leg(10, 35, 0, 4), leg(11, 13, 4, 8), leg(22, 16, 8, 12)] },
-    { force_element: 'FE-PACKHORSE', route: [leg(10, 35, 0, 4), leg(11, 13, 4, 9), leg(18, 18, 9, 13), leg(26, 25, 13, 18)] },
+    { force_element: 'FE-PACKHORSE', route: [leg(10, 35, 0, 4), leg(11, 13, 4, 9), leg(14, 18, 9, 13), leg(26, 25, 13, 18)] },
     { force_element: 'FE-ANVIL', route: [leg(10, 35, 0, 6), leg(28, 12, 6, 10), leg(26, 20, 10, 12)] },
     { force_element: 'FE-FALCON', route: [leg(10, 35, 0, 4), leg(30, 10, 4, 8)] },
     { force_element: 'FE-KINGFISHER', route: [leg(33, 5, 0, 4), leg(10, 35, 4, 36)] },
@@ -220,8 +220,8 @@ const planSouth: Plan = {
   logical_id: 'P-SOUTH', version: 1, name: 'South-channel sweep', seed: 1, generator: 'hand-drawn',
   elements: [
     { force_element: 'FE-BROOM', route: [leg(10, 35, 0, 4), leg(11, 25, 4, 8), leg(22, 16, 8, 12)] },
-    { force_element: 'FE-PACKHORSE', route: [leg(10, 35, 0, 4), leg(11, 25, 4, 10), leg(18, 18, 10, 14), leg(26, 25, 14, 19)] },
-    { force_element: 'FE-ANVIL', route: [leg(10, 35, 0, 6), leg(14, 26, 6, 10)] },
+    { force_element: 'FE-PACKHORSE', route: [leg(10, 35, 0, 4), leg(11, 25, 4, 10), leg(14, 18, 10, 14), leg(26, 25, 14, 19)] },
+    { force_element: 'FE-ANVIL', route: [leg(10, 35, 0, 6), leg(26, 20, 6, 8), leg(12, 25, 8, 10)] }, // fac waters, then south channel
     { force_element: 'FE-FALCON', route: [leg(10, 35, 0, 4), leg(22, 27, 4, 8)] }, // through the town
     { force_element: 'FE-KINGFISHER', route: [leg(33, 5, 0, 4), leg(10, 35, 4, 36)] },
   ],
@@ -231,7 +231,7 @@ const planCenter: Plan = {
   logical_id: 'P-CENTER', version: 1, name: 'Centre strait cut', seed: 1, generator: 'hand-drawn',
   elements: [
     { force_element: 'FE-BROOM', route: [leg(10, 35, 0, 5), leg(22, 16, 5, 9)] },
-    { force_element: 'FE-PACKHORSE', route: [leg(10, 35, 0, 5), leg(22, 16, 5, 9), leg(18, 18, 9, 12), leg(26, 25, 12, 17)] },
+    { force_element: 'FE-PACKHORSE', route: [leg(10, 35, 0, 5), leg(22, 16, 5, 9), leg(14, 18, 9, 12), leg(26, 25, 12, 17)] },
     { force_element: 'FE-ANVIL', route: [leg(10, 35, 0, 6), leg(26, 20, 6, 10)] },
     { force_element: 'FE-FALCON', route: [leg(10, 35, 0, 4), leg(30, 10, 4, 8)] },
     { force_element: 'FE-KINGFISHER', route: [leg(33, 5, 0, 4), leg(10, 35, 4, 36)] },
@@ -244,9 +244,32 @@ const PLANS = [planNorth, planSouth, planCenter];
 // geometry alone (independent of the implementation). Checked below.
 const ORACLE_FOOTPRINT: Record<string, string[]> = {
   'P-NORTH': ['S1', 'S2', 'S3', 'S4', 'S5'],
-  'P-SOUTH': ['S4', 'S5'],
+  'P-SOUTH': ['S3', 'S4', 'S5'],
   'P-CENTER': ['S3', 'S4', 'S5'],
 };
+
+// ───────────────────────────────────────────────────────────────────────────
+// 4b. ADVERSARY COURSES OF ACTION — hypotheticals that re-shape the world.
+//     Each is a ScenarioCOA whose `excursion` overlays the base world (and, by
+//     SPEC-20 layered precedence, BEATS our base assessment where it speaks).
+//     Authored to describe what the ENEMY might do — still blind to our COAs.
+// ───────────────────────────────────────────────────────────────────────────
+
+interface Scenario { logical_id: string; version: number; name: string; narrative: string; excursion: { channel: ChannelKind; region: string; override: Band }[] }
+
+const SCENARIOS: Scenario[] = [
+  {
+    logical_id: 'R-SEA', version: 1, name: 'Littoral fight',
+    narrative: 'The enemy surges fast-attack craft into the southern approaches.',
+    excursion: [{ channel: 'threat', region: 'south_channel', override: { lo: 4, hi: 6, unit: 'threat index' } }],
+  },
+  {
+    logical_id: 'R-STRAITMINE', version: 1, name: 'Strait denial',
+    narrative: 'The enemy heavily mines Cobalt Strait to deny the direct cut.',
+    excursion: [{ channel: 'mobility', region: 'cobalt_strait', override: { lo: 0.1, hi: 0.3, unit: 'transit factor' } }],
+  },
+];
+const SCENARIO_KEYS = ['BASE', ...SCENARIOS.map((s) => s.logical_id)];
 
 // ───────────────────────────────────────────────────────────────────────────
 // Engine wiring helpers (all real services).
@@ -259,38 +282,51 @@ async function buildStore(ids: string[]): Promise<KnowledgeService> {
     const r = await ks.create(ko);
     if (isRefusal(r)) throw new Error(`unexpected refusal creating ${id}: ${r.explanation}`);
   }
-  // Plans live in the same store (the scorer resolves them by ref).
+  // Plans and adversary scenarios live in the same store (compile resolves the
+  // scenario by logical id; the scorer resolves plans by ref).
   for (const p of PLANS) await ks.store.put(p as unknown as Record<string, unknown>);
+  for (const s of SCENARIOS) await ks.store.put(s as unknown as Record<string, unknown>);
   return ks;
 }
 
-async function compileWorld(ks: KnowledgeService, ids: string[]): Promise<{ ref: Ref; world: CompiledWorld; stamp: string }> {
+/** scenarioKey === 'BASE' compiles the un-excursioned world. */
+async function compileWorld(ks: KnowledgeService, ids: string[], scenarioKey: string): Promise<{ ref: Ref; world: CompiledWorld; stamp: string }> {
   const compile = new CompileService({ knowledge: ks });
-  const res = await compile.compile({
+  const req: Parameters<CompileService['compile']>[0] = {
     knowledge: ids.map((id) => ({ logical_id: id, content_hash: '' })),
     config,
     engine_version: ENGINE_VERSION,
-  });
-  if (isRefusal(res)) throw new Error(`compile refused: ${res.explanation}`);
+  };
+  if (scenarioKey !== 'BASE') req.scenario = scenarioKey;
+  const res = await compile.compile(req);
+  if (isRefusal(res)) throw new Error(`compile refused (${scenarioKey}): ${res.explanation}`);
   const world = ks.store.get(res.world.content_hash) as CompiledWorld;
   return { ref: res.world, world, stamp: res.stamp };
 }
 
-async function scoreAll(ks: KnowledgeService, worldRef: Ref): Promise<Record<string, Record<string, string>>> {
+async function scoreAll(ks: KnowledgeService, worldRef: Ref, scenarioKey: string): Promise<Record<string, Record<string, string>>> {
   const scorer = new ScoreService({ store: ks.store, trace: ks.trace, config, commitments });
   const out: Record<string, Record<string, string>> = {};
   for (const p of PLANS) {
     const planRef = ks.store.versions(p.logical_id).at(-1)!;
-    const res = await scorer.score({ plan: planRef, world: worldRef, scenario: 'BASE', engine_version: ENGINE_VERSION });
-    if (isRefusal(res)) throw new Error(`score refused for ${p.logical_id}: ${res.explanation}`);
+    const res = await scorer.score({ plan: planRef, world: worldRef, scenario: scenarioKey, engine_version: ENGINE_VERSION });
+    if (isRefusal(res)) throw new Error(`score refused for ${p.logical_id} (${scenarioKey}): ${res.explanation}`);
     out[p.logical_id] = Object.fromEntries(res.verdicts.map((v: CommitmentVerdict) => [v.commitment, v.verdict]));
   }
   return out;
 }
 
-// ── The read-set projection: which knowledge source the scorer actually reads
-//    at each metric read-point. Mirrors channelAt's resolution but returns the
-//    winning override's `source` (and cross-checks its value against channelAt).
+/** One full run: build store from `ids`, compile under `scenarioKey`, score all. */
+async function run(ids: string[], scenarioKey: string): Promise<{ world: CompiledWorld; verdicts: Record<string, Record<string, string>>; stamp: string }> {
+  const ks = await buildStore(ids);
+  const w = await compileWorld(ks, ids, scenarioKey);
+  const verdicts = await scoreAll(ks, w.ref, scenarioKey);
+  return { world: w.world, verdicts, stamp: w.stamp };
+}
+
+// ── The read-set projection: which source the scorer actually reads at each
+//    metric read-point. Mirrors channelAt EXACTLY (incl. SPEC-20 excursion
+//    precedence) and cross-checks the winning value against channelAt.
 
 type MetricRead = { kind: 'reach' | 'exposure' | 'fires' | 'state'; element?: string; channel?: ChannelKind; region?: string };
 const METRIC_READS: Record<string, MetricRead> = {
@@ -311,10 +347,12 @@ function winnerAt(world: CompiledWorld, kind: ChannelKind, x: number, y: number,
   const activeAt = (o: RegionOverride) => (o.from_step === undefined || t >= o.from_step) && (o.until_step === undefined || t <= o.until_step);
   const active = (channel.regions ?? []).filter((o) => activeAt(o) && contains(o));
   if (active.length === 0) return undefined; // default → no knowledge read here
+  // SPEC-20: an excursion-layer override (source names the world's scenario) wins.
+  const excursion = active.filter((o) => world.scenario !== undefined && o.source === world.scenario);
+  const candidates = excursion.length > 0 ? excursion : active;
   const area = (name: string) => { const g = config.regions.find((r) => r.name === name)!; return (g.x1 - g.x0 + 1) * (g.y1 - g.y0 + 1); };
-  active.sort((a, b) => (b.from_step ?? 0) - (a.from_step ?? 0) || area(a.region) - area(b.region));
-  const winner = active[0]!;
-  // sanity: the winner's value must equal channelAt's answer.
+  candidates.sort((a, b) => (b.from_step ?? 0) - (a.from_step ?? 0) || area(a.region) - area(b.region));
+  const winner = candidates[0]!;
   const viaEngine = channelAt(world, config, kind, x, y, t);
   if (viaEngine.lo !== winner.value.lo || viaEngine.hi !== winner.value.hi) {
     throw new Error(`read-set/channelAt disagree at ${kind}(${x},${y},${t})`);
@@ -322,7 +360,6 @@ function winnerAt(world: CompiledWorld, kind: ChannelKind, x: number, y: number,
   return winner.source;
 }
 
-/** Which knowledge sources a commitment reads for a given plan (determining set). */
 function readsFor(plan: Plan, commitment: Commitment, world: CompiledWorld): Set<string> {
   const m = METRIC_READS[commitment.metric]!;
   const sources = new Set<string>();
@@ -348,115 +385,150 @@ function footprint(plan: Plan, world: CompiledWorld): Set<string> {
   return all;
 }
 
+const isOurIntel = (source: string) => source.startsWith('S');
+
 // ───────────────────────────────────────────────────────────────────────────
 // Report
 // ───────────────────────────────────────────────────────────────────────────
 
 const pad = (s: string, n: number) => (s + ' '.repeat(n)).slice(0, n);
-const line = (n = 78) => console.log('─'.repeat(n));
+const line = (n = 82) => console.log('─'.repeat(n));
 
 async function main() {
-  console.log('\nOPERATION SANDPIPER — reproducible intelligence→COA relevance\n');
+  console.log('\nOPERATION SANDPIPER — reproducible, scenario-dependent intelligence→COA relevance\n');
   console.log(`engine ${ENGINE_VERSION}; grid ${config.grid.cols}×${config.grid.rows}, horizon ${config.grid.horizon_steps} steps`);
+  console.log(`scenarios: ${SCENARIO_KEYS.join(', ')}`);
 
-  const ks = await buildStore(ALL_IDS);
-  const base = await compileWorld(ks, ALL_IDS);
+  // A run of every (scenario) at full knowledge, plus each single-K-removed run,
+  // for behavioural relevance. All via the real engine.
+  const baseline: Record<string, Awaited<ReturnType<typeof run>>> = {};
+  for (const sk of SCENARIO_KEYS) baseline[sk] = await run(ALL_IDS, sk);
 
-  // Which intel compiled, and into which (read vs unread) channel.
+  // ── Compiled world (BASE) ──
   const READ_CHANNELS: ChannelKind[] = ['mobility', 'threat'];
   line();
-  console.log('COMPILED WORLD — every K describes a place; only mobility & threat are read by the metrics\n');
-  for (const ch of base.world.channels) {
+  console.log('COMPILED WORLD (BASE) — every K describes a place; only mobility & threat are read\n');
+  for (const ch of baseline['BASE']!.world.channels) {
     if (!(ch.regions && ch.regions.length)) continue;
-    const readable = READ_CHANNELS.includes(ch.kind);
     for (const o of ch.regions) {
-      console.log(`  ${pad(o.source ?? '?', 4)} ${pad(ch.kind, 14)} ${pad(o.region, 15)} ${pad(`[${o.value.lo}, ${o.value.hi}] ${o.value.unit}`, 26)} ${readable ? 'READ channel' : 'UNREAD → cannot touch a COA'}`);
+      console.log(`  ${pad(o.source ?? '?', 5)} ${pad(ch.kind, 14)} ${pad(o.region, 15)} ${pad(`[${o.value.lo}, ${o.value.hi}] ${o.value.unit}`, 26)} ${READ_CHANNELS.includes(ch.kind) ? 'READ' : 'UNREAD → cannot touch a COA'}`);
     }
   }
 
-  // Baseline verdicts.
-  const baseVerdicts = await scoreAll(ks, base.ref);
+  // ── Robustness: verdicts per scenario + worst-case (minimax) ──
+  const ORDER: Record<string, number> = { violated: 0, tight: 1, marginal: 2, robust: 3 };
   line();
-  console.log('BASELINE VERDICTS  (COA × commitment)\n');
-  console.log('  ' + pad('', 10) + commitments.map((c) => pad(c.logical_id, 9)).join(''));
+  console.log('VERDICTS PER SCENARIO + worst-case (COA × commitment)\n');
+  console.log('  ' + pad('', 20) + commitments.map((c) => pad(c.logical_id, 9)).join(''));
   for (const p of PLANS) {
-    console.log('  ' + pad(p.logical_id, 10) + commitments.map((c) => pad(baseVerdicts[p.logical_id]![c.logical_id]!, 9)).join(''));
+    for (const sk of SCENARIO_KEYS) {
+      console.log('  ' + pad(`${p.logical_id} @ ${sk}`, 20) + commitments.map((c) => pad(baseline[sk]!.verdicts[p.logical_id]![c.logical_id]!, 9)).join(''));
+    }
+    const worst = commitments.map((c) => {
+      const vs = SCENARIO_KEYS.map((sk) => baseline[sk]!.verdicts[p.logical_id]![c.logical_id]!);
+      return vs.reduce((a, b) => (ORDER[a]! <= ORDER[b]! ? a : b));
+    });
+    console.log('  ' + pad(`${p.logical_id} worst-case`, 20) + worst.map((v) => pad(v, 9)).join(''));
+    console.log();
   }
 
-  // Structural relevance: the read-set footprint per COA.
-  line();
-  console.log('STRUCTURAL RELEVANCE — which intel each COA actually READS (computed from geometry+time)\n');
-  const computedFootprint: Record<string, Set<string>> = {};
-  for (const p of PLANS) {
-    const fp = footprint(p, base.world);
-    computedFootprint[p.logical_id] = fp;
-    const reads = [...fp].sort();
-    const inert = ALL_IDS.filter((id) => !fp.has(id));
-    console.log(`  ${pad(p.logical_id, 10)} reads {${reads.join(', ')}}`);
-    console.log(`  ${pad('', 10)} inert {${inert.join(', ')}}   ← describe the world, do not touch this COA`);
+  // ── Structural relevance per scenario (our intel only; scenario-sourced reads
+  //    are the ENEMY's action, reported separately) ──
+  const fp: Record<string, Record<string, Set<string>>> = {}; // scenario → plan → our-intel footprint
+  for (const sk of SCENARIO_KEYS) {
+    fp[sk] = {};
+    for (const p of PLANS) fp[sk][p.logical_id] = new Set([...footprint(p, baseline[sk]!.world)].filter(isOurIntel));
   }
 
-  // Behavioural relevance: remove each K, recompile, re-score, diff verdicts.
+  // ── Behavioural relevance per scenario: decisive(K, plan, scenario) ──
+  const decisive: Record<string, Record<string, Set<string>>> = {}; // scenario → K → set of plans it moves
+  for (const sk of SCENARIO_KEYS) {
+    decisive[sk] = {};
+    for (const id of ALL_IDS) {
+      const sub = await run(ALL_IDS.filter((x) => x !== id), sk);
+      const movesPlans = new Set<string>();
+      for (const p of PLANS) for (const c of commitments) {
+        if (baseline[sk]!.verdicts[p.logical_id]![c.logical_id] !== sub.verdicts[p.logical_id]![c.logical_id]) movesPlans.add(p.logical_id);
+      }
+      decisive[sk][id] = movesPlans;
+    }
+  }
+
+  // ── The headline: relevance that SHIFTS with the enemy COA ──
   line();
-  console.log('BEHAVIOURAL RELEVANCE — remove each K, recompile+rescore, report verdicts that MOVE\n');
-  const moved: Record<string, string[]> = {};
+  console.log('RELEVANCE SHIFTS WITH THE ENEMY COA — same intel, different decisiveness\n');
   for (const id of ALL_IDS) {
-    const subset = ALL_IDS.filter((x) => x !== id);
-    const ks2 = await buildStore(subset);
-    const w2 = await compileWorld(ks2, subset);
-    const v2 = await scoreAll(ks2, w2.ref);
-    const diffs: string[] = [];
-    for (const p of PLANS) for (const c of commitments) {
-      const a = baseVerdicts[p.logical_id]![c.logical_id]!, b = v2[p.logical_id]![c.logical_id]!;
-      if (a !== b) diffs.push(`${p.logical_id}/${c.logical_id}: ${a}→${b}`);
+    for (const p of PLANS) {
+      const where = SCENARIO_KEYS.filter((sk) => decisive[sk][id]!.has(p.logical_id));
+      if (where.length > 0 && where.length < SCENARIO_KEYS.length) {
+        const notWhere = SCENARIO_KEYS.filter((sk) => !where.includes(sk));
+        console.log(`  ${pad(id, 4)} is DECISIVE for ${pad(p.logical_id, 9)} under {${where.join(', ')}} but INERT under {${notWhere.join(', ')}}`);
+      }
     }
-    moved[id] = diffs;
-    console.log(`  remove ${pad(id, 4)} → ${diffs.length ? diffs.join('  ') : 'no verdict moves (inert)'}`);
+  }
+  // Attribution shift: a base override whose value gets MASKED by an excursion.
+  for (const p of PLANS) {
+    const baseFP = footprint(p, baseline['BASE']!.world);
+    for (const sk of SCENARIOS.map((s) => s.logical_id)) {
+      const scenFP = footprint(p, baseline[sk]!.world);
+      const masked = [...baseFP].filter((s) => isOurIntel(s) && !scenFP.has(s) && [...scenFP].includes(sk));
+      for (const m of masked) console.log(`  ${pad(m, 4)} is READ for ${pad(p.logical_id, 9)} under {BASE} but MASKED by the enemy's own action under {${sk}} (the binding value becomes ${sk})`);
+    }
   }
 
-  // ── Reproducibility & agreement proofs ──
+  // ── Proofs ──
   line();
   console.log('PREDICTABLE == REPRODUCIBLE — proofs\n');
   const checks: [string, boolean][] = [];
 
-  // P1: same inputs → identical world stamp and identical verdicts, twice.
-  const ksA = await buildStore(ALL_IDS); const a = await compileWorld(ksA, ALL_IDS); const va = await scoreAll(ksA, a.ref);
-  const ksB = await buildStore(ALL_IDS); const b = await compileWorld(ksB, ALL_IDS); const vb = await scoreAll(ksB, b.ref);
-  checks.push(['same inputs → identical world stamp', a.stamp === b.stamp && a.stamp === base.stamp]);
-  checks.push(['same inputs → identical verdicts', JSON.stringify(va) === JSON.stringify(vb)]);
-
-  // P2: shuffled knowledge input order → identical world stamp (order-independence).
-  const shuffled = [...ALL_IDS].reverse();
-  const ksC = await buildStore(shuffled); const c = await compileWorld(ksC, shuffled);
-  checks.push(['shuffled input order → identical world stamp', c.stamp === base.stamp]);
-
-  // P3: the two relevance notions AGREE — anything the read-set marks inert for a
-  //     COA provably leaves that COA's verdicts byte-identical on removal.
-  let agree = true; const violations: string[] = [];
-  for (const id of ALL_IDS) {
-    for (const p of PLANS) {
-      const isRead = computedFootprint[p.logical_id]!.has(id);
-      const movesThisPlan = moved[id]!.some((d) => d.startsWith(p.logical_id + '/'));
-      if (!isRead && movesThisPlan) { agree = false; violations.push(`${id}/${p.logical_id}`); }
-    }
+  // P1: same inputs → identical stamp + verdicts, per scenario, on re-run.
+  let reruns = true;
+  for (const sk of SCENARIO_KEYS) {
+    const again = await run(ALL_IDS, sk);
+    if (again.stamp !== baseline[sk]!.stamp || JSON.stringify(again.verdicts) !== JSON.stringify(baseline[sk]!.verdicts)) reruns = false;
   }
-  checks.push(['read-set INERT ⇒ removal leaves that COA unchanged', agree]);
-  if (violations.length) console.log('    violations:', violations.join(', '));
+  checks.push(['same inputs → identical stamp + verdicts, every scenario', reruns]);
 
-  // P4: the computed footprint matches the hand-derived oracle.
+  // P2: shuffled knowledge input order → identical stamp, per scenario.
+  let shuffleOk = true;
+  for (const sk of SCENARIO_KEYS) {
+    const rev = await run([...ALL_IDS].reverse(), sk);
+    if (rev.stamp !== baseline[sk]!.stamp) shuffleOk = false;
+  }
+  checks.push(['shuffled input order → identical stamp, every scenario', shuffleOk]);
+
+  // P3: read-set INERT ⇒ removal-invariant, per scenario (the two methods agree).
+  let agree = true; const viol: string[] = [];
+  for (const sk of SCENARIO_KEYS) for (const id of ALL_IDS) for (const p of PLANS) {
+    const isRead = fp[sk][p.logical_id]!.has(id);
+    if (!isRead && decisive[sk][id]!.has(p.logical_id)) { agree = false; viol.push(`${id}/${p.logical_id}@${sk}`); }
+  }
+  if (viol.length) console.log('    violations:', viol.join(', '));
+  checks.push(['read-set INERT ⇒ removal-invariant, every scenario', agree]);
+
+  // P4: BASE footprint == hand-derived oracle.
   let oracleOk = true;
   for (const p of PLANS) {
-    const got = [...computedFootprint[p.logical_id]!].sort().join(',');
+    const got = [...fp['BASE']![p.logical_id]!].sort().join(',');
     const want = [...ORACLE_FOOTPRINT[p.logical_id]!].sort().join(',');
     if (got !== want) { oracleOk = false; console.log(`    oracle mismatch ${p.logical_id}: got {${got}} want {${want}}`); }
   }
-  checks.push(['computed footprint == hand-derived relevance oracle', oracleOk]);
+  checks.push(['BASE footprint == hand-derived relevance oracle', oracleOk]);
+
+  // P5: relevance genuinely SHIFTED — at least one (K, plan) decisive under some
+  //     scenario and inert under another (the whole point of the tune).
+  let shifted = false;
+  for (const id of ALL_IDS) for (const p of PLANS) {
+    const d = SCENARIO_KEYS.filter((sk) => decisive[sk][id]!.has(p.logical_id)).length;
+    if (d > 0 && d < SCENARIO_KEYS.length) shifted = true;
+  }
+  checks.push(['at least one piece of intel changes decisiveness across scenarios', shifted]);
 
   console.log();
   for (const [name, ok] of checks) console.log(`  [${ok ? 'PASS' : 'FAIL'}] ${name}`);
   line();
   const allOk = checks.every(([, ok]) => ok);
-  console.log(allOk ? '\nAll proofs pass — the relevance decision is reproducible and geometry-predictable.\n' : '\nSOME PROOFS FAILED — see above.\n');
+  console.log(allOk ? '\nAll proofs pass — relevance is a reproducible function of (world, COA, enemy COA).\n' : '\nSOME PROOFS FAILED — see above.\n');
   process.exitCode = allOk ? 0 : 1;
 }
 
