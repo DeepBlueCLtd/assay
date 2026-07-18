@@ -386,9 +386,135 @@ function footprint(plan: Plan, world: CompiledWorld): Set<string> {
 }
 
 const isOurIntel = (source: string) => source.startsWith('S');
+const READ_CHANNELS: ChannelKind[] = ['mobility', 'threat'];
+const ORDER: Record<string, number> = { violated: 0, tight: 1, marginal: 2, robust: 3 };
+export type Relevance = 'decisive' | 'read' | 'masked' | 'inert';
 
 // ───────────────────────────────────────────────────────────────────────────
-// Report
+// The model — every number here is produced by the real engine. computeModel
+// runs the whole pipeline (per scenario, and once per single-K removal) and
+// returns both the raw structures (for the console proofs) and a
+// JSON-serialisable `viz` model (for the visual, scratch/build-viz.ts).
+// ───────────────────────────────────────────────────────────────────────────
+
+export interface VizModel {
+  engine: string;
+  grid: { cols: number; rows: number };
+  scenarioKeys: string[];
+  scenarios: { key: string; name: string; narrative: string; excursion: { channel: string; region: string; band: [number, number]; unit: string }[] }[];
+  regions: { name: string; x0: number; y0: number; x1: number; y1: number; channel: string | null; source: string | null; read: boolean }[];
+  intel: { id: string; question: string; channel: string; region: string; band: [number, number]; unit: string; read: boolean; source_class: string; confidence: string }[];
+  plans: { id: string; name: string; routes: { element: string; legs: { x: number; y: number; enter: number; exit: number }[] }[] }[];
+  commitments: { id: string; statement: string; tier: string; metric: string }[];
+  verdicts: Record<string, Record<string, Record<string, string>>>;   // sk → plan → C → verdict
+  worst: Record<string, Record<string, string>>;                       // plan → C → worst-case verdict
+  relevance: Record<string, Record<string, Record<string, Relevance>>>; // sk → plan → S → label
+  shifts: { intel: string; plan: string; decisiveUnder: string[]; inertUnder: string[] }[];
+  masks: { intel: string; plan: string; scenario: string }[];
+}
+
+export async function computeModel(): Promise<{
+  baseline: Record<string, Awaited<ReturnType<typeof run>>>;
+  fp: Record<string, Record<string, Set<string>>>;
+  decisive: Record<string, Record<string, Set<string>>>;
+  viz: VizModel;
+}> {
+  const baseline: Record<string, Awaited<ReturnType<typeof run>>> = {};
+  for (const sk of SCENARIO_KEYS) baseline[sk] = await run(ALL_IDS, sk);
+
+  // Structural footprint (our intel only) and behavioural decisiveness, per scenario.
+  const fp: Record<string, Record<string, Set<string>>> = {};
+  const decisive: Record<string, Record<string, Set<string>>> = {};
+  for (const sk of SCENARIO_KEYS) {
+    fp[sk] = {};
+    for (const p of PLANS) fp[sk][p.logical_id] = new Set([...footprint(p, baseline[sk]!.world)].filter(isOurIntel));
+    decisive[sk] = {};
+    for (const id of ALL_IDS) {
+      const sub = await run(ALL_IDS.filter((x) => x !== id), sk);
+      const moves = new Set<string>();
+      for (const p of PLANS) for (const c of commitments) {
+        if (baseline[sk]!.verdicts[p.logical_id]![c.logical_id] !== sub.verdicts[p.logical_id]![c.logical_id]) moves.add(p.logical_id);
+      }
+      decisive[sk][id] = moves;
+    }
+  }
+
+  // Per-region channel/source (from the BASE compiled world).
+  const regionInfo: Record<string, { channel: string; source?: string }> = {};
+  for (const ch of baseline['BASE']!.world.channels) for (const o of ch.regions ?? []) {
+    regionInfo[o.region] = { channel: ch.kind, ...(o.source ? { source: o.source } : {}) };
+  }
+  const subjectRoute = (subject: string) => config.subject_map.find((e) => e.subject === subject)!;
+
+  // Relevance label per (scenario, plan, intel).
+  const relevance: VizModel['relevance'] = {};
+  for (const sk of SCENARIO_KEYS) {
+    relevance[sk] = {};
+    for (const p of PLANS) {
+      relevance[sk][p.logical_id] = {};
+      for (const id of ALL_IDS) {
+        let label: Relevance;
+        if (decisive[sk][id]!.has(p.logical_id)) label = 'decisive';
+        else if (fp[sk][p.logical_id]!.has(id)) label = 'read';
+        else if (sk !== 'BASE' && fp['BASE']![p.logical_id]!.has(id)) label = 'masked';
+        else label = 'inert';
+        relevance[sk][p.logical_id]![id] = label;
+      }
+    }
+  }
+
+  const shifts: VizModel['shifts'] = [];
+  for (const id of ALL_IDS) for (const p of PLANS) {
+    const where = SCENARIO_KEYS.filter((sk) => decisive[sk][id]!.has(p.logical_id));
+    if (where.length > 0 && where.length < SCENARIO_KEYS.length) {
+      shifts.push({ intel: id, plan: p.logical_id, decisiveUnder: where, inertUnder: SCENARIO_KEYS.filter((sk) => !where.includes(sk)) });
+    }
+  }
+  const masks: VizModel['masks'] = [];
+  for (const sk of SCENARIO_KEYS) for (const p of PLANS) for (const id of ALL_IDS) {
+    if (relevance[sk][p.logical_id]![id] === 'masked') masks.push({ intel: id, plan: p.logical_id, scenario: sk });
+  }
+
+  const worst: VizModel['worst'] = {};
+  for (const p of PLANS) {
+    worst[p.logical_id] = {};
+    for (const c of commitments) {
+      worst[p.logical_id]![c.logical_id] = SCENARIO_KEYS
+        .map((sk) => baseline[sk]!.verdicts[p.logical_id]![c.logical_id]!)
+        .reduce((a, b) => (ORDER[a]! <= ORDER[b]! ? a : b));
+    }
+  }
+
+  const viz: VizModel = {
+    engine: ENGINE_VERSION,
+    grid: { cols: config.grid.cols, rows: config.grid.rows },
+    scenarioKeys: SCENARIO_KEYS,
+    scenarios: [
+      { key: 'BASE', name: 'Baseline', narrative: 'Our current assessment of the world — no adversary hypothesis applied.', excursion: [] },
+      ...SCENARIOS.map((s) => ({ key: s.logical_id, name: s.name, narrative: s.narrative, excursion: s.excursion.map((e) => ({ channel: e.channel, region: e.region, band: [e.override.lo, e.override.hi] as [number, number], unit: e.override.unit })) })),
+    ],
+    regions: config.regions.map((g) => {
+      const info = regionInfo[g.name];
+      return { name: g.name, x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1, channel: info?.channel ?? null, source: info?.source ?? null, read: info ? READ_CHANNELS.includes(info.channel as ChannelKind) : false };
+    }),
+    intel: knowledge.map((k) => {
+      const r = subjectRoute(k.subject);
+      return { id: k.logical_id, question: k.question, channel: r.channel, region: r.region, band: [k.answer!.lo, k.answer!.hi] as [number, number], unit: k.answer!.unit, read: READ_CHANNELS.includes(r.channel), source_class: k.provenance!.source_class, confidence: k.provenance!.confidence };
+    }),
+    plans: PLANS.map((p) => ({ id: p.logical_id, name: p.name, routes: p.elements.map((e) => ({ element: e.force_element, legs: (e.route ?? []).map((l) => ({ x: l.x, y: l.y, enter: l.enter_step, exit: l.exit_step })) })) })),
+    commitments: commitments.map((c) => ({ id: c.logical_id, statement: c.statement, tier: c.tier, metric: c.metric })),
+    verdicts: Object.fromEntries(SCENARIO_KEYS.map((sk) => [sk, baseline[sk]!.verdicts])),
+    worst,
+    relevance,
+    shifts,
+    masks,
+  };
+
+  return { baseline, fp, decisive, viz };
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Console report (the proofs). Runs only when executed directly.
 // ───────────────────────────────────────────────────────────────────────────
 
 const pad = (s: string, n: number) => (s + ' '.repeat(n)).slice(0, n);
@@ -399,13 +525,8 @@ async function main() {
   console.log(`engine ${ENGINE_VERSION}; grid ${config.grid.cols}×${config.grid.rows}, horizon ${config.grid.horizon_steps} steps`);
   console.log(`scenarios: ${SCENARIO_KEYS.join(', ')}`);
 
-  // A run of every (scenario) at full knowledge, plus each single-K-removed run,
-  // for behavioural relevance. All via the real engine.
-  const baseline: Record<string, Awaited<ReturnType<typeof run>>> = {};
-  for (const sk of SCENARIO_KEYS) baseline[sk] = await run(ALL_IDS, sk);
+  const { baseline, fp, decisive, viz } = await computeModel();
 
-  // ── Compiled world (BASE) ──
-  const READ_CHANNELS: ChannelKind[] = ['mobility', 'threat'];
   line();
   console.log('COMPILED WORLD (BASE) — every K describes a place; only mobility & threat are read\n');
   for (const ch of baseline['BASE']!.world.channels) {
@@ -415,65 +536,24 @@ async function main() {
     }
   }
 
-  // ── Robustness: verdicts per scenario + worst-case (minimax) ──
-  const ORDER: Record<string, number> = { violated: 0, tight: 1, marginal: 2, robust: 3 };
   line();
   console.log('VERDICTS PER SCENARIO + worst-case (COA × commitment)\n');
   console.log('  ' + pad('', 20) + commitments.map((c) => pad(c.logical_id, 9)).join(''));
   for (const p of PLANS) {
     for (const sk of SCENARIO_KEYS) {
-      console.log('  ' + pad(`${p.logical_id} @ ${sk}`, 20) + commitments.map((c) => pad(baseline[sk]!.verdicts[p.logical_id]![c.logical_id]!, 9)).join(''));
+      console.log('  ' + pad(`${p.logical_id} @ ${sk}`, 20) + commitments.map((c) => pad(viz.verdicts[sk]![p.logical_id]![c.logical_id]!, 9)).join(''));
     }
-    const worst = commitments.map((c) => {
-      const vs = SCENARIO_KEYS.map((sk) => baseline[sk]!.verdicts[p.logical_id]![c.logical_id]!);
-      return vs.reduce((a, b) => (ORDER[a]! <= ORDER[b]! ? a : b));
-    });
-    console.log('  ' + pad(`${p.logical_id} worst-case`, 20) + worst.map((v) => pad(v, 9)).join(''));
+    console.log('  ' + pad(`${p.logical_id} worst-case`, 20) + commitments.map((c) => pad(viz.worst[p.logical_id]![c.logical_id]!, 9)).join(''));
     console.log();
   }
 
-  // ── Structural relevance per scenario (our intel only; scenario-sourced reads
-  //    are the ENEMY's action, reported separately) ──
-  const fp: Record<string, Record<string, Set<string>>> = {}; // scenario → plan → our-intel footprint
-  for (const sk of SCENARIO_KEYS) {
-    fp[sk] = {};
-    for (const p of PLANS) fp[sk][p.logical_id] = new Set([...footprint(p, baseline[sk]!.world)].filter(isOurIntel));
-  }
-
-  // ── Behavioural relevance per scenario: decisive(K, plan, scenario) ──
-  const decisive: Record<string, Record<string, Set<string>>> = {}; // scenario → K → set of plans it moves
-  for (const sk of SCENARIO_KEYS) {
-    decisive[sk] = {};
-    for (const id of ALL_IDS) {
-      const sub = await run(ALL_IDS.filter((x) => x !== id), sk);
-      const movesPlans = new Set<string>();
-      for (const p of PLANS) for (const c of commitments) {
-        if (baseline[sk]!.verdicts[p.logical_id]![c.logical_id] !== sub.verdicts[p.logical_id]![c.logical_id]) movesPlans.add(p.logical_id);
-      }
-      decisive[sk][id] = movesPlans;
-    }
-  }
-
-  // ── The headline: relevance that SHIFTS with the enemy COA ──
   line();
   console.log('RELEVANCE SHIFTS WITH THE ENEMY COA — same intel, different decisiveness\n');
-  for (const id of ALL_IDS) {
-    for (const p of PLANS) {
-      const where = SCENARIO_KEYS.filter((sk) => decisive[sk][id]!.has(p.logical_id));
-      if (where.length > 0 && where.length < SCENARIO_KEYS.length) {
-        const notWhere = SCENARIO_KEYS.filter((sk) => !where.includes(sk));
-        console.log(`  ${pad(id, 4)} is DECISIVE for ${pad(p.logical_id, 9)} under {${where.join(', ')}} but INERT under {${notWhere.join(', ')}}`);
-      }
-    }
+  for (const s of viz.shifts) {
+    console.log(`  ${pad(s.intel, 4)} is DECISIVE for ${pad(s.plan, 9)} under {${s.decisiveUnder.join(', ')}} but INERT under {${s.inertUnder.join(', ')}}`);
   }
-  // Attribution shift: a base override whose value gets MASKED by an excursion.
-  for (const p of PLANS) {
-    const baseFP = footprint(p, baseline['BASE']!.world);
-    for (const sk of SCENARIOS.map((s) => s.logical_id)) {
-      const scenFP = footprint(p, baseline[sk]!.world);
-      const masked = [...baseFP].filter((s) => isOurIntel(s) && !scenFP.has(s) && [...scenFP].includes(sk));
-      for (const m of masked) console.log(`  ${pad(m, 4)} is READ for ${pad(p.logical_id, 9)} under {BASE} but MASKED by the enemy's own action under {${sk}} (the binding value becomes ${sk})`);
-    }
+  for (const m of viz.masks) {
+    console.log(`  ${pad(m.intel, 4)} is READ for ${pad(m.plan, 9)} under {BASE} but MASKED by the enemy's own action under {${m.scenario}}`);
   }
 
   // ── Proofs ──
@@ -532,4 +612,8 @@ async function main() {
   process.exitCode = allOk ? 0 : 1;
 }
 
-main().catch((e) => { console.error(e); process.exitCode = 1; });
+// Run the proofs only when invoked directly (build-viz.ts imports computeModel).
+import { fileURLToPath } from 'node:url';
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((e) => { console.error(e); process.exitCode = 1; });
+}
