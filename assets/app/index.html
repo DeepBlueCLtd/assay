@@ -2750,6 +2750,38 @@
   function informs(store, hash, isKnown) {
     return neighbours(store, hash, "informs", isKnown);
   }
+  var RECURSIVE_TRACE_DEPTH_CAP = 3;
+  var RECURSIVE_TRACE_BREADTH_CAP = 6;
+  function recursiveNeighbours(store, origin, relation, isKnown, depthCap = RECURSIVE_TRACE_DEPTH_CAP, breadthCap = RECURSIVE_TRACE_BREADTH_CAP) {
+    const buildAll = (hash, depth, path) => neighbours(store, hash, relation, isKnown).filter((n) => !path.has(n.hash)).map((n) => {
+      if (!n.known) {
+        return { hash: n.hash, edge_type: n.edge_type, known: false, depth, children: [], remainder: 0, childrenRemainder: 0 };
+      }
+      const nextPath = new Set(path).add(n.hash);
+      if (depth >= depthCap) {
+        const onward = neighbours(store, n.hash, relation, isKnown).filter((m) => !nextPath.has(m.hash));
+        return { hash: n.hash, edge_type: n.edge_type, known: true, depth, children: [], remainder: onward.length, childrenRemainder: 0 };
+      }
+      const all2 = buildAll(n.hash, depth + 1, nextPath);
+      return {
+        hash: n.hash,
+        edge_type: n.edge_type,
+        known: true,
+        depth,
+        children: all2.slice(0, breadthCap),
+        remainder: 0,
+        childrenRemainder: Math.max(0, all2.length - breadthCap)
+      };
+    });
+    const all = buildAll(origin, 1, /* @__PURE__ */ new Set([origin]));
+    return {
+      origin,
+      relation,
+      depthCap,
+      children: all.slice(0, breadthCap),
+      childrenRemainder: Math.max(0, all.length - breadthCap)
+    };
+  }
 
   // src/staleness.ts
   var StalenessService = class {
@@ -4598,6 +4630,10 @@ ${items}
     role_menu: {
       term: "role actions (the legal verbs for this role)",
       gloss: "The write verbs C2 permits this role \u2014 J-2 collect/contest/resolve/supersede, planner compile/generate/relax/score, commander select/waive, observer none. Each is marked live-actionable, pipeline-automatic, or deferred (never a dead button faking a write, DEC-4). Menus reorganise what the seam already permits (DEC-33), never restrict; the observer tab exposes no write (SPEC-25)."
+    },
+    recursive_trace: {
+      term: "recursive trace (\u25B8 expand \xB7 depth cap 3)",
+      gloss: 'The one-hop informs/influenced-by menu expanded in place, hop by hop, to a stated depth cap of 3 (DEC-38). Each hop shows its real edge type \u2014 plus a fixed operation gloss on the computation edges (scored_from = the interval evaluation over channel reads; compiled_into = the band materialisation), never an invented "why". Dead ends read as dead ends at every depth (G3). The same transitive walk as the full graph, capped for reading flow; at the cap an honest "N more \u2014 open full trace" opens that graph (G4 \u2014 never a silent stop).'
     }
   };
   var esc17 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -4626,6 +4662,7 @@ ${items}
     sensitivityTable: ["sensitivity", "single_source_flag", "verdict", "verdict_legend"],
     discriminationTable: ["separation", "separation_class", "operative_pair", "collection_cost", "band", "provenance", "weight_tiebreak"],
     stalenessFlags: ["invalidated"],
+    recursiveTrace: ["recursive_trace"],
     dsmTable: ["decision_point", "ltiov_state", "tripwire", "separation_class", "collection_cost", "band", "provenance", "tier", "verdict_legend"]
   };
   var VERDICT_SURFACES = /* @__PURE__ */ new Set([
@@ -5406,6 +5443,37 @@ ${items}
       const verdict = sens.ranking[0]?.baseline_verdicts[idx] ?? "unknown";
       return { plan: planId, commitment: commitmentId, verdict, contributors, stamp: sens.stamp };
     }
+    /**
+     * SPEC-26 US3 (DEC-38) — the recursive-trace tooltip's labelled tree for an
+     * item, resolved to readable labels exactly as `traceMenu` resolves them. The
+     * traversal is `recursiveNeighbours` (the shipped one-hop `neighbours` reading
+     * recursed under EDGE_ORIENTATION — the same semantics the DEC-47 graph view
+     * walks, no parallel walker). The cap remainder hands off to `depGraph`.
+     */
+    recursiveTrace(logicalId, relation) {
+      const hash = this.#latestHash(logicalId);
+      if (!hash) return void 0;
+      const known = (h) => this.#svc.store.exists(h);
+      const tree = recursiveNeighbours(this.#svc.trace, hash, relation, known);
+      const label = (hops) => hops.map((h) => ({
+        label: this.describeHash(h.hash),
+        hash: h.hash,
+        edge_type: h.edge_type,
+        known: h.known,
+        depth: h.depth,
+        children: label(h.children),
+        remainder: h.remainder,
+        childrenRemainder: h.childrenRemainder
+      }));
+      return {
+        originLabel: this.describeHash(hash),
+        originHash: hash,
+        relation: tree.relation,
+        depthCap: tree.depthCap,
+        children: label(tree.children),
+        childrenRemainder: tree.childrenRemainder
+      };
+    }
     /** Full transitive dependency graph around an item (issue #24). */
     depGraph(logicalId, maxDepth = 4) {
       const hash = this.#latestHash(logicalId);
@@ -5650,6 +5718,47 @@ ${items}
 </div>`;
   }
 
+  // src/components/recursiveTrace.ts
+  var esc20 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var OPERATION_GLOSS = {
+    scored_from: "interval evaluation over channel reads",
+    compiled_into: "band materialisation"
+  };
+  function hopRelation(edge_type) {
+    const gloss = OPERATION_GLOSS[edge_type];
+    return gloss ? `<span class="assay-rt-edge">${esc20(edge_type)}</span> <span class="assay-rt-gloss">\xB7 ${esc20(gloss)}</span>` : `<span class="assay-rt-edge">${esc20(edge_type)}</span>`;
+  }
+  function handoffRow(count, hash, kind) {
+    if (count <= 0) return "";
+    const label = kind === "depth" ? `${count} more ${count === 1 ? "hop" : "hops"} \u2014 open full trace \u2192` : `+${count} more \u2014 open full trace \u2192`;
+    return `<div class="assay-rt-remainder"><a href="#" class="assay-rt-open" data-rt-hash="${esc20(hash)}">${label}</a></div>`;
+  }
+  function renderHop(hop) {
+    const deadEnd = !hop.known;
+    const relation = hopRelation(hop.edge_type);
+    const labelHtml = deadEnd ? `<span class="assay-rt-label assay-rt-deadend">${esc20(hop.label)}</span> <span class="assay-rt-deadend-tag">dead end \u2014 G3</span>` : `<span class="assay-rt-label">${esc20(hop.label)}</span>`;
+    const head = `${labelHtml} <span class="assay-rt-rel">${relation}</span>`;
+    if (deadEnd || hop.children.length === 0 && hop.remainder === 0) {
+      return `<li class="assay-rt-hop">${head}</li>`;
+    }
+    if (hop.children.length === 0) {
+      return `<li class="assay-rt-hop">${head}${handoffRow(hop.remainder, hop.hash, "depth")}</li>`;
+    }
+    return `<li class="assay-rt-hop"><details><summary>${head}</summary><ul class="assay-rt-list">${hop.children.map(renderHop).join("")}${handoffRow(hop.childrenRemainder, hop.hash, "breadth")}</ul></details></li>`;
+  }
+  var RELATION_TITLE = {
+    informs: "Informs (upstream \u2014 what feeds this)",
+    influences: "Influences (downstream \u2014 what this drives)"
+  };
+  function recursiveTrace(tree) {
+    const body = tree.children.length === 0 ? `<div class="assay-rt-empty">\u2014 none yet \u2014</div>` : `<ul class="assay-rt-list assay-rt-root">${tree.children.map(renderHop).join("")}${handoffRow(tree.childrenRemainder, tree.originHash, "breadth")}</ul>`;
+    return `<div class="assay-rt" data-rt-relation="${tree.relation}">
+    <div class="assay-rt-title">${esc20(RELATION_TITLE[tree.relation])}</div>
+    ${body}
+    <div class="assay-rt-cap">depth cap ${tree.depthCap} \u2014 deeper chains open the full trace</div>
+  </div>`;
+  }
+
   // src/narratives.ts
   var SCRIPTING_PRINCIPLES = [
     'Never narrate a midpoint \u2014 say "9 to 13 steps", not "about 11."',
@@ -5889,9 +5998,9 @@ ${items}
     if (shadowSnap.notice?.kind === "refusal") result.refusal = shadowSnap.notice.html;
     return result;
   }
-  var esc20 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc21 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   function ghostSummary(result) {
-    const header = `<div style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#5B3B8C">Previewed \u2014 not applied \xB7 ${esc20(describeArmedAct(result.armed))}</div>`;
+    const header = `<div style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#5B3B8C">Previewed \u2014 not applied \xB7 ${esc21(describeArmedAct(result.armed))}</div>`;
     if (result.refusal) {
       return `<div class="assay-ghost" style="border:1px dashed #B9A0E0;border-left:4px solid #5B3B8C;background:#F6F1FC;border-radius:6px;padding:10px 12px">
       ${header}
@@ -5901,7 +6010,7 @@ ${items}
     }
     const verdictCells = result.cells.filter((c) => c.verdict && c.from !== void 0 && c.from !== c.to);
     const cellLines = verdictCells.length ? `<ul style="margin:6px 0 0;padding-left:18px;font-size:11px;color:#33424E">${verdictCells.map(
-      (c) => `<li style="font-family:ui-monospace,monospace">${esc20(c.id.replace(/^v:/, ""))}: <b>${esc20(c.from)}</b> \u2192 <b>${esc20(c.to)}</b></li>`
+      (c) => `<li style="font-family:ui-monospace,monospace">${esc21(c.id.replace(/^v:/, ""))}: <b>${esc21(c.from)}</b> \u2192 <b>${esc21(c.to)}</b></li>`
     ).join("")}</ul>` : `<div style="margin-top:6px;font-size:11px;color:#5B6B77">No verdict cell changes word; ${result.changed.size} unit(s) would glow (rows, stamps, feed).</div>`;
     return `<div class="assay-ghost" style="border:1px dashed #B9A0E0;border-left:4px solid #5B3B8C;background:#F6F1FC;border-radius:6px;padding:10px 12px">
     ${header}
@@ -5955,7 +6064,7 @@ ${items}
   };
 
   // src/components/roleMenu.ts
-  var esc21 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc22 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var STATUS = {
     live: { label: "live", fg: "#1E6B3A", bg: "#E6F2EA", border: "#B7DCC4" },
     auto: { label: "runs on recompute", fg: "#3E5D8A", bg: "#E8EEF6", border: "#C3D3E8" },
@@ -5964,13 +6073,13 @@ ${items}
   function verbRow(v) {
     const s = STATUS[v.status];
     return `<div style="display:flex;gap:8px;align-items:baseline;padding:3px 0">
-    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732;min-width:118px">${esc21(v.verb)}</span>
-    <span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:8px;color:${s.fg};background:${s.bg};border:1px solid ${s.border};white-space:nowrap">${esc21(s.label)}</span>
-    <span style="font-size:11px;color:#5B6B77">${esc21(v.gloss)}</span>
+    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732;min-width:118px">${esc22(v.verb)}</span>
+    <span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:8px;color:${s.fg};background:${s.bg};border:1px solid ${s.border};white-space:nowrap">${esc22(s.label)}</span>
+    <span style="font-size:11px;color:#5B6B77">${esc22(v.gloss)}</span>
   </div>`;
   }
   function roleMenu(menu) {
-    const title = `Role actions \u2014 ${esc21(menu.role)}${menu.surface ? " \xB7 a surface, not a role" : ""}`;
+    const title = `Role actions \u2014 ${esc22(menu.role)}${menu.surface ? " \xB7 a surface, not a role" : ""}`;
     const body = menu.verbs.length === 0 ? `<div style="font-size:11.5px;color:#5B6B77;margin-top:6px"><b>Read &amp; trace only.</b> This role exposes <b>no write verb</b> \u2014 the bridge watches the seam, it never touches it. That an observer may do nothing is the C2 point made legible (SPEC-25).</div>` : `<div style="margin-top:6px">${menu.verbs.map(verbRow).join("")}</div>
          <div style="margin-top:6px;font-size:10px;color:#8091A0">Menus reorganise what the seam already permits (DEC-33) \u2014 never restrict. Every wired verb routes through the same honesty gates as before; deferred verbs are named, never faked (DEC-4).</div>`;
     return `<details class="assay-role-menu" style="margin:8px 0;border:1px solid #C8D2DA;border-radius:6px;padding:6px 12px;background:#FBFCFD">
@@ -5980,17 +6089,17 @@ ${items}
   }
 
   // src/components/challengePanel.ts
-  var esc22 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  var esc23 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   var singleSourceFlag = () => `<span style="font-family:ui-monospace,monospace;font-size:9.5px;font-weight:700;color:#A33131;background:#F8E2E2;border:1px solid #EFC6C6;border-radius:3px;padding:1px 5px;margin-left:6px">single-source</span>`;
   function contributorRow(c) {
-    return `<div data-logical-id="${esc22(c.knowledge)}" style="display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:11.5px">
-    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732;min-width:44px">${esc22(c.knowledge)}</span>
-    <span style="color:#5B6B77">pushed to its band edge, flips this verdict <b style="font-family:ui-monospace,monospace">${esc22(c.from)} \u2192 ${esc22(c.to)}</b></span>
+    return `<div data-logical-id="${esc23(c.knowledge)}" style="display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:11.5px">
+    <span style="font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#1B2732;min-width:44px">${esc23(c.knowledge)}</span>
+    <span style="color:#5B6B77">pushed to its band edge, flips this verdict <b style="font-family:ui-monospace,monospace">${esc23(c.from)} \u2192 ${esc23(c.to)}</b></span>
     ${c.single_source ? singleSourceFlag() : ""}
   </div>`;
   }
   function challengePanel(result) {
-    const header = `<div style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">Challenge \xB7 ${esc22(result.plan)} \xB7 ${esc22(result.commitment)} (${esc22(result.verdict)}) \u2014 key assumptions</div>`;
+    const header = `<div style="font-family:ui-monospace,monospace;font-size:11.5px;font-weight:700;color:#1B2732">Challenge \xB7 ${esc23(result.plan)} \xB7 ${esc23(result.commitment)} (${esc23(result.verdict)}) \u2014 key assumptions</div>`;
     if (result.contributors.length === 0) {
       return `<div class="assay-challenge" style="border:1px solid #B7DCC4;border-left:4px solid #1E6B3A;background:#EFF6F1;border-radius:6px;padding:10px 12px">
       ${header}
@@ -6037,6 +6146,24 @@ ${items}
 .assay-menu h4{margin:6px 0 3px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .assay-menu .row{padding:2px 0;font-family:ui-monospace,monospace;font-size:11px}
 .assay-menu .edge{color:#8091A0}
+/* ---- recursive-trace tooltip (SPEC-26 US3 / DEC-38) ---- */
+.assay-rt{margin:4px 0}
+.assay-rt-title{margin:6px 0 3px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.assay-rt-list{list-style:none;margin:0;padding:0 0 0 10px;border-left:1px solid var(--line)}
+.assay-rt-root{border-left:none;padding-left:0}
+.assay-rt-hop{padding:1px 0;font-family:ui-monospace,monospace;font-size:11px}
+.assay-rt-hop details>summary{cursor:pointer;list-style:none}
+.assay-rt-hop details>summary::-webkit-details-marker{display:none}
+.assay-rt-hop details>summary::before{content:'\u25B8 ';color:#8091A0}
+.assay-rt-hop details[open]>summary::before{content:'\u25BE '}
+.assay-rt-rel{color:#8091A0}
+.assay-rt-gloss{color:#5B6B77;font-style:italic}
+.assay-rt-deadend{color:#A33131}
+.assay-rt-deadend-tag{color:#A33131;font-size:9.5px}
+.assay-rt-remainder{padding:2px 0 2px 14px}
+.assay-rt-open{font-size:10.5px;color:#3E5D8A;font-weight:600;text-decoration:none}
+.assay-rt-cap{margin-top:4px;font-size:10px;color:var(--muted)}
+.assay-rt-empty{font-size:11px;color:var(--muted)}
 .assay-notice{margin:10px 0}
 .assay-dep-overlay{position:fixed;inset:0;z-index:100;background:rgba(27,39,50,.6);display:flex;align-items:stretch;justify-content:center}
 .assay-dep-overlay-inner{background:#fff;margin:24px;border-radius:12px;display:flex;flex-direction:column;width:100%;max-width:1400px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
@@ -6080,7 +6207,7 @@ ${items}
 [data-projection="wall"] .assay-panel{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 [data-projection="wall"] .assay-narrative-bar{background:#1B2732;border-color:#2C4A6E;color:#E8EEF2}
 `;
-  var esc23 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var esc24 = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   function mountShell(root, app) {
     const doc = root.ownerDocument;
     const style = doc.createElement("style");
@@ -6115,7 +6242,7 @@ ${items}
     <span class="label">Narrative:</span>
     <select id="assay-narrative-select">
       <option value="">\u2014 free exploration \u2014</option>
-      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc23(n.name)} (${esc23(n.audience)})</option>`).join("")}
+      ${NARRATIVES.map((n) => `<option value="${n.id}">${esc24(n.name)} (${esc24(n.audience)})</option>`).join("")}
     </select>
     <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:auto">
       <input type="checkbox" id="assay-wall-toggle"> Wall projection
@@ -6165,19 +6292,19 @@ ${items}
       }
       const isCentrepiece = beatIndex === n.beats.length - 1;
       narratorEl.innerHTML = `<div class="assay-narrator">
-      <div class="beat-title">${esc23(beat.title)}</div>
-      <div class="beat-count">${esc23(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc23(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
-      <div class="presenter-note">${esc23(beat.presenterNote)}</div>
-      ${beat.doctrinalQuote ? `<div class="doctrine">${esc23(beat.doctrinalQuote)}</div>` : ""}
-      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc23(n.centrepiece)}</div>` : ""}
-      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc23(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
+      <div class="beat-title">${esc24(beat.title)}</div>
+      <div class="beat-count">${esc24(n.name)} \u2014 beat ${beatIndex + 1} of ${n.beats.length} \xB7 ${esc24(n.audience)}${n.leadTheses.length ? ` \xB7 theses ${n.leadTheses.join(", ")}` : ""}</div>
+      <div class="presenter-note">${esc24(beat.presenterNote)}</div>
+      ${beat.doctrinalQuote ? `<div class="doctrine">${esc24(beat.doctrinalQuote)}</div>` : ""}
+      ${isCentrepiece ? `<div class="centrepiece">\u2605 Centrepiece: ${esc24(n.centrepiece)}</div>` : ""}
+      ${beat.action ? `<div style="margin-top:8px;font-size:11px;color:#F4C430">\u26A1 Scripted action: ${esc24(beat.action === "resolve" ? "Resolve K12 contest" : "Edit K8 band")}</div>` : ""}
       <div class="nav">
         <button id="assay-beat-prev" ${beatIndex === 0 ? "disabled" : ""}>\u25C0 Previous</button>
         <button id="assay-beat-next" ${beatIndex >= n.beats.length - 1 ? "disabled" : ""}>Next \u25B6</button>
       </div>
       <details class="principles" style="cursor:pointer">
         <summary>Scripting principles (note 09 \xA74)</summary>
-        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc23(p)}</div>`).join("")}
+        ${SCRIPTING_PRINCIPLES.map((p, i) => `<div>${i + 1}. ${esc24(p)}</div>`).join("")}
       </details>
     </div>`;
       const prevBtn = root.querySelector("#assay-beat-prev");
@@ -6480,18 +6607,12 @@ ${items}
     doc.addEventListener("click", closeMenu);
     function openMenu(logicalId, ev) {
       closeMenu();
-      const m = app.traceMenu(logicalId);
-      if (!m) return;
-      const section = (title, items) => {
-        if (items.length === 0)
-          return `<h4>${title}</h4><div class="row" style="color:var(--muted)">\u2014 none yet \u2014</div>`;
-        return `<h4>${title}</h4>` + items.map(
-          (n) => `<div class="row"${n.known ? "" : ' style="color:#A33131"'}>${n.label} <span class="edge">\xB7 ${n.edge}</span></div>`
-        ).join("");
-      };
+      const informs2 = app.recursiveTrace(logicalId, "informs");
+      const influences2 = app.recursiveTrace(logicalId, "influences");
+      if (!informs2 || !influences2) return;
       menuEl = doc.createElement("div");
       menuEl.className = "assay-menu";
-      menuEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${logicalId} \u2014 relationships</div>` + section("Informs (upstream)", m.informs) + section("Influences (downstream)", m.influences) + `<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><a href="#" class="assay-dep-open" style="font-size:11px;color:#3E5D8A;font-weight:600;text-decoration:none" data-dep-logical-id="${logicalId}">View full graph \u2192</a></div><div style="margin-top:4px;font-size:10px;color:var(--muted)">one hop \u2014 click a chip again to walk further</div>`;
+      menuEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${logicalId} \u2014 relationships</div>` + recursiveTrace(informs2) + recursiveTrace(influences2) + `<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><a href="#" class="assay-dep-open" style="font-size:11px;color:#3E5D8A;font-weight:600;text-decoration:none" data-dep-logical-id="${logicalId}">View full graph \u2192</a></div>`;
       const depLink = menuEl.querySelector(".assay-dep-open");
       depLink.addEventListener("click", (e) => {
         e.preventDefault();
@@ -6499,6 +6620,16 @@ ${items}
         closeMenu();
         openDepOverlay(logicalId);
       });
+      for (const el2 of Array.from(menuEl.querySelectorAll(".assay-rt-open"))) {
+        el2.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const hash = el2.dataset.rtHash;
+          if (!hash) return;
+          closeMenu();
+          openDepOverlayByHash(hash);
+        });
+      }
       menuEl.style.left = `${ev.pageX + 6}px`;
       menuEl.style.top = `${ev.pageY + 6}px`;
       menuEl.addEventListener("click", (e) => e.stopPropagation());
@@ -6538,6 +6669,20 @@ ${items}
       </div>
     </div>`;
       overlay.querySelector(".assay-dep-close").addEventListener("click", closeDepOverlay);
+    }
+    function openDepOverlayByHash(hash) {
+      closeDepOverlay();
+      const graph = app.depGraphByHash(hash);
+      if (!graph) return;
+      depOverlay = doc.createElement("div");
+      depOverlay.className = "assay-dep-overlay";
+      renderDepOverlayContent(depOverlay, graph, graph.focus.label);
+      depOverlay.querySelector(".assay-dep-close").addEventListener("click", closeDepOverlay);
+      depOverlay.addEventListener("click", (e) => {
+        if (e.target === depOverlay) closeDepOverlay();
+      });
+      wireDepNodes(depOverlay);
+      doc.body.appendChild(depOverlay);
     }
     function refocusDepGraph(hash) {
       if (!depOverlay) return;
