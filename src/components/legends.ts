@@ -161,6 +161,11 @@ export const PILL_LEGEND: Record<string, LegendEntry> = {
     gloss:
       'The write verbs C2 permits this role — J-2 collect/contest/resolve/supersede, planner compile/generate/relax/score, commander select/waive, observer none. Each is marked live-actionable, pipeline-automatic, or deferred (never a dead button faking a write, DEC-4). Menus reorganise what the seam already permits (DEC-33), never restrict; the observer tab exposes no write (SPEC-25).',
   },
+  recursive_trace: {
+    term: 'recursive trace (▸ expand · depth cap 3)',
+    gloss:
+      'The one-hop informs/influenced-by menu expanded in place, hop by hop, to a stated depth cap of 3 (DEC-38). Each hop shows its real edge type — plus a fixed operation gloss on the computation edges (scored_from = the interval evaluation over channel reads; compiled_into = the band materialisation), never an invented "why". Dead ends read as dead ends at every depth (G3). The same transitive walk as the full graph, capped for reading flow; at the cap an honest "N more — open full trace" opens that graph (G4 — never a silent stop).',
+  },
 };
 
 const esc = (s: string): string =>
@@ -199,6 +204,7 @@ export const COMPONENT_PILLS: Record<string, string[]> = {
   sensitivityTable: ['sensitivity', 'single_source_flag', 'verdict', 'verdict_legend'],
   discriminationTable: ['separation', 'separation_class', 'operative_pair', 'collection_cost', 'band', 'provenance', 'weight_tiebreak'],
   stalenessFlags: ['invalidated'],
+  recursiveTrace: ['recursive_trace'],
   dsmTable: ['decision_point', 'ltiov_state', 'tripwire', 'separation_class', 'collection_cost', 'band', 'provenance', 'tier', 'verdict_legend'],
 };
 

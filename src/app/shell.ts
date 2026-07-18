@@ -25,6 +25,7 @@ import { changedGlowUnits, changedTabs, type SignatureMap } from './glow.js';
 import { cellAtPixel, makeProjection } from '../mapProject.js';
 import { depGraphRiver } from '../components/depGraphRiver.js';
 import { depGraphSidebar } from '../components/depGraphSidebar.js';
+import { recursiveTrace as recursiveTraceView } from '../components/recursiveTrace.js';
 import { NARRATIVES, SCRIPTING_PRINCIPLES, type Narrative, type NarrativeBeat } from '../narratives.js';
 import { previewAct, applyArmedAct, ghostSummary, type ArmedAct } from '../preview.js';
 import { ROLE_VERBS } from '../roleMenus.js';
@@ -65,6 +66,24 @@ const STYLES = `
 .assay-menu h4{margin:6px 0 3px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .assay-menu .row{padding:2px 0;font-family:ui-monospace,monospace;font-size:11px}
 .assay-menu .edge{color:#8091A0}
+/* ---- recursive-trace tooltip (SPEC-26 US3 / DEC-38) ---- */
+.assay-rt{margin:4px 0}
+.assay-rt-title{margin:6px 0 3px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.assay-rt-list{list-style:none;margin:0;padding:0 0 0 10px;border-left:1px solid var(--line)}
+.assay-rt-root{border-left:none;padding-left:0}
+.assay-rt-hop{padding:1px 0;font-family:ui-monospace,monospace;font-size:11px}
+.assay-rt-hop details>summary{cursor:pointer;list-style:none}
+.assay-rt-hop details>summary::-webkit-details-marker{display:none}
+.assay-rt-hop details>summary::before{content:'▸ ';color:#8091A0}
+.assay-rt-hop details[open]>summary::before{content:'▾ '}
+.assay-rt-rel{color:#8091A0}
+.assay-rt-gloss{color:#5B6B77;font-style:italic}
+.assay-rt-deadend{color:#A33131}
+.assay-rt-deadend-tag{color:#A33131;font-size:9.5px}
+.assay-rt-remainder{padding:2px 0 2px 14px}
+.assay-rt-open{font-size:10.5px;color:#3E5D8A;font-weight:600;text-decoration:none}
+.assay-rt-cap{margin-top:4px;font-size:10px;color:var(--muted)}
+.assay-rt-empty{font-size:11px;color:var(--muted)}
 .assay-notice{margin:10px 0}
 .assay-dep-overlay{position:fixed;inset:0;z-index:100;background:rgba(27,39,50,.6);display:flex;align-items:stretch;justify-content:center}
 .assay-dep-overlay-inner{background:#fff;margin:24px;border-radius:12px;display:flex;flex-direction:column;width:100%;max-width:1400px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
@@ -564,29 +583,21 @@ export function mountShell(root: HTMLElement, app: AppState): void {
 
   function openMenu(logicalId: string, ev: MouseEvent): void {
     closeMenu();
-    const m = app.traceMenu(logicalId);
-    if (!m) return;
-    const section = (title: string, items: { label: string; edge: string; known: boolean }[]): string => {
-      if (items.length === 0)
-        return `<h4>${title}</h4><div class="row" style="color:var(--muted)">— none yet —</div>`;
-      return (
-        `<h4>${title}</h4>` +
-        items
-          .map(
-            (n) =>
-              `<div class="row"${n.known ? '' : ' style="color:#A33131"'}>${n.label} <span class="edge">· ${n.edge}</span></div>`,
-          )
-          .join('')
-      );
-    };
+    // SPEC-26 US3 (DEC-38) — the one-hop menu made recursively expandable in
+    // place, depth-capped at 3 (research note 15 §5). The tree reuses the shipped
+    // `neighbours` reading recursed under EDGE_ORIENTATION — the same traversal
+    // as the DEC-47 full graph, no parallel walker. At the cap, and via the
+    // always-present "View full graph" link, it hands off to that overlay.
+    const informs = app.recursiveTrace(logicalId, 'informs');
+    const influences = app.recursiveTrace(logicalId, 'influences');
+    if (!informs || !influences) return;
     menuEl = doc.createElement('div');
     menuEl.className = 'assay-menu';
     menuEl.innerHTML =
       `<div style="font-weight:600;margin-bottom:4px">${logicalId} — relationships</div>` +
-      section('Informs (upstream)', m.informs) +
-      section('Influences (downstream)', m.influences) +
-      `<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><a href="#" class="assay-dep-open" style="font-size:11px;color:#3E5D8A;font-weight:600;text-decoration:none" data-dep-logical-id="${logicalId}">View full graph →</a></div>` +
-      `<div style="margin-top:4px;font-size:10px;color:var(--muted)">one hop — click a chip again to walk further</div>`;
+      recursiveTraceView(informs) +
+      recursiveTraceView(influences) +
+      `<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><a href="#" class="assay-dep-open" style="font-size:11px;color:#3E5D8A;font-weight:600;text-decoration:none" data-dep-logical-id="${logicalId}">View full graph →</a></div>`;
     const depLink = menuEl.querySelector('.assay-dep-open') as HTMLElement;
     depLink.addEventListener('click', (e) => {
       e.preventDefault();
@@ -594,6 +605,18 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       closeMenu();
       openDepOverlay(logicalId);
     });
+    // The counted-remainder affordances at the depth cap open the full trace at
+    // exactly the hop where the tooltip stopped (G4 — visible, bounded, escapable).
+    for (const el of Array.from(menuEl.querySelectorAll('.assay-rt-open')) as HTMLElement[]) {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hash = el.dataset.rtHash;
+        if (!hash) return;
+        closeMenu();
+        openDepOverlayByHash(hash);
+      });
+    }
     menuEl.style.left = `${ev.pageX + 6}px`;
     menuEl.style.top = `${ev.pageY + 6}px`;
     menuEl.addEventListener('click', (e) => e.stopPropagation());
@@ -641,6 +664,23 @@ export function mountShell(root: HTMLElement, app: AppState): void {
       </div>
     </div>`;
     overlay.querySelector('.assay-dep-close')!.addEventListener('click', closeDepOverlay);
+  }
+
+  // SPEC-26 US3 (DEC-38) — the depth-cap remainder handoff: open the full-screen
+  // graph focused on the exact hop the tooltip stopped at (by content hash).
+  function openDepOverlayByHash(hash: string): void {
+    closeDepOverlay();
+    const graph = app.depGraphByHash(hash);
+    if (!graph) return;
+    depOverlay = doc.createElement('div');
+    depOverlay.className = 'assay-dep-overlay';
+    renderDepOverlayContent(depOverlay, graph, graph.focus.label);
+    depOverlay.querySelector('.assay-dep-close')!.addEventListener('click', closeDepOverlay);
+    depOverlay.addEventListener('click', (e) => {
+      if (e.target === depOverlay) closeDepOverlay();
+    });
+    wireDepNodes(depOverlay);
+    doc.body.appendChild(depOverlay);
   }
 
   function refocusDepGraph(hash: string): void {
